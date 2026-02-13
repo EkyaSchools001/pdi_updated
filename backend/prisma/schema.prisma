@@ -1,0 +1,244 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  LEADER
+  TEACHER
+  MANAGEMENT
+  SUPERADMIN
+  MANAGER
+  TEAM_MEMBER
+  CUSTOMER
+}
+
+enum ObservationStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
+}
+
+enum GoalStatus {
+  IN_PROGRESS
+  NEAR_COMPLETION
+  COMPLETED
+  ON_HOLD
+}
+
+enum TrainingStatus {
+  PLANNED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?   @default("") // Renamed to match existing DB
+  fullName      String
+  profilePicture String?   // Renamed to match existing DB
+  role          Role      @default(TEACHER)
+  campusId      String?
+  department    String?
+  status        String    @default("Active")
+  lastActive    DateTime?
+  lastSeen      DateTime? // Added to match existing DB
+  isVerified    Boolean   @default(false) // Added to match existing DB
+  campusAccess  String?   // Added to match existing DB
+  dateOfBirth   String?   // Added to match existing DB
+  managerId     String?   // Added to match existing DB
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  sentObservations     Observation[] @relation("Observer")
+  receivedObservations Observation[] @relation("Teacher")
+  goals                Goal[]
+  registrations        Registration[]
+  pdHours              PDHour[]
+  createdDocuments     Document[]
+  acknowledgements     DocumentAcknowledgement[]
+}
+
+model Observation {
+  id                String            @id @default(uuid())
+  teacherId         String
+  observerId        String
+  date              String            // Or DateTime
+  domain            String
+  score             Float
+  notes             String?           @db.Text
+  status            ObservationStatus @default(SUBMITTED)
+  actionStep        String?           @db.Text
+  teacherReflection String?           @db.Text
+  detailedReflection Json?             @db.JsonB
+  discussionMet     Boolean           @default(false)
+  hasReflection     Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  teacher           User              @relation("Teacher", fields: [teacherId], references: [id])
+  observer          User              @relation("Observer", fields: [observerId], references: [id])
+  domainRatings     ObservationDomain[]
+}
+
+model ObservationDomain {
+  id             String      @id @default(uuid())
+  observationId  String
+  domainId       Int
+  title          String
+  rating         String
+  evidence       String?     @db.Text
+  
+  observation    Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id                String     @id @default(uuid())
+  teacherId         String
+  title             String
+  description       String?    @db.Text
+  progress          Int        @default(0)
+  dueDate           String
+  status            GoalStatus @default(IN_PROGRESS)
+  isSchoolAligned   Boolean    @default(false)
+  category          String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  teacher           User       @relation(fields: [teacherId], references: [id])
+}
+
+model TrainingEvent {
+  id            String         @id @default(uuid())
+  title         String
+  topic         String
+  type          String
+  date          String
+  location      String
+  capacity      Int
+  status        TrainingStatus @default(PLANNED)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  registrations Registration[]
+}
+
+model Registration {
+  id               String   @id @default(uuid())
+  eventId          String
+  userId           String
+  registrationDate DateTime @default(now())
+
+  event            TrainingEvent @relation(fields: [eventId], references: [id])
+  user             User          @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model PDHour {
+  id          String   @id @default(uuid())
+  userId      String
+  activity    String
+  hours       Float
+  category    String
+  status      String   @default("APPROVED")
+  date        DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum AcknowledgementStatus {
+  PENDING
+  VIEWED
+  ACKNOWLEDGED
+  SIGNED
+}
+
+model Document {
+  id                String   @id @default(uuid())
+  title             String
+  description       String?  @db.Text
+  fileUrl           String
+  fileName          String
+  fileSize          Int?
+  version           String   @default("1.0")
+  requiresSignature Boolean  @default(false)
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  hash              String?  // SHA256 hash of file
+
+  createdBy         User                     @relation(fields: [createdById], references: [id])
+  acknowledgements  DocumentAcknowledgement[]
+}
+
+model DocumentAcknowledgement {
+  id              String                @id @default(uuid())
+  documentId      String
+  teacherId       String
+  status          AcknowledgementStatus @default(PENDING)
+  viewedAt        DateTime?
+  acknowledgedAt  DateTime?
+  signatureUrl    String?
+  ipAddress       String?
+  userAgent       String?              @db.Text
+  receiptUrl      String?
+  documentHash    String?              // SHA256 at time of acknowledgement
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  document        Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  teacher         User                 @relation(fields: [teacherId], references: [id])
+
+}
+
+// Placeholder models to prevent Prisma from dropping existing tables
+model Chat {
+  id String @id @default(uuid())
+}
+
+model ChatParticipant {
+  id String @id @default(uuid())
+}
+
+model MeetingRoom {
+  id String @id @default(uuid())
+}
+
+model Message {
+  id String @id @default(uuid())
+}
+
+model Project {
+  id String @id @default(uuid())
+}
+
+model Task {
+  id String @id @default(uuid())
+}
+
+model ProjectMembers {
+  A String
+  B String
+  @@unique([A, B])
+  @@map("_ProjectMembers")
+}
+
+model TaskAssignees {
+  A String
+  B String
+  @@unique([A, B])
+  @@map("_TaskAssignees")
+}
