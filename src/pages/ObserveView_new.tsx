@@ -1,3 +1,7 @@
+import api from "@/lib/api";
+
+// ... existing imports
+
 function ObserveView({ setObservations, setTeam, team, observations }: {
     setObservations: React.Dispatch<React.SetStateAction<Observation[]>>,
     setTeam: React.Dispatch<React.SetStateAction<typeof teamMembers>>,
@@ -40,63 +44,80 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
                         fields={template.fields}
                         submitLabel="Submit Observation"
                         onCancel={() => navigate("/leader")}
-                        onSubmit={(data) => {
-                            // Map dynamic form data back to Observation structure
-                            // Keys correspond to field IDs in template-utils.ts (ID 1)
-                            const newObs = {
-                                id: Math.random().toString(36).substr(2, 9),
-                                teacher: data.t1 || "Unknown Teacher",
-                                domain: data.a1 || "General",
-                                date: data.o2 ? new Date(data.o2).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                                score: Number(data.a2) || 0,
-                                notes: data.a3 || "",
-                                observerName: data.o1 || "Dr. Sarah Johnson",
-                                observerRole: data.o3 || "Head of School",
-                                classroom: {
-                                    block: data.c1 || "",
-                                    grade: data.c2 || "",
-                                    section: data.c3 || "",
-                                    learningArea: data.c4 || ""
-                                },
-                                hasReflection: false,
-                                reflection: "",
-                                learningArea: data.c4 || "",
-                                strengths: data.a4 || "",
-                                improvements: data.a5 || "",
-                                teachingStrategies: data.a6 ? (typeof data.a6 === 'string' ? data.a6.split(",").map((s: string) => s.trim()) : []) : [],
-                            } as Observation;
+                        onSubmit={async (data) => {
+                            try {
+                                // Map dynamic form data back to Observation structure for API
+                                const payload = {
+                                    teacher: data.t1,
+                                    teacherEmail: data.t2,
+                                    observerName: data.o1,
+                                    observerRole: data.o3,
+                                    date: data.o2 ? new Date(data.o2).toISOString() : new Date().toISOString(),
+                                    // Time is data.o5
+                                    domain: data.a1 || "General",
+                                    score: Number(data.a2) || 0,
+                                    notes: data.a3 || "",
+                                    strengths: data.a4 || "", // Will be part of notes/feedback in backend or handled if schema updated? 
+                                    // Backend schema has 'notes', 'actionStep', 'teacherReflection', 'detailedReflection'. 
+                                    // It seems 'strengths' and 'improvements' might need to be concatenated into 'notes' or 'detailedReflection' if not explicitly supported.
+                                    // Checking controller: it maps 'notes' -> 'notes'. 
+                                    // Let's concatenate strengths/improvements into notes for now if backend doesn't support them directly, or send them as part of detailedReflection JSON.
 
-                            setObservations(prev => [newObs, ...prev]);
+                                    // Actually controller uses: notes: data.notes || data.feedback || ''
+                                    // It doesn't seem to explicitly look for strengths/improvements in the root `createObservation`. 
+                                    // However, let's look at `newObservationData` construction in controller.
+                                    // It picks `notes`, `actionStep`, `teacherReflection`.
+                                    // It doesn't pick `strengths` or `domains` array unless we send `domains`.
 
-                            // Update teacher stats
-                            setTeam(prev => {
-                                const teacherName = data.t1 as string;
-                                if (!teacherName) return prev;
+                                    // Wait, the controller handles `domains` array for `domainRatings`.
+                                    // But here we are submitting a simplified form that seems to treat the whole observation as one domain?
+                                    // The template has "Observation Domain" (a1) as a dropdown. 
+                                    // So it is a single-domain observation?
+                                    // Yes, `a1` is "Observation Domain".
 
-                                const existing = prev.find(t => t.name.toLowerCase() === teacherName.toLowerCase());
-                                if (existing) {
-                                    return prev.map(t => t.name.toLowerCase() === teacherName.toLowerCase() ? {
-                                        ...t,
-                                        observations: t.observations + 1,
-                                        lastObserved: newObs.date,
-                                        avgScore: Number(((t.avgScore * t.observations + newObs.score) / (t.observations + 1)).toFixed(1))
-                                    } : t);
-                                } else {
-                                    return [...prev, {
-                                        id: (prev.length + 1).toString(),
-                                        name: teacherName,
-                                        role: "Subject Teacher",
-                                        observations: 1,
-                                        lastObserved: newObs.date,
-                                        avgScore: newObs.score,
-                                        pdHours: 0,
-                                        completionRate: 0
-                                    }];
+                                    // Let's construct the payload expected by `createObservation` in `observationController.ts`.
+
+                                    // Payload mapping:
+                                    // teacherId: (optional, looked up by email) -> we send teacherEmail
+                                    // teacherEmail: data.t2
+                                    // date: data.o2
+                                    // domain: data.a1
+                                    // score: data.a2
+                                    // notes: data.a3
+                                    // campus: from team/user? Or maybe not in form? Template has no campus field? 
+                                    // Wait, template has Block (c1), Grade (c2), etc.
+
+                                    block: data.c1,
+                                    grade: data.c2,
+                                    section: data.c3,
+                                    learningArea: data.c4,
+
+                                    // detailedReflection: We can put extra fields here
+                                    detailedReflection: JSON.stringify({
+                                        strengths: data.a4,
+                                        improvements: data.a5,
+                                        teachingStrategies: data.a6,
+                                        time: data.o5
+                                    }),
+
+                                    // For compat with "domains" array in schema if needed?
+                                    // The controller creates `domainRatings` from `data.domains`. 
+                                    // But the current form is single domain. 
+                                    // We can just send the root fields.
+                                };
+
+                                const response = await api.post('/observations', payload);
+
+                                if (response.data.status === 'success') {
+                                    const newObs = response.data.data.observation;
+                                    setObservations(prev => [newObs, ...prev]);
+                                    toast.success(`Observation recorded successfully!`);
+                                    navigate("/leader");
                                 }
-                            });
-
-                            toast.success(`Observation recorded successfully!`);
-                            navigate("/leader");
+                            } catch (error) {
+                                console.error("Failed to submit observation", error);
+                                toast.error("Failed to submit observation. Please try again.");
+                            }
                         }}
                     />
                 </CardContent>
