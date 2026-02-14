@@ -2506,7 +2506,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                                 </div>
                               </div>
                             </div>
-                          ))}
+                          ))
                         ) : (
                     <div className="p-8 rounded-2xl bg-muted/20 border-2 border-dashed border-muted-foreground/10 text-lg leading-relaxed text-foreground/80 italic text-center">
                       "{observation.teacherReflection || observation.reflection || "No reflection text provided."}"
