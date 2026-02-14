@@ -144,10 +144,38 @@ export default function LeaderDashboard() {
     try {
       const response = await api.get('/observations');
       if (response.data?.status === 'success') {
-        const apiObservations = (response.data?.data?.observations || []).map((obs: any) => ({
-          ...obs,
-          teacher: obs.teacher?.fullName || obs.teacherEmail || 'Unknown Teacher'
-        }));
+        const apiObservations = (response.data?.data?.observations || []).map((obs: any) => {
+          // Parse detailedReflection if it's a string
+          let parsedReflection = obs.detailedReflection;
+          if (typeof obs.detailedReflection === 'string') {
+            try {
+              parsedReflection = JSON.parse(obs.detailedReflection);
+            } catch (e) {
+              console.warn("Failed to parse detailedReflection for obs", obs.id);
+            }
+          }
+
+          return {
+            ...obs,
+            // Ensure teacher is a string name for display
+            teacher: obs.teacher?.fullName || obs.teacherEmail || 'Unknown Teacher',
+            // Flatten classroom fields if they are at root
+            classroom: obs.classroom || {
+              block: obs.block,
+              grade: obs.grade,
+              section: obs.section,
+              learningArea: obs.learningArea
+            },
+            // Ensure detailedReflection is an object
+            detailedReflection: parsedReflection || {},
+            // Map legacy fields if they are in detailedReflection
+            strengths: obs.strengths || parsedReflection?.strengths || "",
+            improvements: obs.improvements || parsedReflection?.improvements || "",
+            teachingStrategies: obs.teachingStrategies || parsedReflection?.teachingStrategies || [],
+            // Ensure date is formatted
+            date: obs.date ? new Date(obs.date).toLocaleDateString() : 'N/A'
+          };
+        });
 
         if (apiObservations.length > 0) {
           setObservations(apiObservations);
