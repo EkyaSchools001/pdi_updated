@@ -372,12 +372,22 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Name of the Teacher *</Label>
-                                        <Input
-                                            placeholder="Full Name"
-                                            value={formData.teacher || ""}
-                                            onChange={(e) => updateField("teacher", e.target.value)}
-                                            className="h-12 text-base rounded-xl border-muted-foreground/20"
-                                        />
+                                        <Select
+                                            value={formData.teacherId || ""}
+                                            onValueChange={handleTeacherSelect}
+                                        >
+                                            <SelectTrigger className="h-12 text-base rounded-xl border-muted-foreground/20">
+                                                <SelectValue placeholder="Search or Select Teacher" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {teachers?.map(t => (
+                                                    <SelectItem key={t.id} value={t.id}>{t.name} ({t.role || 'Teacher'})</SelectItem>
+                                                ))}
+                                                {(!teachers || teachers.length === 0) && (
+                                                    <SelectItem value="manual" disabled>No teachers found</SelectItem>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher Email ID *</Label>

@@ -94,6 +94,9 @@ export function UserManagementView() {
     const leaderCount = users.filter(u => u.role === "LEADER").length;
 
     const filteredUsers = users.filter(user => {
+        // Exclude Superadmin and Management roles from view
+        if (user.role === 'SUPERADMIN' || user.role === 'MANAGEMENT') return false;
+
         const matchesSearch = user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.role.toLowerCase().includes(searchQuery.toLowerCase());

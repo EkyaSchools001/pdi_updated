@@ -1701,15 +1701,7 @@ export default function TeacherDashboard() {
       return initialGoals;
     }
   });
-  const [events, setEvents] = useState(() => {
-    try {
-      const saved = localStorage.getItem('training_events_data');
-      return saved ? JSON.parse(saved) : initialEvents;
-    } catch (e) {
-      console.error("Failed to load events", e);
-      return initialEvents;
-    }
-  });
+  const [events, setEvents] = useState<any[]>(initialEvents);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [pdHours, setPdHours] = useState(() => {
     try {
@@ -1831,7 +1823,7 @@ export default function TeacherDashboard() {
     const fetchTraining = async () => {
       try {
         const trainingEvents = await trainingService.getAllEvents();
-        if (trainingEvents && trainingEvents.length > 0) {
+        if (trainingEvents) {
           setEvents(trainingEvents);
         }
       } catch (error) {

@@ -75,15 +75,21 @@ export const createObservation = async (req: Request, res: Response, next: NextF
         const authReq = req as AuthRequest;
         const data = req.body;
 
+        console.log("DEBUG: createObservation received body:", JSON.stringify(data, null, 2));
+        console.log("DEBUG: Observer ID:", authReq.user?.id);
+
         // Try to link to a teacher user if email is provided
         let teacherId = data.teacherId;
         if (!teacherId && data.teacherEmail) {
+            console.log("DEBUG: No teacherId provided, looking up by email:", data.teacherEmail);
             const teacher = await prisma.user.findUnique({ where: { email: data.teacherEmail } });
             if (teacher) {
                 teacherId = teacher.id;
+                console.log("DEBUG: Found teacher by email:", teacherId);
             } else {
                 // Auto-create teacher if not found to support manual input
                 try {
+                    console.log("DEBUG: Teacher not found. Auto-creating teacher for email:", data.teacherEmail);
                     const newTeacher = await prisma.user.create({
                         data: {
                             email: data.teacherEmail,
@@ -93,6 +99,7 @@ export const createObservation = async (req: Request, res: Response, next: NextF
                         }
                     });
                     teacherId = newTeacher.id;
+                    console.log("DEBUG: Auto-created teacher:", teacherId);
                 } catch (userErr) {
                     console.error("Error auto-creating teacher:", userErr);
                     // Fallback to unknown if creation fails (e.g. race condition)
@@ -124,8 +131,11 @@ export const createObservation = async (req: Request, res: Response, next: NextF
         };
 
         if (!newObservationData.teacherId || !newObservationData.observerId) {
+            console.error("DEBUG: Validation failed. teacherId:", newObservationData.teacherId, "observerId:", newObservationData.observerId);
             return next(new AppError('A valid teacher and authenticated observer are required', 400));
         }
+
+        console.log("DEBUG: Attempting to create observation in DB with data:", JSON.stringify(newObservationData, null, 2));
 
         // Create the observation
         const createdObservation = await prisma.observation.create({

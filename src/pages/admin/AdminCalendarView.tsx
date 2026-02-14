@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
+import { trainingService } from "@/services/trainingService";
 
 // Mock Data (Reusing structure for consistency)
 const initialTrainingEvents = [
@@ -62,56 +63,24 @@ const initialTrainingEvents = [
 ];
 
 export function AdminCalendarView() {
-    const [training, setTraining] = useState(() => {
+    const [training, setTraining] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchEvents = async () => {
+        setIsLoading(true);
         try {
-            const saved = localStorage.getItem('training_events_data');
-            return saved ? JSON.parse(saved) : initialTrainingEvents;
-        } catch (e) {
-            console.error("Failed to parse training events", e);
-            return initialTrainingEvents;
+            const events = await trainingService.getAllEvents();
+            setTraining(events || []);
+        } catch (error) {
+            console.error("Failed to fetch training events", error);
+            toast.error("Failed to load events from server");
+        } finally {
+            setIsLoading(false);
         }
-    });
+    };
 
     useEffect(() => {
-        localStorage.setItem('training_events_data', JSON.stringify(training));
-        // Dispatch custom event for same-window updates
-        window.dispatchEvent(new Event('training-events-updated'));
-    }, [training]);
-
-    // Listen for updates from other dashboards/tabs
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'training_events_data' && e.newValue) {
-                try {
-                    setTraining(JSON.parse(e.newValue));
-                } catch (err) {
-                    console.error("Failed to sync training data", err);
-                }
-            }
-        };
-
-        const handleCustomEvent = () => {
-            const saved = localStorage.getItem('training_events_data');
-            if (saved) {
-                try {
-                    const newData = JSON.parse(saved);
-                    setTraining((prev: any) => {
-                        // Prevent infinite loops by comparing with current state
-                        if (JSON.stringify(prev) === JSON.stringify(newData)) return prev;
-                        return newData;
-                    });
-                } catch (err) {
-                    console.error("Failed to sync training data via custom event", err);
-                }
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('training-events-updated', handleCustomEvent);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('training-events-updated', handleCustomEvent);
-        };
+        fetchEvents();
     }, []);
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -129,26 +98,36 @@ export function AdminCalendarView() {
         return format(d, "MMM d, yyyy");
     };
 
-    const handleScheduleEvent = () => {
+    const handleScheduleEvent = async () => {
         if (!newEvent.title || !newEvent.date) {
             toast.error("Please fill in required fields");
             return;
         }
-        const event = {
-            id: (training.length > 0 ? Math.max(...training.map((t: any) => parseInt(t.id) || 0)) + 1 : 1).toString(),
-            ...newEvent,
-            date: formatDateStr(newEvent.date),
-            registered: 0,
-            capacity: 30,
-            status: "Approved",
-            isAdminCreated: true,
-            spotsLeft: 30,
-            registrants: []
-        };
-        setTraining([...training, event]);
-        setIsScheduleOpen(false);
-        setNewEvent({ title: "", type: "Pedagogy", date: new Date(2026, 1, 15), time: "09:00 AM", location: "" });
-        toast.success("Event scheduled successfully");
+
+        try {
+            const eventData = {
+                title: newEvent.title,
+                type: newEvent.type,
+                topic: newEvent.type, // Backend uses both topic and type
+                date: formatDateStr(newEvent.date),
+                time: newEvent.time,
+                location: newEvent.location,
+                capacity: 30, // Default capacity
+                status: "Approved"
+            };
+
+            await trainingService.createEvent(eventData);
+
+            // Refresh list from server
+            await fetchEvents();
+
+            setIsScheduleOpen(false);
+            setNewEvent({ title: "", type: "Pedagogy", date: new Date(2026, 1, 15), time: "09:00 AM", location: "" });
+            toast.success("Event scheduled successfully");
+        } catch (error) {
+            console.error("Error scheduling event:", error);
+            toast.error("Failed to schedule event on server");
+        }
     };
 
     const handleEditEvent = () => {
