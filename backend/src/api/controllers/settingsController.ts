@@ -1,0 +1,87 @@
+import { Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { AppError } from '../../infrastructure/utils/AppError';
+
+const prisma = new PrismaClient();
+
+// Get all settings
+export const getAllSettings = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const settings = await prisma.systemSettings.findMany({
+            orderBy: { updatedAt: 'desc' }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            results: settings.length,
+            data: { settings }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Get a setting by key
+export const getSetting = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const key = Array.isArray(req.params.key) ? req.params.key[0] : req.params.key;
+
+        const setting = await prisma.systemSettings.findUnique({
+            where: { key }
+        });
+
+        if (!setting) {
+            return next(new AppError('Setting not found', 404));
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: { setting }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Upsert a setting (create or update)
+export const upsertSetting = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { key, value } = req.body;
+
+        const setting = await prisma.systemSettings.upsert({
+            where: { key },
+            update: {
+                value: JSON.stringify(value)
+            },
+            create: {
+                key,
+                value: JSON.stringify(value)
+            }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: { setting }
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+// Delete a setting
+export const deleteSetting = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const key = Array.isArray(req.params.key) ? req.params.key[0] : req.params.key;
+
+        await prisma.systemSettings.delete({
+            where: { key }
+        });
+
+        res.status(204).json({
+            status: 'success',
+            data: null
+        });
+    } catch (err) {
+        next(err);
+    }
+};

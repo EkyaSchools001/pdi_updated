@@ -36,6 +36,7 @@ model User {
   createdDocuments     Document[]
   acknowledgements     DocumentAcknowledgement[]
   moocSubmissions      MoocSubmission[]
+  enrollments          CourseEnrollment[]
 }
 
 model Observation {
@@ -236,4 +237,36 @@ model TaskAssignees {
 
   @@unique([A, B])
   @@map("_TaskAssignees")
+}
+
+model Course {
+  id             String             @id @default(uuid())
+  title          String
+  category       String
+  hours          Float
+  instructor     String
+  status         String             @default("Draft")
+  description    String?
+  thumbnail      String?
+  url            String?
+  isDownloadable Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  enrollments    CourseEnrollment[]
+}
+
+model CourseEnrollment {
+  id          String    @id @default(uuid())
+  courseId    String
+  userId      String
+  status      String    @default("IN_PROGRESS")
+  progress    Int       @default(0)
+  completedAt DateTime?
+  enrolledAt  DateTime  @default(now())
+
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([courseId, userId])
 }

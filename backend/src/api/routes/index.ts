@@ -9,6 +9,7 @@ import documentRoutes from './documentRoutes';
 import moocRoutes from './moocRoutes';
 import trainingRoutes from './trainingRoutes';
 import statsRoutes from './statsRoutes';
+import courseRoutes from './courseRoutes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/upload', uploadRoutes);
 router.use('/mooc', moocRoutes);
 router.use('/training', trainingRoutes);
 router.use('/stats', statsRoutes);
+router.use('/courses', courseRoutes);
 
 export default router;
