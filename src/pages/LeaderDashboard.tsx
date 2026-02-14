@@ -2477,7 +2477,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                           <FileText className="w-5 h-5 text-muted-foreground" />
                           Reflection Details
                         </h3>
-                        {observation.detailedReflection?.sections ? (
+                        {observation.detailedReflection?.sections && (
                           Object.entries(observation.detailedReflection.sections).map(([key, section]: [string, any]) => (
                             <div key={key} className="space-y-4 border rounded-2xl p-6 bg-card/50">
                               <div className="flex items-center gap-3 pb-4 border-b">
@@ -2507,9 +2507,12 @@ function ObservationReportView({ observations, team }: { observations: Observati
                               </div>
                             </div>
                           ))
-                        ) : (
+                        )}
+                      </div>
+                    </div>
+                  ) : (
                     <div className="p-8 rounded-2xl bg-muted/20 border-2 border-dashed border-muted-foreground/10 text-lg leading-relaxed text-foreground/80 italic text-center">
-                      "{observation.teacherReflection || observation.reflection || "No reflection text provided."}"
+                      {observation.teacherReflection || observation.reflection || "No reflection text provided."}
                     </div>
                   )}
                 </CardContent>
@@ -2571,653 +2574,653 @@ function ObservationReportView({ observations, team }: { observations: Observati
           </Card>
         </div>
       </div>
-      </div>
-      );
+    </div>
+  );
 }
 
-      function ObservationsManagementView({observations}: {observations: Observation[] }) {
+function ObservationsManagementView({ observations }: { observations: Observation[] }) {
   const navigate = useNavigate();
-      const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredObservations = observations.filter(obs => {
     const teacherName = obs.teacher || obs.teacherEmail || 'Unknown Teacher';
-      const domainName = obs.domain || 'General';
-      return teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const domainName = obs.domain || 'General';
+    return teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       domainName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-      return (
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/leader")}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <PageHeader
-              title="Observations Management"
-              subtitle="Audit teacher reviews and instructional quality"
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/leader")}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <PageHeader
+            title="Observations Management"
+            subtitle="Audit teacher reviews and instructional quality"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search observations..."
+              className="pl-10 w-[250px] bg-background/50 border-muted-foreground/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search observations..."
-                className="pl-10 w-[250px] bg-background/50 border-muted-foreground/20"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
-          </div>
+          <Button variant="outline" className="gap-2">
+            <Filter className="w-4 h-4" />
+            Filter
+          </Button>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Reviews"
-            value={observations.length}
-            subtitle="This academic year"
-            icon={Eye}
-            onClick={() => navigate("/leader/observations")}
-          />
-          <StatCard
-            title="Average Score"
-            value="3.9"
-            subtitle="Institutional avg"
-            icon={Star}
-            onClick={() => navigate("/leader/performance")}
-          />
-          <StatCard
-            title="Distinguished"
-            value={observations.filter(o => o.score === 5).length}
-            subtitle="Top tier performance"
-            icon={TrendingUp}
-            onClick={() => navigate("/leader/performance")}
-          />
-          <StatCard
-            title="Pending Feedback"
-            value="2"
-            subtitle="Requires attention"
-            icon={FileText}
-            onClick={() => navigate("/leader/reports")}
-          />
-        </div>
-
-        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
-          <CardHeader className="border-b bg-muted/20">
-            <CardTitle>Observation Audit Log</CardTitle>
-            <CardDescription>View and manage all classroom visit records.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/30 border-b">
-                    <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Date</th>
-                    <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher</th>
-                    <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Domain</th>
-                    <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Score</th>
-                    <th className="text-right p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-muted-foreground/10">
-                  {filteredObservations.map((obs) => (
-                    <tr key={obs.id} className="hover:bg-primary/5 transition-colors group">
-                      <td className="p-6 text-sm font-medium text-muted-foreground">
-                        {obs.date}, 2026
-                      </td>
-                      <td className="p-6">
-                        <p className="font-bold text-foreground group-hover:text-primary transition-colors">{obs.teacher}</p>
-                      </td>
-                      <td className="p-6">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                          {obs.domain}
-                        </span>
-                      </td>
-                      <td className="p-6">
-                        <div className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center font-bold border",
-                          obs.score >= 4 ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"
-                        )}>
-                          {obs.score}
-                        </div>
-                      </td>
-                      <td className="p-6 text-right">
-                        <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 hover:bg-primary/10 hover:text-primary" onClick={() => navigate(`/leader/observations/${obs.id}`)}>
-                          View Full Report
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
       </div>
-      );
+
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Reviews"
+          value={observations.length}
+          subtitle="This academic year"
+          icon={Eye}
+          onClick={() => navigate("/leader/observations")}
+        />
+        <StatCard
+          title="Average Score"
+          value="3.9"
+          subtitle="Institutional avg"
+          icon={Star}
+          onClick={() => navigate("/leader/performance")}
+        />
+        <StatCard
+          title="Distinguished"
+          value={observations.filter(o => o.score === 5).length}
+          subtitle="Top tier performance"
+          icon={TrendingUp}
+          onClick={() => navigate("/leader/performance")}
+        />
+        <StatCard
+          title="Pending Feedback"
+          value="2"
+          subtitle="Requires attention"
+          icon={FileText}
+          onClick={() => navigate("/leader/reports")}
+        />
+      </div>
+
+      <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
+        <CardHeader className="border-b bg-muted/20">
+          <CardTitle>Observation Audit Log</CardTitle>
+          <CardDescription>View and manage all classroom visit records.</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/30 border-b">
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Date</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Domain</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Score</th>
+                  <th className="text-right p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-muted-foreground/10">
+                {filteredObservations.map((obs) => (
+                  <tr key={obs.id} className="hover:bg-primary/5 transition-colors group">
+                    <td className="p-6 text-sm font-medium text-muted-foreground">
+                      {obs.date}, 2026
+                    </td>
+                    <td className="p-6">
+                      <p className="font-bold text-foreground group-hover:text-primary transition-colors">{obs.teacher}</p>
+                    </td>
+                    <td className="p-6">
+                      <span className="inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                        {obs.domain}
+                      </span>
+                    </td>
+                    <td className="p-6">
+                      <div className={cn(
+                        "w-10 h-10 rounded-lg flex items-center justify-center font-bold border",
+                        obs.score >= 4 ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"
+                      )}>
+                        {obs.score}
+                      </div>
+                    </td>
+                    <td className="p-6 text-right">
+                      <Button variant="ghost" size="sm" className="h-10 px-4 gap-2 hover:bg-primary/10 hover:text-primary" onClick={() => navigate(`/leader/observations/${obs.id}`)}>
+                        View Full Report
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-      function ObserveView({setObservations, setTeam, team, observations}: {
-        setObservations: React.Dispatch<React.SetStateAction<Observation[]>>,
-          setTeam: React.Dispatch<React.SetStateAction<typeof teamMembers>>,
-            team: typeof teamMembers,
-            observations: Observation[]
+function ObserveView({ setObservations, setTeam, team, observations }: {
+  setObservations: React.Dispatch<React.SetStateAction<Observation[]>>,
+  setTeam: React.Dispatch<React.SetStateAction<typeof teamMembers>>,
+  team: typeof teamMembers,
+  observations: Observation[]
 }) {
   const navigate = useNavigate();
-          const location = useLocation();
-          const initialData = location.state?.observation || location.state?.initialData || { };
-          const isEditing = !!initialData.id;
+  const location = useLocation();
+  const initialData = location.state?.observation || location.state?.initialData || {};
+  const isEditing = !!initialData.id;
 
-          if (!team || !observations) {
+  if (!team || !observations) {
     return <div className="p-8 text-center text-muted-foreground">Loading dashboard data...</div>;
   }
 
-          return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-8">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/leader")}>
-                <ChevronLeft className="w-5 h-5" />
-              </Button>
-              <PageHeader
-                title={isEditing ? "Edit Observation" : "Ekya Danielson Framework"}
-                subtitle={isEditing ? `Updating observation for ${initialData.teacher}` : "Unified Observation, Feedback & Improvement Form"}
-              />
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/leader")}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <PageHeader
+          title={isEditing ? "Edit Observation" : "Ekya Danielson Framework"}
+          subtitle={isEditing ? `Updating observation for ${initialData.teacher}` : "Unified Observation, Feedback & Improvement Form"}
+        />
+      </div>
 
-            <UnifiedObservationForm
-              teachers={team}
-              initialData={initialData}
-              onCancel={() => navigate("/leader")}
-              onSubmit={async (data) => {
-                if (isEditing) {
-                  try {
-                    await api.patch(`/observations/${initialData.id}`, data);
-                    toast.success("Observation updated successfully!");
-                  } catch (error) {
-                    console.error(error);
-                    toast.error("Failed to update observation");
-                  }
+      <UnifiedObservationForm
+        teachers={team}
+        initialData={initialData}
+        onCancel={() => navigate("/leader")}
+        onSubmit={async (data) => {
+          if (isEditing) {
+            try {
+              await api.patch(`/observations/${initialData.id}`, data);
+              toast.success("Observation updated successfully!");
+            } catch (error) {
+              console.error(error);
+              toast.error("Failed to update observation");
+            }
+          } else {
+            const newObs = {
+              ...data,
+              // Let backend handle ID generation or use this one if backend accepts it (our mock backend does)
+              date: data.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              hasReflection: false,
+              reflection: "",
+            } as Observation;
+
+            try {
+              await api.post('/observations', newObs);
+              toast.success(`Observation for ${newObs.teacher} recorded successfully!`);
+
+              // Update teacher stats locally immediately for UX
+              setTeam(prev => {
+                const teacherName = newObs.teacher;
+                if (!teacherName || typeof teacherName !== 'string') return prev;
+
+                const existing = prev.find(t => t?.name?.toLowerCase() === teacherName.toLowerCase());
+                if (existing) {
+                  return prev.map(t => (t?.name?.toLowerCase() === teacherName.toLowerCase()) ? {
+                    ...t,
+                    observations: (t.observations || 0) + 1,
+                    lastObserved: newObs.date,
+                    avgScore: Number((((t.avgScore || 0) * (t.observations || 0) + newObs.score) / ((t.observations || 0) + 1)).toFixed(1))
+                  } : t);
                 } else {
-                  const newObs = {
-                    ...data,
-                    // Let backend handle ID generation or use this one if backend accepts it (our mock backend does)
-                    date: data.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                    hasReflection: false,
-                    reflection: "",
-                  } as Observation;
-
-                  try {
-                    await api.post('/observations', newObs);
-                    toast.success(`Observation for ${newObs.teacher} recorded successfully!`);
-
-                    // Update teacher stats locally immediately for UX
-                    setTeam(prev => {
-                      const teacherName = newObs.teacher;
-                      if (!teacherName || typeof teacherName !== 'string') return prev;
-
-                      const existing = prev.find(t => t?.name?.toLowerCase() === teacherName.toLowerCase());
-                      if (existing) {
-                        return prev.map(t => (t?.name?.toLowerCase() === teacherName.toLowerCase()) ? {
-                          ...t,
-                          observations: (t.observations || 0) + 1,
-                          lastObserved: newObs.date,
-                          avgScore: Number((((t.avgScore || 0) * (t.observations || 0) + newObs.score) / ((t.observations || 0) + 1)).toFixed(1))
-                        } : t);
-                      } else {
-                        return [...prev, {
-                          id: Math.random().toString(36).substr(2, 9),
-                          name: teacherName,
-                          email: newObs.teacherEmail || "",
-                          role: "Subject Teacher",
-                          observations: 1,
-                          lastObserved: newObs.date,
-                          avgScore: newObs.score,
-                          pdHours: 0,
-                          completionRate: 0
-                        }];
-                      }
-                    });
-                  } catch (error) {
-                    console.error(error);
-                    toast.error("Failed to save observation");
-                  }
+                  return [...prev, {
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: teacherName,
+                    email: newObs.teacherEmail || "",
+                    role: "Subject Teacher",
+                    observations: 1,
+                    lastObserved: newObs.date,
+                    avgScore: newObs.score,
+                    pdHours: 0,
+                    completionRate: 0
+                  }];
                 }
-                navigate("/leader");
+              });
+            } catch (error) {
+              console.error(error);
+              toast.error("Failed to save observation");
+            }
+          }
+          navigate("/leader");
+        }}
+      />
+    </div>
+  );
+}
+
+
+
+function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: typeof teamMembers }) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/leader/goals")}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <PageHeader
+            title="Assign New Goal"
+            subtitle="Set academic year goals for educators"
+          />
+        </div>
+      </div>
+
+      {getActiveTemplateByType("Goal Setting") ? (
+        <Card className="border-none shadow-premium bg-background/50 backdrop-blur-sm">
+          <CardContent className="pt-6">
+            <DynamicForm
+              fields={getActiveTemplateByType("Goal Setting")!.fields.map(f =>
+                f.id === "g1" ? { ...f, type: "select" as const, options: team.map(t => t.name) } : f
+              )}
+              submitLabel="Assign Goal"
+              onCancel={() => navigate("/leader/goals")}
+              onSubmit={async (data) => {
+                const targetTeacher = team.find(t => t.name === (data.g1 || "Unknown Teacher"));
+
+                const newGoal = {
+                  teacher: data.g1 || "Unknown Teacher",
+                  teacherEmail: targetTeacher?.email,
+                  title: data.g9 || "New School Goal",
+                  category: data.g12 || "General",
+                  progress: 0,
+                  status: "Assigned",
+                  dueDate: data.g_end_date ? format(new Date(data.g_end_date), "MMM dd, yyyy") : "Jun 28, 2026",
+                  assignedBy: data.g2 || "Admin",
+                  description: data.g10 || "",
+                  actionStep: data.g11 || "",
+                  pillar: data.g12 || "Professional Practice",
+                  campus: data.g3 || "HQ",
+                  ay: "25-26",
+                  isSchoolAligned: true,
+                  assignedDate: new Date().toISOString(),
+                  reflectionCompleted: true,
+                };
+
+                try {
+                  await api.post('/goals', newGoal);
+                  toast.success("Goal successfully assigned using Master Template.");
+                  navigate("/leader/goals");
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Failed to assign goal");
+                }
               }}
             />
-          </div>
-          );
+          </CardContent>
+        </Card>
+      ) : (
+        <GoalSettingForm
+          teachers={team}
+          defaultCoachName="Dr. Sarah Johnson"
+          onCancel={() => navigate("/leader/goals")}
+          onSubmit={async (data) => {
+            const targetTeacher = team.find(t => t.name === data.educatorName);
+
+            const newGoal = {
+              teacher: data.educatorName,
+              teacherEmail: targetTeacher?.email,
+              title: data.goalForYear,
+              category: data.pillarTag,
+              progress: 0,
+              status: "Assigned",
+              dueDate: format(data.goalEndDate, "MMM dd, yyyy"),
+              assignedBy: data.coachName,
+              description: data.reasonForGoal,
+              actionStep: data.actionStep,
+              pillar: data.pillarTag,
+              campus: data.campus,
+              ay: "25-26",
+              isSchoolAligned: true,
+              assignedDate: new Date().toISOString(),
+              reflectionCompleted: true,
+            };
+
+            try {
+              await api.post('/goals', newGoal);
+              toast.success("Goal successfully assigned.");
+              navigate("/leader/goals");
+            } catch (error) {
+              console.error(error);
+              toast.error("Failed to assign goal");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
-
-
-          function AssignGoalView({setGoals, team}: {setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: typeof teamMembers }) {
-  const navigate = useNavigate();
-
-            return (
-            <div className="space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <Button variant="ghost" size="icon" onClick={() => navigate("/leader/goals")}>
-                    <ChevronLeft className="w-5 h-5" />
-                  </Button>
-                  <PageHeader
-                    title="Assign New Goal"
-                    subtitle="Set academic year goals for educators"
-                  />
-                </div>
-              </div>
-
-              {getActiveTemplateByType("Goal Setting") ? (
-                <Card className="border-none shadow-premium bg-background/50 backdrop-blur-sm">
-                  <CardContent className="pt-6">
-                    <DynamicForm
-                      fields={getActiveTemplateByType("Goal Setting")!.fields.map(f =>
-                        f.id === "g1" ? { ...f, type: "select" as const, options: team.map(t => t.name) } : f
-                      )}
-                      submitLabel="Assign Goal"
-                      onCancel={() => navigate("/leader/goals")}
-                      onSubmit={async (data) => {
-                        const targetTeacher = team.find(t => t.name === (data.g1 || "Unknown Teacher"));
-
-                        const newGoal = {
-                          teacher: data.g1 || "Unknown Teacher",
-                          teacherEmail: targetTeacher?.email,
-                          title: data.g9 || "New School Goal",
-                          category: data.g12 || "General",
-                          progress: 0,
-                          status: "Assigned",
-                          dueDate: data.g_end_date ? format(new Date(data.g_end_date), "MMM dd, yyyy") : "Jun 28, 2026",
-                          assignedBy: data.g2 || "Admin",
-                          description: data.g10 || "",
-                          actionStep: data.g11 || "",
-                          pillar: data.g12 || "Professional Practice",
-                          campus: data.g3 || "HQ",
-                          ay: "25-26",
-                          isSchoolAligned: true,
-                          assignedDate: new Date().toISOString(),
-                          reflectionCompleted: true,
-                        };
-
-                        try {
-                          await api.post('/goals', newGoal);
-                          toast.success("Goal successfully assigned using Master Template.");
-                          navigate("/leader/goals");
-                        } catch (error) {
-                          console.error(error);
-                          toast.error("Failed to assign goal");
-                        }
-                      }}
-                    />
-                  </CardContent>
-                </Card>
-              ) : (
-                <GoalSettingForm
-                  teachers={team}
-                  defaultCoachName="Dr. Sarah Johnson"
-                  onCancel={() => navigate("/leader/goals")}
-                  onSubmit={async (data) => {
-                    const targetTeacher = team.find(t => t.name === data.educatorName);
-
-                    const newGoal = {
-                      teacher: data.educatorName,
-                      teacherEmail: targetTeacher?.email,
-                      title: data.goalForYear,
-                      category: data.pillarTag,
-                      progress: 0,
-                      status: "Assigned",
-                      dueDate: format(data.goalEndDate, "MMM dd, yyyy"),
-                      assignedBy: data.coachName,
-                      description: data.reasonForGoal,
-                      actionStep: data.actionStep,
-                      pillar: data.pillarTag,
-                      campus: data.campus,
-                      ay: "25-26",
-                      isSchoolAligned: true,
-                      assignedDate: new Date().toISOString(),
-                      reflectionCompleted: true,
-                    };
-
-                    try {
-                      await api.post('/goals', newGoal);
-                      toast.success("Goal successfully assigned.");
-                      navigate("/leader/goals");
-                    } catch (error) {
-                      console.error(error);
-                      toast.error("Failed to assign goal");
-                    }
-                  }}
-                />
-              )}
-            </div>
-            );
-}
-
-            function PlaceholderView({title, icon: Icon }: {title: string; icon: React.ComponentType<{ className ?: string}> }) {
+function PlaceholderView({ title, icon: Icon }: { title: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
-              <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-                <div className="p-4 rounded-3xl bg-primary/10 mb-6">
-                  <Icon className="w-12 h-12 text-primary" />
-                </div>
-                <h2 className="text-3xl font-bold text-foreground mb-3">{title}</h2>
-                <p className="text-muted-foreground max-w-md mx-auto mb-8">
-                  This management module is currently in development.
-                  It will provide deep insights and powerful tools for school leaders once released.
-                </p>
-                <Button asChild>
-                  <Link to="/leader">Return to Overview</Link>
-                </Button>
-              </div>
-              );
+    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
+      <div className="p-4 rounded-3xl bg-primary/10 mb-6">
+        <Icon className="w-12 h-12 text-primary" />
+      </div>
+      <h2 className="text-3xl font-bold text-foreground mb-3">{title}</h2>
+      <p className="text-muted-foreground max-w-md mx-auto mb-8">
+        This management module is currently in development.
+        It will provide deep insights and powerful tools for school leaders once released.
+      </p>
+      <Button asChild>
+        <Link to="/leader">Return to Overview</Link>
+      </Button>
+    </div>
+  );
 }
 
-              function MoocResponsesView({refreshTeam}: {refreshTeam: () => Promise<void> }) {
+function MoocResponsesView({ refreshTeam }: { refreshTeam: () => Promise<void> }) {
   const navigate = useNavigate();
-                const [submissions, setSubmissions] = useState<any[]>([]);
-                const [loading, setLoading] = useState(true);
-                const [searchQuery, setSearchQuery] = useState("");
-                const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
-                const [isUpdating, setIsUpdating] = useState(false);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSubmission, setSelectedSubmission] = useState<any | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     const loadSubmissions = async () => {
       try {
-                  setLoading(true);
-                const data = await moocService.getAllSubmissions();
-                setSubmissions(data);
+        setLoading(true);
+        const data = await moocService.getAllSubmissions();
+        setSubmissions(data);
       } catch (error) {
-                  console.error("Failed to load MOOC submissions", error);
-                toast.error("Failed to load submissions");
+        console.error("Failed to load MOOC submissions", error);
+        toast.error("Failed to load submissions");
       } finally {
-                  setLoading(false);
+        setLoading(false);
       }
     };
-                loadSubmissions();
+    loadSubmissions();
   }, []);
 
-                async function handleUpdateStatus(status: string) {
+  async function handleUpdateStatus(status: string) {
     if (!selectedSubmission) return;
-                try {
-                  setIsUpdating(true);
-                await moocService.updateStatus(selectedSubmission.id, status);
-                toast.success(`Submission ${status.toLowerCase()} successfully`);
+    try {
+      setIsUpdating(true);
+      await moocService.updateStatus(selectedSubmission.id, status);
+      toast.success(`Submission ${status.toLowerCase()} successfully`);
 
       // Update local state
-      setSubmissions(prev => prev.map(s => s.id === selectedSubmission.id ? {...s, status} : s));
-                setSelectedSubmission(null);
+      setSubmissions(prev => prev.map(s => s.id === selectedSubmission.id ? { ...s, status } : s));
+      setSelectedSubmission(null);
 
-                // Refresh team data to update PD hours
-                await refreshTeam();
+      // Refresh team data to update PD hours
+      await refreshTeam();
     } catch (error) {
-                  console.error("Failed to update status", error);
-                toast.error("Failed to update submission status");
+      console.error("Failed to update status", error);
+      toast.error("Failed to update submission status");
     } finally {
-                  setIsUpdating(false);
+      setIsUpdating(false);
     }
   }
 
   const filteredSubmissions = submissions.filter(s =>
-                (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (s.courseName || "").toLowerCase().includes(searchQuery.toLowerCase())
-                );
+    (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.courseName || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-                if (loading && submissions.length === 0) {
+  if (loading && submissions.length === 0) {
     return (
-                <div className="flex items-center justify-center p-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-                );
+      <div className="flex items-center justify-center p-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-                return (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate("/leader/calendar")}>
-                      <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                    <PageHeader
-                      title="Course Evidence Registry"
-                      subtitle="Review MOOC completions and reflection evidence"
-                    />
-                  </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/leader/calendar")}>
+          <ChevronLeft className="w-5 h-5" />
+        </Button>
+        <PageHeader
+          title="Course Evidence Registry"
+          subtitle="Review MOOC completions and reflection evidence"
+        />
+      </div>
 
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search submissions..."
-                        className="pl-10 w-[250px] bg-background border-muted-foreground/20 rounded-xl"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
+      <div className="flex items-center gap-3 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search submissions..."
+            className="pl-10 w-[250px] bg-background border-muted-foreground/20 rounded-xl"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/30 border-b">
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Course</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Platform</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Completion Date</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Evidence</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Status</th>
+                  <th className="text-right p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
+                </tr >
+              </thead >
+              <tbody className="divide-y divide-muted-foreground/10">
+                {filteredSubmissions.map((sub) => (
+                  <tr key={sub.id} className="hover:bg-primary/5 transition-colors group">
+                    <td className="p-6">
+                      <p className="font-bold text-foreground">{sub.name}</p>
+                      <p className="text-xs text-muted-foreground">{sub.email}</p>
+                    </td>
+                    <td className="p-6">
+                      <p className="font-medium text-foreground">{sub.courseName}</p>
+                      <p className="text-xs text-muted-foreground">{sub.hours} Hours</p>
+                    </td>
+                    <td className="p-6">
+                      <Badge variant="outline">{sub.platform === 'Other' ? sub.otherPlatform : sub.platform}</Badge>
+                    </td>
+                    <td className="p-6">
+                      {new Date(sub.completionDate).toLocaleDateString()}
+                    </td>
+                    <td className="p-6">
+                      {sub.hasCertificate === 'yes' ? (
+                        <a href={sub.proofLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline font-medium">
+                          <LinkIcon className="w-3 h-3" />
+                          Certificate
+                        </a>
+                      ) : (
+                        <Badge variant="secondary">Reflection</Badge>
+                      )}
+                    </td>
+                    <td className="p-6">
+                      <Badge variant={sub.status === 'APPROVED' ? 'default' : sub.status === 'REJECTED' ? 'destructive' : 'outline'} className={sub.status === 'APPROVED' ? 'bg-green-600' : ''}>
+                        {sub.status || 'PENDING'}
+                      </Badge>
+                    </td>
+                    <td className="p-6 text-right">
+                      <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(sub)}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Details
+                      </Button>
+                    </td>
+                  </tr >
+                ))
+                }
+                {
+                  filteredSubmissions.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="p-12 text-center text-muted-foreground">
+                        No submissions found.
+                      </td>
+                    </tr>
+                  )
+                }
+              </tbody >
+            </table >
+          </div >
+        </CardContent >
+      </Card >
+
+      <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Submission Details</DialogTitle>
+            <DialogDescription>
+              Submitted on {selectedSubmission && new Date(selectedSubmission.submittedAt).toLocaleDateString()}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedSubmission && (
+            <div className="space-y-6 mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Teacher</Label>
+                  <p className="font-medium">{selectedSubmission.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Campus</Label>
+                  <p className="font-medium">{selectedSubmission.campus}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Course</Label>
+                  <p className="font-medium">{selectedSubmission.courseName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Platform</Label>
+                  <p className="font-medium">{selectedSubmission.platform === 'Other' ? selectedSubmission.otherPlatform : selectedSubmission.platform}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Hours</Label>
+                  <p className="font-medium">{selectedSubmission.hours}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Completion Date</Label>
+                  <p className="font-medium">{new Date(selectedSubmission.completionDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div className="h-px bg-border my-4" />
+
+              {selectedSubmission.hasCertificate === 'yes' ? (
+                <div>
+                  <Label className="text-muted-foreground block mb-2">Certificate</Label>
+                  <a href={selectedSubmission.proofLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5">
+                    <LinkIcon className="w-4 h-4" />
+                    Open Certificate Link
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center gap-2"><Brain className="w-4 h-4" /> Reflection</h4>
+                  <div>
+                    <Label className="text-muted-foreground">Key Takeaways</Label>
+                    <p className="mt-1 text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">{selectedSubmission.keyTakeaways}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Unanswered Questions</Label>
+                    <p className="mt-1 text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">{selectedSubmission.unansweredQuestions}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Self-Assessment</Label>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star className="w-4 h-4 text-primary fill-primary" />
+                      <span className="font-bold">{selectedSubmission.effectivenessRating}/10</span>
                     </div>
                   </div>
+                </div>
+              )}
 
-                  <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-muted/30 border-b">
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher</th>
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Course</th>
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Platform</th>
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Completion Date</th>
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Evidence</th>
-                              <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                              <th className="text-right p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Actions</th>
-                            </tr >
-                          </thead >
-                          <tbody className="divide-y divide-muted-foreground/10">
-                            {filteredSubmissions.map((sub) => (
-                              <tr key={sub.id} className="hover:bg-primary/5 transition-colors group">
-                                <td className="p-6">
-                                  <p className="font-bold text-foreground">{sub.name}</p>
-                                  <p className="text-xs text-muted-foreground">{sub.email}</p>
-                                </td>
-                                <td className="p-6">
-                                  <p className="font-medium text-foreground">{sub.courseName}</p>
-                                  <p className="text-xs text-muted-foreground">{sub.hours} Hours</p>
-                                </td>
-                                <td className="p-6">
-                                  <Badge variant="outline">{sub.platform === 'Other' ? sub.otherPlatform : sub.platform}</Badge>
-                                </td>
-                                <td className="p-6">
-                                  {new Date(sub.completionDate).toLocaleDateString()}
-                                </td>
-                                <td className="p-6">
-                                  {sub.hasCertificate === 'yes' ? (
-                                    <a href={sub.proofLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline font-medium">
-                                      <LinkIcon className="w-3 h-3" />
-                                      Certificate
-                                    </a>
-                                  ) : (
-                                    <Badge variant="secondary">Reflection</Badge>
-                                  )}
-                                </td>
-                                <td className="p-6">
-                                  <Badge variant={sub.status === 'APPROVED' ? 'default' : sub.status === 'REJECTED' ? 'destructive' : 'outline'} className={sub.status === 'APPROVED' ? 'bg-green-600' : ''}>
-                                    {sub.status || 'PENDING'}
-                                  </Badge>
-                                </td>
-                                <td className="p-6 text-right">
-                                  <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(sub)}>
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View Details
-                                  </Button>
-                                </td>
-                              </tr >
-                            ))
-                            }
-                            {
-                              filteredSubmissions.length === 0 && (
-                                <tr>
-                                  <td colSpan={7} className="p-12 text-center text-muted-foreground">
-                                    No submissions found.
-                                  </td>
-                                </tr>
-                              )
-                            }
-                          </tbody >
-                        </table >
-                      </div >
-                    </CardContent >
-                  </Card >
+              {/* Supporting Documents Section */}
+              {(selectedSubmission.supportingDocType || selectedSubmission.supportingDocLink || selectedSubmission.supportingDocFile) && (
+                <div>
+                  <div className="h-px bg-border my-4" />
+                  <h4 className="font-semibold flex items-center gap-2 mb-3">
+                    <Paperclip className="w-4 h-4" /> Supporting Documents
+                  </h4>
 
-                  <Dialog open={!!selectedSubmission} onOpenChange={(open) => !open && setSelectedSubmission(null)}>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Submission Details</DialogTitle>
-                        <DialogDescription>
-                          Submitted on {selectedSubmission && new Date(selectedSubmission.submittedAt).toLocaleDateString()}
-                        </DialogDescription>
-                      </DialogHeader>
-                      {selectedSubmission && (
-                        <div className="space-y-6 mt-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label className="text-muted-foreground">Teacher</Label>
-                              <p className="font-medium">{selectedSubmission.name}</p>
-                            </div>
-                            <div>
-                              <Label className="text-muted-foreground">Campus</Label>
-                              <p className="font-medium">{selectedSubmission.campus}</p>
-                            </div>
-                            <div>
-                              <Label className="text-muted-foreground">Course</Label>
-                              <p className="font-medium">{selectedSubmission.courseName}</p>
-                            </div>
-                            <div>
-                              <Label className="text-muted-foreground">Platform</Label>
-                              <p className="font-medium">{selectedSubmission.platform === 'Other' ? selectedSubmission.otherPlatform : selectedSubmission.platform}</p>
-                            </div>
-                            <div>
-                              <Label className="text-muted-foreground">Hours</Label>
-                              <p className="font-medium">{selectedSubmission.hours}</p>
-                            </div>
-                            <div>
-                              <Label className="text-muted-foreground">Completion Date</Label>
-                              <p className="font-medium">{new Date(selectedSubmission.completionDate).toLocaleDateString()}</p>
-                            </div>
-                          </div>
+                  {selectedSubmission.supportingDocType === 'link' && selectedSubmission.supportingDocLink && (
+                    <div>
+                      <Label className="text-muted-foreground block mb-2">External Link</Label>
+                      <a
+                        href={selectedSubmission.supportingDocLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5"
+                      >
+                        <LinkIcon className="w-4 h-4" />
+                        Open Attached Document
+                      </a>
+                    </div>
+                  )}
 
-                          <div className="h-px bg-border my-4" />
+                  {selectedSubmission.supportingDocType === 'file' && selectedSubmission.supportingDocFile && (
+                    <div>
+                      <Label className="text-muted-foreground block mb-2">Attached File</Label>
+                      <a
+                        href={selectedSubmission.supportingDocFile}
+                        download={selectedSubmission.supportingDocFileName || "supporting-document"}
+                        className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download {selectedSubmission.supportingDocFileName || "Document"}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="h-px bg-border my-4" />
 
-                          {selectedSubmission.hasCertificate === 'yes' ? (
-                            <div>
-                              <Label className="text-muted-foreground block mb-2">Certificate</Label>
-                              <a href={selectedSubmission.proofLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5">
-                                <LinkIcon className="w-4 h-4" />
-                                Open Certificate Link
-                              </a>
-                            </div>
-                          ) : (
-                            <div className="space-y-4">
-                              <h4 className="font-semibold flex items-center gap-2"><Brain className="w-4 h-4" /> Reflection</h4>
-                              <div>
-                                <Label className="text-muted-foreground">Key Takeaways</Label>
-                                <p className="mt-1 text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">{selectedSubmission.keyTakeaways}</p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">Unanswered Questions</Label>
-                                <p className="mt-1 text-sm bg-muted p-3 rounded-md whitespace-pre-wrap">{selectedSubmission.unansweredQuestions}</p>
-                              </div>
-                              <div>
-                                <Label className="text-muted-foreground">Self-Assessment</Label>
-                                <div className="flex items-center gap-1 mt-1">
-                                  <Star className="w-4 h-4 text-primary fill-primary" />
-                                  <span className="font-bold">{selectedSubmission.effectivenessRating}/10</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+              <div>
+                <Label className="text-muted-foreground">Effectiveness Rating</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex gap-1">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className={cn("w-2 h-2 rounded-full", i < (Array.isArray(selectedSubmission.effectivenessRating) ? selectedSubmission.effectivenessRating[0] : selectedSubmission.effectivenessRating) ? "bg-primary" : "bg-muted")} />
+                    ))}
+                  </div>
+                  <span className="font-bold">{(Array.isArray(selectedSubmission.effectivenessRating) ? selectedSubmission.effectivenessRating[0] : selectedSubmission.effectivenessRating)}/10</span>
+                </div>
+              </div>
 
-                          {/* Supporting Documents Section */}
-                          {(selectedSubmission.supportingDocType || selectedSubmission.supportingDocLink || selectedSubmission.supportingDocFile) && (
-                            <div>
-                              <div className="h-px bg-border my-4" />
-                              <h4 className="font-semibold flex items-center gap-2 mb-3">
-                                <Paperclip className="w-4 h-4" /> Supporting Documents
-                              </h4>
+              {selectedSubmission.additionalFeedback && (
+                <div>
+                  <Label className="text-muted-foreground">Additional Feedback</Label>
+                  <p className="mt-1 text-sm italic">{selectedSubmission.additionalFeedback}</p>
+                </div>
+              )}
 
-                              {selectedSubmission.supportingDocType === 'link' && selectedSubmission.supportingDocLink && (
-                                <div>
-                                  <Label className="text-muted-foreground block mb-2">External Link</Label>
-                                  <a
-                                    href={selectedSubmission.supportingDocLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5"
-                                  >
-                                    <LinkIcon className="w-4 h-4" />
-                                    Open Attached Document
-                                  </a>
-                                </div>
-                              )}
-
-                              {selectedSubmission.supportingDocType === 'file' && selectedSubmission.supportingDocFile && (
-                                <div>
-                                  <Label className="text-muted-foreground block mb-2">Attached File</Label>
-                                  <a
-                                    href={selectedSubmission.supportingDocFile}
-                                    download={selectedSubmission.supportingDocFileName || "supporting-document"}
-                                    className="inline-flex items-center gap-2 text-primary hover:underline border px-4 py-2 rounded-md bg-primary/5"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    Download {selectedSubmission.supportingDocFileName || "Document"}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <div className="h-px bg-border my-4" />
-
-                          <div>
-                            <Label className="text-muted-foreground">Effectiveness Rating</Label>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex gap-1">
-                                {Array.from({ length: 10 }).map((_, i) => (
-                                  <div key={i} className={cn("w-2 h-2 rounded-full", i < (Array.isArray(selectedSubmission.effectivenessRating) ? selectedSubmission.effectivenessRating[0] : selectedSubmission.effectivenessRating) ? "bg-primary" : "bg-muted")} />
-                                ))}
-                              </div>
-                              <span className="font-bold">{(Array.isArray(selectedSubmission.effectivenessRating) ? selectedSubmission.effectivenessRating[0] : selectedSubmission.effectivenessRating)}/10</span>
-                            </div>
-                          </div>
-
-                          {selectedSubmission.additionalFeedback && (
-                            <div>
-                              <Label className="text-muted-foreground">Additional Feedback</Label>
-                              <p className="mt-1 text-sm italic">{selectedSubmission.additionalFeedback}</p>
-                            </div>
-                          )}
-
-                          {selectedSubmission.status !== 'APPROVED' && selectedSubmission.status !== 'REJECTED' && (
-                            <div className="flex gap-3 pt-6 border-t mt-6">
-                              <Button
-                                variant="outline"
-                                className="flex-1 text-destructive hover:bg-destructive/10"
-                                onClick={() => handleUpdateStatus('REJECTED')}
-                                disabled={isUpdating}
-                              >
-                                Reject Submission
-                              </Button>
-                              <Button
-                                className="flex-1 bg-green-600 hover:bg-green-700"
-                                onClick={() => handleUpdateStatus('APPROVED')}
-                                disabled={isUpdating}
-                              >
-                                Approve Submission
-                              </Button>
-                            </div>
-                          )}
-                        </div >
-                      )}
-                    </DialogContent >
-                  </Dialog >
-                </div >
-                );
+              {selectedSubmission.status !== 'APPROVED' && selectedSubmission.status !== 'REJECTED' && (
+                <div className="flex gap-3 pt-6 border-t mt-6">
+                  <Button
+                    variant="outline"
+                    className="flex-1 text-destructive hover:bg-destructive/10"
+                    onClick={() => handleUpdateStatus('REJECTED')}
+                    disabled={isUpdating}
+                  >
+                    Reject Submission
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => handleUpdateStatus('APPROVED')}
+                    disabled={isUpdating}
+                  >
+                    Approve Submission
+                  </Button>
+                </div>
+              )}
+            </div >
+          )}
+        </DialogContent >
+      </Dialog >
+    </div >
+  );
 }
