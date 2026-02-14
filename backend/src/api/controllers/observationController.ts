@@ -194,7 +194,12 @@ export const createObservation = async (req: Request, res: Response, next: NextF
             status: 'success',
             data: { observation: mappedObservation }
         });
-    } catch (err) {
+    } catch (err: any) {
+        console.error("FATAL ERROR in createObservation:");
+        console.error("Error Message:", err.message);
+        console.error("Stack Trace:", err.stack);
+        if (err.code) console.error("Prisma Error Code:", err.code);
+        if (err.meta) console.error("Prisma Error Meta:", JSON.stringify(err.meta));
         next(err);
     }
 };

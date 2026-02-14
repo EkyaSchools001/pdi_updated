@@ -1,6 +1,11 @@
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:4000';
+// In production, use the same origin (relative) or valid VITE_API_URL
+// In development, default to localhost:4000
+const API_URL = import.meta.env.PROD
+    ? (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || window.location.origin)
+    : 'http://localhost:4000';
+
 
 let socket: Socket;
 

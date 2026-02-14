@@ -5,7 +5,9 @@ import { protect, restrictTo } from '../middlewares/auth';
 const router = Router();
 
 router.use(protect);
-router.use(restrictTo('ADMIN', 'SUPERADMIN'));
+// Allow Leaders and Management to view users (for dashboard stats etc)
+router.use(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'MANAGEMENT'));
+
 
 router.get('/', getAllUsers);
 router.post('/', createUser);
