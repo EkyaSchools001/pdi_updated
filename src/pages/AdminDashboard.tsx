@@ -36,20 +36,61 @@ export default function AdminDashboard() {
   const [observations, setObservations] = useState<Observation[]>([]);
   const [recentUsers, setRecentUsers] = useState<DashboardUser[]>([]);
 
+  const [stats, setStats] = useState({
+    users: { total: 0, new: 0 },
+    training: { total: 0, thisMonth: 0 },
+    forms: { active: 0, total: 0 },
+    courses: { total: 0, new: 0 }
+  });
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [obsResponse, usersResponse] = await Promise.all([
+        // 1. Fetch Backend Stats
+        const [obsResponse, usersResponse, statsResponse] = await Promise.all([
           api.get('/observations'),
-          api.get('/users')
+          api.get('/users'),
+          api.get('/stats/admin')
         ]);
 
         setObservations(obsResponse.data?.data?.observations || []);
 
-        // Users are already sorted by createdAt desc (newest first) from backend
-        // Take top 5 for the dashboard
         const allUsers = usersResponse.data?.data?.users || [];
         setRecentUsers(allUsers.slice(0, 5));
+
+        const backendStats = statsResponse.data?.data;
+
+        // 2. Calculate Frontend Stats (LocalStorage)
+        // Forms
+        const savedForms = localStorage.getItem("form_templates");
+        const forms = savedForms ? JSON.parse(savedForms) : [];
+        const activeForms = forms.filter((f: any) => f.status === 'Active').length;
+
+        // Courses
+        const savedCourses = localStorage.getItem('downloadable_courses');
+        const downloadableCourses = savedCourses ? JSON.parse(savedCourses) : [];
+        // Combine with hardcoded initial courses count (5)
+        const totalCourses = 5 + downloadableCourses.length;
+
+        setStats({
+          users: {
+            total: backendStats?.users?.total || 0,
+            new: backendStats?.users?.newThisMonth || 0
+          },
+          training: {
+            total: backendStats?.trainingEvents?.total || 0,
+            thisMonth: backendStats?.trainingEvents?.thisMonth || 0
+          },
+          forms: {
+            active: activeForms > 0 ? activeForms : 4, // Default to 4 if LS empty (initialTemplates)
+            total: forms.length
+          },
+          courses: {
+            total: totalCourses,
+            new: downloadableCourses.length // Assuming downloadables are "new"
+          }
+        });
+
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       }
@@ -76,7 +117,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
       <Routes>
-        <Route index element={<DashboardOverview recentUsers={recentUsers} />} />
+        <Route index element={<DashboardOverview recentUsers={recentUsers} stats={stats} />} />
         <Route path="users" element={<UserManagementView />} />
         <Route path="profile/:userId" element={<AdminTeacherProfileView observations={observations} />} />
         <Route path="forms" element={<FormTemplatesView />} />
@@ -145,7 +186,15 @@ const adminModules = [
 
 
 
-function DashboardOverview({ recentUsers }: { recentUsers: DashboardUser[] }) {
+function DashboardOverview({ recentUsers, stats }: {
+  recentUsers: DashboardUser[],
+  stats: {
+    users: { total: number, new: number },
+    training: { total: number, thisMonth: number },
+    forms: { active: number, total: number },
+    courses: { total: number, new: number }
+  }
+}) {
   return (
     <>
       <PageHeader
@@ -154,33 +203,35 @@ function DashboardOverview({ recentUsers }: { recentUsers: DashboardUser[] }) {
       />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-        <StatCard
-          title="Total Users"
-          value="248"
-          subtitle="+12 this month"
-          icon={Users}
-          trend={{ value: 5, isPositive: true }}
-        />
-        <StatCard
-          title="Active Forms"
-          value="4"
-          subtitle="All systems active"
-          icon={FileText}
-        />
-        <StatCard
-          title="Courses"
-          value="34"
-          subtitle="5 new this quarter"
-          icon={Book}
-        />
-        <StatCard
-          title="Training Events"
-          value="12"
-          subtitle="This month"
-          icon={Calendar}
-        />
-      </div>
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <StatCard
+            title="Total Users"
+            value={stats.users?.total?.toString() || "0"}
+            subtitle={`+${stats.users?.new || 0} this month`}
+            icon={Users}
+            trend={{ value: stats.users?.new || 0, isPositive: true }}
+          />
+          <StatCard
+            title="Active Forms"
+            value={stats.forms?.active?.toString() || "0"}
+            subtitle="All systems active"
+            icon={FileText}
+          />
+          <StatCard
+            title="Courses"
+            value={stats.courses?.total?.toString() || "0"}
+            subtitle={`${stats.courses?.new || 0} new downloadable`}
+            icon={Book}
+          />
+          <StatCard
+            title="Training Events"
+            value={stats.training?.total?.toString() || "0"}
+            subtitle={`${stats.training?.thisMonth || 0} this month`}
+            icon={Calendar}
+          />
+        </div>
+      )}
 
       {/* Live Data Feeds / Drill Downs */}
       <div className="mb-8 animate-in slide-in-from-bottom-5 duration-500 delay-100">

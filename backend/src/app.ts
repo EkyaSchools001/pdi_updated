@@ -24,6 +24,7 @@ app.use(cors({
         'http://localhost:8080',
         'http://127.0.0.1:8080',
         'http://localhost:5173',
+        'http://localhost:5174', // Explicitly added
         'http://localhost:3000',
         process.env.FRONTEND_URL || '',
         'https://brave-aliens-sleep.loca.lt',

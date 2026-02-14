@@ -9,50 +9,58 @@
 
 @layer base {
   :root {
-    /* Core Brand - Deep professional blues */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Core Brand - Earth Theme */
+    --background: 39 60% 90%;
+    /* Lightened Sand (#EBD5AB -> L90) */
+    --foreground: 111 12% 12%;
+    /* #1B211A - Dark Black-Green */
 
     /* Cards & Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    /* Start with White for cleanliness */
+    --card-foreground: 111 12% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 111 12% 12%;
 
-    /* Primary - Professional Navy */
-    --primary: 222 47% 20%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Olive Green */
+    --primary: 89 33% 38%;
+    /* #628141 */
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Soft neutral */
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 222 47% 20%;
+    /* Secondary - Sage Green */
+    --secondary: 89 32% 54%;
+    /* #8BAE66 */
+    --secondary-foreground: 111 12% 12%;
 
-    /* Muted - Subtle backgrounds */
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted - Sand/Beige */
+    --muted: 39 60% 80%;
+    /* #EBD5AB */
+    --muted-foreground: 89 33% 38%;
 
-    /* Accent - Warm amber for highlights */
-    --accent: 38 92% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Sage */
+    --accent: 89 32% 54%;
+    --accent-foreground: 111 12% 12%;
 
     /* Status Colors */
-    --success: 142 76% 36%;
+    --success: 89 33% 38%;
+    /* Use Olive */
     --success-foreground: 0 0% 100%;
-    
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     /* UI Elements */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222 47% 20%;
+    --border: 89 32% 54%;
+    /* Sage Border */
+    --input: 89 32% 54%;
+    --ring: 89 33% 38%;
 
     --radius: 0.625rem;
 
@@ -60,62 +68,68 @@
     --priority-1: 0 84% 60%;
     --priority-2: 38 92% 50%;
     --priority-3: 199 89% 48%;
-    --priority-4: 142 76% 36%;
+    --priority-4: 89 33% 38%;
 
     /* Role Colors */
     --role-teacher: 199 89% 48%;
     --role-leader: 262 83% 58%;
-    --role-admin: 142 76% 36%;
+    --role-admin: 89 33% 38%;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 38 92% 50%;
+    /* Sidebar - Deep Earth */
+    --sidebar-background: 111 12% 12%;
+    /* Dark Black-Green */
+    --sidebar-foreground: 39 60% 80%;
+    /* Sand Text */
+    --sidebar-primary: 89 33% 38%;
+    /* Olive */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 20%;
-    --sidebar-ring: 38 92% 50%;
-    --sidebar-muted: 222 47% 30%;
+    --sidebar-accent: 89 32% 54%;
+    /* Sage Hover */
+    --sidebar-accent-foreground: 111 12% 12%;
+    --sidebar-border: 89 33% 38%;
+    --sidebar-ring: 89 32% 54%;
+    --sidebar-muted: 111 12% 20%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* Deep Earth Dark Mode */
+    --background: 111 12% 10%;
+    --foreground: 39 60% 80%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
+    --card: 111 12% 14%;
+    --card-foreground: 39 60% 80%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 111 12% 14%;
+    --popover-foreground: 39 60% 80%;
 
-    --primary: 38 92% 50%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 89 32% 54%;
+    /* Sage for primary in dark mode */
+    --primary-foreground: 111 12% 10%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 89 33% 25%;
+    --secondary-foreground: 39 60% 80%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 89 33% 20%;
+    --muted-foreground: 89 32% 54%;
 
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 89 33% 38%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 39 60% 80%;
 
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
-    --ring: 38 92% 50%;
+    --border: 89 33% 25%;
+    --input: 89 33% 25%;
+    --ring: 89 32% 54%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 222 47% 15%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 15%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-background: 111 12% 10%;
+    --sidebar-foreground: 39 60% 80%;
+    --sidebar-primary: 89 32% 54%;
+    --sidebar-primary-foreground: 111 12% 10%;
+    --sidebar-accent: 89 33% 25%;
+    --sidebar-accent-foreground: 39 60% 80%;
+    --sidebar-border: 89 33% 25%;
+    --sidebar-ring: 89 32% 54%;
   }
 }
 
@@ -129,29 +143,35 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 }
 
 @layer components {
+
   /* Priority Badge Styles */
   .priority-badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold;
   }
-  
+
   .priority-1 {
     @apply bg-[hsl(var(--priority-1)/0.15)] text-[hsl(var(--priority-1))];
   }
-  
+
   .priority-2 {
     @apply bg-[hsl(var(--priority-2)/0.15)] text-[hsl(var(--priority-2))];
   }
-  
+
   .priority-3 {
     @apply bg-[hsl(var(--priority-3)/0.15)] text-[hsl(var(--priority-3))];
   }
-  
+
   .priority-4 {
     @apply bg-[hsl(var(--priority-4)/0.15)] text-[hsl(var(--priority-4))];
   }
@@ -160,11 +180,11 @@
   .role-teacher {
     @apply bg-[hsl(var(--role-teacher)/0.15)] text-[hsl(var(--role-teacher))];
   }
-  
+
   .role-leader {
     @apply bg-[hsl(var(--role-leader)/0.15)] text-[hsl(var(--role-leader))];
   }
-  
+
   .role-admin {
     @apply bg-[hsl(var(--role-admin)/0.15)] text-[hsl(var(--role-admin))];
   }
@@ -194,11 +214,11 @@
 
   /* Gradient Backgrounds */
   .gradient-hero {
-    background: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 47% 20%) 50%, hsl(262 83% 30%) 100%);
+    background: linear-gradient(135deg, hsl(111 12% 12%) 0%, hsl(89 33% 38%) 100%);
   }
 
   .gradient-accent {
-    background: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(38 92% 60%) 100%);
+    background: linear-gradient(135deg, hsl(39 60% 80%) 0%, hsl(89 32% 54%) 100%);
   }
 }
 
@@ -220,29 +240,54 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 }
 
 @media print {
+
   /* Hide all interactive elements and navigation */
-  header, nav, button, .no-print {
+  header,
+  nav,
+  button,
+  .no-print {
     display: none !important;
   }
-  
+
   /* Reset layout for print */
-  body, #root, .grid {
+  body,
+  #root,
+  .grid {
     display: block !important;
     height: auto !important;
     width: 100% !important;
@@ -268,12 +313,16 @@
   }
 
   /* Typography for print */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     color: black !important;
     page-break-after: avoid;
   }
-  
-  p, span, div {
+
+  p,
+  span,
+  div {
     color: black !important;
   }
 }
