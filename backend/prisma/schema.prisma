@@ -270,3 +270,20 @@ model CourseEnrollment {
 
   @@unique([courseId, userId])
 }
+
+model SystemSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model FormTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  structure String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
