@@ -259,17 +259,48 @@ export default function LeaderDashboard() {
 
     // Join room for leaders to get MOOC submissions
     socket.emit('join_room', 'leaders');
-    socket.on('observation:created', (newObs: Observation) => {
-      setObservations(prev => [newObs, ...prev]);
-      toast.info(`New observation received for ${newObs.teacher}`);
+    socket.on('observation:created', (newObs: any) => {
+      // Map incoming observation to match UI structure
+      let parsedReflection = newObs.detailedReflection;
+      if (typeof newObs.detailedReflection === 'string') {
+        try {
+          parsedReflection = JSON.parse(newObs.detailedReflection);
+        } catch (e) { }
+      }
+
+      const mappedObs = {
+        ...newObs,
+        teacher: newObs.teacher?.fullName || newObs.teacherEmail || 'Unknown Teacher',
+        detailedReflection: parsedReflection || {},
+        strengths: newObs.strengths || parsedReflection?.strengths || "",
+        improvements: newObs.improvements || parsedReflection?.improvements || "",
+        teachingStrategies: newObs.teachingStrategies || parsedReflection?.teachingStrategies || [],
+        date: newObs.date ? new Date(newObs.date).toLocaleDateString() : 'N/A'
+      };
+
+      setObservations(prev => [mappedObs, ...prev]);
+      toast.info(`New observation received for ${mappedObs.teacher}`);
     });
 
-    socket.on('observation:updated', (updatedObs: Observation) => {
+    socket.on('observation:updated', (updatedObs: any) => {
       // Map teacher if it's an object to maintain UI consistency
+      let parsedReflection = updatedObs.detailedReflection;
+      if (typeof updatedObs.detailedReflection === 'string') {
+        try {
+          parsedReflection = JSON.parse(updatedObs.detailedReflection);
+        } catch (e) { }
+      }
+
       const mappedObs = {
         ...updatedObs,
-        teacher: (updatedObs.teacher as any)?.fullName || updatedObs.teacher || updatedObs.teacherEmail || 'Unknown Teacher'
+        teacher: (updatedObs.teacher as any)?.fullName || updatedObs.teacher || updatedObs.teacherEmail || 'Unknown Teacher',
+        detailedReflection: parsedReflection || {},
+        strengths: updatedObs.strengths || parsedReflection?.strengths || "",
+        improvements: updatedObs.improvements || parsedReflection?.improvements || "",
+        teachingStrategies: updatedObs.teachingStrategies || parsedReflection?.teachingStrategies || [],
+        date: updatedObs.date ? new Date(updatedObs.date).toLocaleDateString() : 'N/A'
       };
+
       setObservations(prev => prev.map(obs => obs.id === mappedObs.id ? mappedObs : obs));
       toast.info(`Observation updated for ${mappedObs.teacher}`);
     });
@@ -2410,7 +2441,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                   </div>
                 </CardHeader>
                 <CardContent className="p-8 space-y-8">
-                  {observation.detailedReflection ? (
+                  {observation.detailedReflection && Object.keys(observation.detailedReflection).length > 0 ? (
                     <div className="space-y-8">
                       {/* Summary Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2419,7 +2450,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                             <CardTitle className="text-sm font-bold uppercase tracking-wider text-emerald-700">Strengths</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection.strengths}</p>
+                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection?.strengths || "No strengths recorded."}</p>
                           </CardContent>
                         </Card>
                         <Card className="bg-amber-50/50 border-amber-100 shadow-sm">
@@ -2427,7 +2458,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                             <CardTitle className="text-sm font-bold uppercase tracking-wider text-amber-700">Areas for Growth</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection.improvements}</p>
+                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection?.improvements || "No areas for growth recorded."}</p>
                           </CardContent>
                         </Card>
                         <Card className="bg-blue-50/50 border-blue-100 shadow-sm">
@@ -2435,7 +2466,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
                             <CardTitle className="text-sm font-bold uppercase tracking-wider text-blue-700">Goal for Next Cycle</CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection.goal}</p>
+                            <p className="text-sm font-medium text-foreground/80 leading-relaxed">{observation.detailedReflection?.goal || "No goal recorded."}</p>
                           </CardContent>
                         </Card>
                       </div>
@@ -2446,35 +2477,36 @@ function ObservationReportView({ observations, team }: { observations: Observati
                           <FileText className="w-5 h-5 text-muted-foreground" />
                           Reflection Details
                         </h3>
-                        {Object.entries(observation.detailedReflection.sections).map(([key, section]) => (
-                          <div key={key} className="space-y-4 border rounded-2xl p-6 bg-card/50">
-                            <div className="flex items-center gap-3 pb-4 border-b">
-                              <div className="w-2 h-8 rounded-full bg-indigo-500" />
-                              <h4 className="font-bold text-lg">{section.title}</h4>
-                            </div>
-                            <div className="grid lg:grid-cols-2 gap-8">
-                              <div className="space-y-4">
-                                <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Self-Ratings</p>
-                                <div className="space-y-3">
-                                  {section.ratings.map(r => (
-                                    <div key={r.indicator} className="flex justify-between items-center group">
-                                      <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">{r.indicator}</span>
-                                      <Badge variant={r.rating === "Highly Effective" ? "default" : r.rating === "Effective" ? "secondary" : "outline"} className="ml-4">
-                                        {r.rating}
-                                      </Badge>
-                                    </div>
-                                  ))}
+                        {observation.detailedReflection?.sections ? (
+                          Object.entries(observation.detailedReflection.sections).map(([key, section]: [string, any]) => (
+                            <div key={key} className="space-y-4 border rounded-2xl p-6 bg-card/50">
+                              <div className="flex items-center gap-3 pb-4 border-b">
+                                <div className="w-2 h-8 rounded-full bg-indigo-500" />
+                                <h4 className="font-bold text-lg">{section.title}</h4>
+                              </div>
+                              <div className="grid lg:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                  <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Self-Ratings</p>
+                                  <div className="space-y-3">
+                                    {section.ratings && section.ratings.map((r: any) => (
+                                      <div key={r.indicator} className="flex justify-between items-center group">
+                                        <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">{r.indicator}</span>
+                                        <Badge variant={r.rating === "Highly Effective" ? "default" : r.rating === "Effective" ? "secondary" : "outline"} className="ml-4">
+                                          {r.rating}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Evidence Provided</p>
+                                  <div className="p-4 rounded-xl bg-muted/30 text-sm italic leading-relaxed text-muted-foreground border border-dashed border-muted-foreground/20">
+                                    "{section.evidence}"
+                                  </div>
                                 </div>
                               </div>
-                              <div className="space-y-2">
-                                <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Evidence Provided</p>
-                                <div className="p-4 rounded-xl bg-muted/30 text-sm italic leading-relaxed text-muted-foreground border border-dashed border-muted-foreground/20">
-                                  "{section.evidence}"
-                                </div>
-                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </div>
                   ) : (
