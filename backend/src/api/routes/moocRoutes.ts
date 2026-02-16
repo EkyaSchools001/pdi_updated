@@ -8,6 +8,6 @@ router.use(protect);
 
 router.post('/submit', submitMoocEvidence);
 router.get('/', getAllMoocSubmissions);
-router.patch('/:id/status', restrictTo('SCHOOL_LEADER', 'ADMIN', 'MANAGEMENT', 'SUPER_ADMIN'), updateMoocStatus);
+router.patch('/:id/status', restrictTo('LEADER', 'SCHOOL_LEADER', 'ADMIN', 'MANAGEMENT', 'SUPERADMIN'), updateMoocStatus);
 
 export default router;

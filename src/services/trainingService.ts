@@ -31,5 +31,15 @@ export const trainingService = {
     async updateStatus(id: string, status: string) {
         const response = await api.patch(`/training/${id}/status`, { status });
         return response.data.data.event;
+    },
+
+    async deleteEvent(id: string) {
+        const response = await api.delete(`/training/${id}`);
+        return response.data;
+    },
+
+    async updateEvent(id: string, data: any) {
+        const response = await api.put(`/training/${id}`, data);
+        return response.data.data.event;
     }
 };

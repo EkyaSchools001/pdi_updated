@@ -59,6 +59,8 @@ export default function AdminDocumentManagement() {
         assignedTeachers: [] as string[],
     });
 
+    const [uploadTeacherSearchQuery, setUploadTeacherSearchQuery] = useState("");
+
     useEffect(() => {
         fetchDocuments();
         fetchTeachers();
@@ -125,6 +127,7 @@ export default function AdminDocumentManagement() {
         }
 
         try {
+            console.log("[DOC-UPLOAD] Starting upload process for:", newDocument.title);
             const uploadedDoc = await documentService.uploadDocument({
                 title: newDocument.title,
                 description: newDocument.description,
@@ -133,8 +136,11 @@ export default function AdminDocumentManagement() {
                 file: newDocument.file
             });
 
+            console.log("[DOC-UPLOAD] Metadata created successfully:", uploadedDoc.id);
+
             // If teachers were selected during upload, assign them now
             if (newDocument.assignedTeachers.length > 0) {
+                console.log("[DOC-UPLOAD] Assigning to", newDocument.assignedTeachers.length, "teachers");
                 await documentService.assignDocument(uploadedDoc.id, newDocument.assignedTeachers);
             }
 
@@ -148,10 +154,12 @@ export default function AdminDocumentManagement() {
                 file: null,
                 assignedTeachers: [],
             });
+            setUploadTeacherSearchQuery(""); // Clear search
             fetchDocuments(); // Refresh list
-        } catch (error) {
-            console.error("Error uploading document:", error);
-            toast.error("Failed to upload document");
+        } catch (error: any) {
+            console.error("[DOC-UPLOAD] Failure point:", error.config?.url || "unknown", error);
+            const errorMessage = error.response?.data?.message || error.message || "Failed to upload document";
+            toast.error(errorMessage);
         }
     };
 
@@ -649,81 +657,95 @@ export default function AdminDocumentManagement() {
                             </div>
 
                             {selectedSchool && (
-                                <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-muted/20">
-                                    <div className="space-y-2">
-                                        {(selectedSchool === "all" ? teachers : teachersByGroup[selectedSchool] || []).map((teacher) => (
-                                            <div
-                                                key={teacher.id}
-                                                className="flex items-center space-x-3 p-3 rounded-lg hover:bg-background cursor-pointer transition-colors"
-                                                onClick={() => {
-                                                    const isSelected = newDocument.assignedTeachers.includes(teacher.id);
-                                                    setNewDocument({
-                                                        ...newDocument,
-                                                        assignedTeachers: isSelected
-                                                            ? newDocument.assignedTeachers.filter(id => id !== teacher.id)
-                                                            : [...newDocument.assignedTeachers, teacher.id]
-                                                    });
-                                                }}
-                                            >
-                                                <Checkbox
-                                                    checked={newDocument.assignedTeachers.includes(teacher.id)}
-                                                    onCheckedChange={() => {
-                                                        const isSelected = newDocument.assignedTeachers.includes(teacher.id);
-                                                        setNewDocument({
-                                                            ...newDocument,
-                                                            assignedTeachers: isSelected
-                                                                ? newDocument.assignedTeachers.filter(id => id !== teacher.id)
-                                                                : [...newDocument.assignedTeachers, teacher.id]
-                                                        });
-                                                    }}
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="font-medium text-sm">{teacher.fullName}</div>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        {teacher.campusId || 'N/A'} • {teacher.department || 'N/A'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                <div className="space-y-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search teacher by name or email..."
+                                            className="pl-8 h-9"
+                                            value={uploadTeacherSearchQuery}
+                                            onChange={(e) => setUploadTeacherSearchQuery(e.target.value)}
+                                        />
                                     </div>
-                                </div>
-                            )}
+                                    <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-muted/20">
+                                        <div className="space-y-2">
+                                            {(selectedSchool === "all" ? teachers : teachersByGroup[selectedSchool] || [])
+                                                .filter(teacher =>
+                                                    teacher.fullName.toLowerCase().includes(uploadTeacherSearchQuery.toLowerCase()) ||
+                                                    teacher.email.toLowerCase().includes(uploadTeacherSearchQuery.toLowerCase())
+                                                )
+                                                .map((teacher) => (
+                                                    <div
+                                                        key={teacher.id}
+                                                        className="flex items-center space-x-3 p-3 rounded-lg hover:bg-background cursor-pointer transition-colors"
+                                                        onClick={() => {
+                                                            const isSelected = newDocument.assignedTeachers.includes(teacher.id);
+                                                            setNewDocument({
+                                                                ...newDocument,
+                                                                assignedTeachers: isSelected
+                                                                    ? newDocument.assignedTeachers.filter(id => id !== teacher.id)
+                                                                    : [...newDocument.assignedTeachers, teacher.id]
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Checkbox
+                                                            checked={newDocument.assignedTeachers.includes(teacher.id)}
+                                                            onCheckedChange={() => {
+                                                                const isSelected = newDocument.assignedTeachers.includes(teacher.id);
+                                                                setNewDocument({
+                                                                    ...newDocument,
+                                                                    assignedTeachers: isSelected
+                                                                        ? newDocument.assignedTeachers.filter(id => id !== teacher.id)
+                                                                        : [...newDocument.assignedTeachers, teacher.id]
+                                                                });
+                                                            }}
+                                                        />
+                                                        <div className="flex-1">
+                                                            <div className="font-medium text-sm">{teacher.fullName}</div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {teacher.email} • {teacher.campusId || 'N/A'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
 
-                            {selectedSchool && (
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            const teachersToSelect = selectedSchool === "all"
-                                                ? teachers
-                                                : teachersByGroup[selectedSchool] || [];
-                                            setNewDocument({
-                                                ...newDocument,
-                                                assignedTeachers: [...new Set([...newDocument.assignedTeachers, ...teachersToSelect.map(t => t.id)])]
-                                            });
-                                        }}
-                                    >
-                                        Select All in Group
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            const teachersToRemove = selectedSchool === "all"
-                                                ? teachers
-                                                : teachersByGroup[selectedSchool] || [];
-                                            const idsToRemove = new Set(teachersToRemove.map(t => t.id));
-                                            setNewDocument({
-                                                ...newDocument,
-                                                assignedTeachers: newDocument.assignedTeachers.filter(id => !idsToRemove.has(id))
-                                            });
-                                        }}
-                                    >
-                                        Clear Group
-                                    </Button>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                const teachersToSelect = selectedSchool === "all"
+                                                    ? teachers
+                                                    : teachersByGroup[selectedSchool] || [];
+                                                setNewDocument({
+                                                    ...newDocument,
+                                                    assignedTeachers: [...new Set([...newDocument.assignedTeachers, ...teachersToSelect.map(t => t.id)])]
+                                                });
+                                            }}
+                                        >
+                                            Select All in Group
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                const teachersToRemove = selectedSchool === "all"
+                                                    ? teachers
+                                                    : teachersByGroup[selectedSchool] || [];
+                                                const idsToRemove = new Set(teachersToRemove.map(t => t.id));
+                                                setNewDocument({
+                                                    ...newDocument,
+                                                    assignedTeachers: newDocument.assignedTeachers.filter(id => !idsToRemove.has(id))
+                                                });
+                                            }}
+                                        >
+                                            Clear Group
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -780,7 +802,10 @@ export default function AdminDocumentManagement() {
                         <div className="border rounded-lg p-4 max-h-64 overflow-y-auto bg-muted/20">
                             <div className="space-y-2">
                                 {(selectedSchool && selectedSchool !== "all" ? teachersByGroup[selectedSchool] : teachers)
-                                    .filter(t => t.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase()))
+                                    .filter(t =>
+                                        t.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase()) ||
+                                        t.email.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+                                    )
                                     .map((teacher) => (
                                         <div
                                             key={teacher.id}
@@ -800,7 +825,10 @@ export default function AdminDocumentManagement() {
                                         </div>
                                     ))}
                                 {(selectedSchool && selectedSchool !== "all" ? teachersByGroup[selectedSchool] : teachers)
-                                    .filter(t => t.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase())).length === 0 && (
+                                    .filter(t =>
+                                        t.fullName.toLowerCase().includes(teacherSearchQuery.toLowerCase()) ||
+                                        t.email.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+                                    ).length === 0 && (
                                         <div className="text-center py-8 text-muted-foreground">
                                             No teachers found matching "{teacherSearchQuery}"
                                         </div>

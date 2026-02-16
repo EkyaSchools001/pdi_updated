@@ -14,13 +14,27 @@ export const getAllGoals = async (req: Request, res: Response, next: NextFunctio
 
         const goals = await prisma.goal.findMany({
             where: filter,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: {
+                teacher: {
+                    select: {
+                        fullName: true,
+                        email: true
+                    }
+                }
+            }
         });
+
+        const formattedGoals = goals.map(g => ({
+            ...g,
+            teacher: g.teacher?.fullName || 'Unknown Teacher',
+            teacherEmail: g.teacherEmail || g.teacher?.email || null
+        }));
 
         res.status(200).json({
             status: 'success',
-            results: goals.length,
-            data: { goals }
+            results: formattedGoals.length,
+            data: { goals: formattedGoals }
         });
     } catch (err) {
         next(err);
@@ -59,12 +73,9 @@ export const createGoal = async (req: Request, res: Response, next: NextFunction
             }
         }
 
-        // Remove teacherEmail from data before creating in DB (if not in schema)
-        const { teacherEmail, ...dbData } = data;
-
         const newGoal = await prisma.goal.create({
             data: {
-                ...dbData,
+                ...data,
                 teacherId: teacherId
             }
         });

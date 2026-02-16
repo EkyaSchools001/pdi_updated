@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../infrastructure/utils/AppError';
+import { getIO } from '../../core/socket';
 
 const prisma = new PrismaClient();
 
@@ -81,6 +82,9 @@ export const createCourse = async (req: Request, res: Response, next: NextFuncti
             }
         });
 
+        // Emit socket event for real-time updates
+        getIO().emit('course:created', newCourse);
+
         res.status(201).json({
             status: 'success',
             data: { course: newCourse }
@@ -99,6 +103,9 @@ export const updateCourse = async (req: Request, res: Response, next: NextFuncti
             data: req.body
         });
 
+        // Emit socket event for real-time updates
+        getIO().emit('course:updated', updatedCourse);
+
         res.status(200).json({
             status: 'success',
             data: { course: updatedCourse }
@@ -115,6 +122,9 @@ export const deleteCourse = async (req: Request, res: Response, next: NextFuncti
         await prisma.course.delete({
             where: { id }
         });
+
+        // Emit socket event for real-time updates
+        getIO().emit('course:deleted', { id });
 
         res.status(204).json({
             status: 'success',

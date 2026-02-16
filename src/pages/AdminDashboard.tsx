@@ -60,17 +60,10 @@ export default function AdminDashboard() {
 
         const backendStats = statsResponse.data?.data;
 
-        // 2. Calculate Frontend Stats (LocalStorage)
-        // Forms
+        // 2. Form Stats (LocalStorage)
         const savedForms = localStorage.getItem("form_templates");
         const forms = savedForms ? JSON.parse(savedForms) : [];
         const activeForms = forms.filter((f: any) => f.status === 'Active').length;
-
-        // Courses
-        const savedCourses = localStorage.getItem('downloadable_courses');
-        const downloadableCourses = savedCourses ? JSON.parse(savedCourses) : [];
-        // Combine with hardcoded initial courses count (5)
-        const totalCourses = 5 + downloadableCourses.length;
 
         setStats({
           users: {
@@ -82,12 +75,12 @@ export default function AdminDashboard() {
             thisMonth: backendStats?.trainingEvents?.thisMonth || 0
           },
           forms: {
-            active: activeForms > 0 ? activeForms : 4, // Default to 4 if LS empty (initialTemplates)
+            active: activeForms,
             total: forms.length
           },
           courses: {
-            total: totalCourses,
-            new: downloadableCourses.length // Assuming downloadables are "new"
+            total: backendStats?.courses?.total || 0,
+            new: backendStats?.courses?.newThisMonth || 0
           }
         });
 

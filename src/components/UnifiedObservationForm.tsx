@@ -163,7 +163,7 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
             teacher: initialData.teacher || "",
             teacherId: initialData.teacherId || "",
             teacherEmail: initialData.teacherEmail || "",
-            observerName: initialData.observerName || "Dr. Sarah Johnson",
+            observerName: initialData.observerName || "Rohit",
             block: initialData.classroom?.block || "",
             grade: initialData.classroom?.grade || "",
             section: initialData.classroom?.section || "",

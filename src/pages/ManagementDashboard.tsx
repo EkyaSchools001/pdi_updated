@@ -675,7 +675,7 @@ function Leadership() {
                                 </thead>
                                 <tbody className="divide-y">
                                     {[
-                                        { name: 'Dr. Sarah Johnson', obs: '98%', quality: 'High', growth: '+15%' },
+                                        { name: 'Rohit', obs: '98%', quality: 'High', growth: '+15%' },
                                         { name: 'Michael Chen', obs: '82%', quality: 'Medium', growth: '+8%' },
                                         { name: 'Anita Rao', obs: '92%', quality: 'High', growth: '+12%' },
                                     ].map((leader, i) => (

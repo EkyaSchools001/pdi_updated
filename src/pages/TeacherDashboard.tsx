@@ -122,204 +122,9 @@ import { TeacherProfileView } from "@/components/TeacherProfileView";
 // Removed local Observation interface in favor of shared type
 
 
-const mockObservations: Observation[] = [
-  {
-    id: "1",
-    teacher: "Teacher One",
-    date: "Jan 15, 2024",
-    observerName: "Dr. Sarah Johnson",
-    observerRole: "Head of School",
-    domain: "Instruction",
-    score: 4,
-    notes: "Excellent engagement strategies used. Student participation was very high.",
-    hasReflection: true,
-    reflection: "I will focus on pacing next time.",
-  },
-  {
-    id: "new-demo-1",
-    teacher: "Teacher One",
-    date: "Feb 5, 2024",
-    observerName: "Dr. Sarah Johnson",
-    observerRole: "Head of School",
-    domain: "Assessment",
-    score: 3,
-    notes: "Good formative assessment, but check for understanding more frequently.",
-    hasReflection: false,
-  },
-];
 
-const initialGoals = [
-  {
-    id: "1",
-    title: "Implement Project-Based Learning",
-    description: "Incorporate at least 2 PBL units this semester with cross-curricular connections",
-    progress: 65,
-    dueDate: "Mar 30, 2024",
-    assignedBy: "Dr. Sarah Johnson",
-    isSchoolAligned: true,
-    teacher: "Teacher One"
-  },
-  {
-    id: "2",
-    title: "Differentiation Strategies",
-    description: "Develop and implement tiered assignments for diverse learner needs",
-    progress: 40,
-    dueDate: "Apr 15, 2024",
-    teacher: "Teacher One"
-  },
-];
+// Mock data removed in favor of API calls
 
-const initialEvents = [
-  {
-    id: "1",
-    title: "Differentiated Instruction Workshop",
-    topic: "Pedagogy",
-    type: "Pedagogy",
-    date: "Feb 15, 2026",
-    time: "09:00 AM",
-    location: "Auditorium A",
-    registered: 12,
-    capacity: 20,
-    status: "Approved",
-    spotsLeft: 8,
-    isRegistered: false,
-    isAdminCreated: true,
-    registrants: [
-      { id: "u1", name: "Teacher One", email: "teacher1.btmlayout@pdi.com", dateRegistered: "Jan 12, 2026" },
-      { id: "u2", name: "Teacher Two", email: "teacher2.jpnagar@pdi.com", dateRegistered: "Jan 14, 2026" },
-      { id: "u3", name: "Teacher Three", email: "teacher3.itpl@pdi.com", dateRegistered: "Jan 15, 2026" },
-    ]
-  },
-  {
-    id: "2",
-    title: "Digital Literacy in Classroom",
-    topic: "Technology",
-    type: "Technology",
-    date: "Feb 18, 2026",
-    time: "02:00 PM",
-    location: "Computer Lab 1",
-    registered: 18,
-    capacity: 25,
-    status: "Approved",
-    spotsLeft: 7,
-    isRegistered: true,
-    isAdminCreated: true,
-    registrants: [
-      { id: "u4", name: "Teacher Three", email: "teacher3.itpl@pdi.com", dateRegistered: "Jan 20, 2026" },
-      { id: "u5", name: "Teacher Two", email: "teacher2.jpnagar@pdi.com", dateRegistered: "Jan 21, 2026" },
-    ]
-  },
-  { id: "3", title: "Social-Emotional Learning Hub", topic: "Culture", type: "Culture", date: "Feb 22, 2026", time: "11:00 AM", location: "Conference Room B", registered: 8, capacity: 15, status: "Approved", spotsLeft: 7, isRegistered: false, isAdminCreated: true, registrants: [] },
-  { id: "4", title: "Advanced Formative Assessment", topic: "Assessment", type: "Assessment", date: "Feb 25, 2026", time: "03:30 PM", location: "Main Library", registered: 15, capacity: 20, status: "Pending", spotsLeft: 5, isRegistered: false, isAdminCreated: true, registrants: [] },
-  { id: "5", title: "Instructional Design Workshop", topic: "Pedagogy", type: "Pedagogy", date: "Feb 13, 2026", time: "09:00 AM", location: "TRC 1", registered: 10, capacity: 15, status: "Approved", spotsLeft: 5, isRegistered: false, isAdminCreated: true, registrants: [] },
-];
-
-const mockCourses = [
-  {
-    id: "1",
-    title: "Advanced Classroom Management",
-    instructor: "Sarah Jenkins, PhD",
-    duration: "4h 30m",
-    progress: 75,
-    category: "Management",
-    rating: 4.8,
-    students: 1240,
-    thumbnail: "bg-blue-500",
-    status: "in-progress"
-  },
-  {
-    id: "2",
-    title: "Inclusive Education Strategies",
-    instructor: "Mark Thompson",
-    duration: "6h 15m",
-    progress: 30,
-    category: "Special Ed",
-    rating: 4.9,
-    students: 850,
-    thumbnail: "bg-purple-500",
-    status: "in-progress"
-  },
-  {
-    id: "3",
-    title: "Digital Literacy in 2024",
-    instructor: "Emily Chen",
-    duration: "3h 0m",
-    progress: 0,
-    category: "Technology",
-    rating: 4.7,
-    students: 2100,
-    thumbnail: "bg-orange-500",
-    status: "recommended"
-  },
-  {
-    id: "4",
-    title: "Assessment for Learning",
-    instructor: "David Miller",
-    duration: "5h 45m",
-    progress: 0,
-    category: "Pedagogy",
-    rating: 4.6,
-    students: 1500,
-    thumbnail: "bg-emerald-500",
-    status: "recommended"
-  },
-  {
-    id: "5",
-    title: "Mental Health First Aid",
-    instructor: "Dr. Lisa Wong",
-    duration: "8h 20m",
-    progress: 100,
-    category: "Wellbeing",
-    rating: 5.0,
-    students: 3200,
-    thumbnail: "bg-rose-500",
-    status: "completed"
-  }
-];
-
-const mockPDHours = {
-  total: 24.5,
-  target: 30,
-  categories: [
-    { name: "Workshops", hours: 12, color: "bg-blue-500" },
-    { name: "Online Courses", hours: 8, color: "bg-purple-500" },
-    { name: "Seminars", hours: 4.5, color: "bg-emerald-500" }
-  ],
-  history: [
-    { id: 1, activity: "Advanced Classroom Management", category: "Online Course", date: "Jan 20, 2024", hours: 4, status: "Approved", instructor: "Dr. Sarah Jenkins", enrolled: 45 },
-    { id: 2, activity: "Inquiry-Based Learning Workshop", category: "Workshop", date: "Jan 15, 2024", hours: 3, status: "Approved", instructor: "Prof. Michael Chen", enrolled: 32 },
-    { id: 3, activity: "Digital Literacy Seminar", category: "Seminar", date: "Jan 10, 2024", hours: 2.5, status: "Approved", instructor: "Sarah Johnson", enrolled: 28 },
-    { id: 4, activity: "Inclusive Education Strategies", category: "Online Course", date: "Dec 18, 2023", hours: 4, status: "Approved", instructor: "Dr. Lisa Wong", enrolled: 56 },
-    { id: 5, activity: "Annual Staff Training Day", category: "Workshop", date: "Nov 05, 2023", hours: 6, status: "Approved", instructor: "Multiple Facilitators", enrolled: 120 },
-    { id: 6, activity: "Faculty Meeting: New Curriculum", category: "Seminar", date: "Oct 22, 2023", hours: 2, status: "Pending", instructor: "HR Department", enrolled: 85 }
-  ]
-};
-
-const mockInsights = {
-  skills: [
-    { subject: 'Instruction', A: 120, B: 110, fullMark: 150 },
-    { subject: 'Classroom Mgmt', A: 98, B: 130, fullMark: 150 },
-    { subject: 'Assessment', A: 86, B: 130, fullMark: 150 },
-    { subject: 'Technology', A: 99, B: 100, fullMark: 150 },
-    { subject: 'Collaboration', A: 85, B: 90, fullMark: 150 },
-    { subject: 'Professionalism', A: 65, B: 85, fullMark: 150 },
-  ],
-  growth: [
-    { month: 'Sep', hours: 4 },
-    { month: 'Oct', hours: 7 },
-    { month: 'Nov', hours: 15 },
-    { month: 'Dec', hours: 19 },
-    { month: 'Jan', hours: 24.5 },
-  ],
-  strengths: [
-    { name: "Active Engagement", level: "Expert", description: "Consistently maintains high student participation throughout lessons." },
-    { name: "Curriculum Design", level: "Advanced", description: "Skillfully aligns lessons with complex learning objectives." }
-  ],
-  recommendations: [
-    { name: "Differentiation", focus: "Personalization", reason: "Focus on tiered assignments to address diverse learner needs." },
-    { name: "Data Analysis", focus: "Assessment", reason: "Leverage assessment data to drive instructional pivots." }
-  ]
-};
 
 const DashboardOverview = ({
   goals,
@@ -331,14 +136,14 @@ const DashboardOverview = ({
   userName,
   pdHours
 }: {
-  goals: typeof initialGoals,
-  events: typeof initialEvents,
+  goals: any[],
+  events: any[],
   observations: Observation[],
   onRegister: (id: string) => void,
   onView: (id: string) => void,
   onReflect: (obs: Observation) => void,
   userName: string,
-  pdHours: typeof mockPDHours
+  pdHours: any
 }) => {
   const navigate = useNavigate();
   const schoolAlignedGoals = goals.filter(g => g.isSchoolAligned).length;
@@ -491,7 +296,7 @@ function ObservationsView({
   );
 }
 
-function GoalsView({ goals, onAddGoal, userName }: { goals: typeof initialGoals, onAddGoal: (goal: NewGoal) => void, userName: string }) {
+function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (goal: NewGoal) => void, userName: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newGoal, setNewGoal] = useState({ title: "", description: "", dueDate: "" });
 
@@ -578,7 +383,7 @@ function CalendarView({
   events,
   onRegister
 }: {
-  events: typeof initialEvents,
+  events: any[],
   onRegister: (id: string) => void
 }) {
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 25)); // Set a default date in center of mock data
@@ -830,70 +635,36 @@ function CalendarView({
   );
 }
 
-function CoursesView() {
+function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], enrolledCourses?: any[] }) {
   const { user } = useAuth();
   const userName = user?.fullName || "Teacher";
   const userEmail = user?.email || "";
   const [isMoocFormOpen, setIsMoocFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | "all">("all");
-  const [downloadableCourses, setDownloadableCourses] = useState<any[]>(() => {
-    try {
-      const saved = localStorage.getItem('downloadable_courses');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error("Failed to load downloadable courses", e);
-      return [];
-    }
+
+  // Merge courses with enrollment status
+  const allCourses = courses.map(course => {
+    const enrollment = enrolledCourses.find(e => e.courseId === course.id);
+    return {
+      ...course,
+      status: enrollment ? (enrollment.progress === 100 ? 'completed' : 'in-progress') : 'recommended',
+      progress: enrollment?.progress || 0
+    };
   });
 
-  const categories = Array.from(new Set(mockCourses.map(c => c.category)));
-
-  // Convert downloadable courses to course format and merge with mock courses
-  const downloadableCoursesFormatted = downloadableCourses.map(dc => ({
-    id: `dc-${dc.id}`,
-    title: dc.title,
-    category: "Downloadable Course",
-    hours: 0,
-    duration: "Self-paced",
-    instructor: dc.uploadedBy || "Admin",
-    status: "recommended",
-    progress: 0,
-    rating: 0,
-    students: 0,
-    thumbnail: "/placeholder.svg",
-    description: dc.description || "",
-    url: dc.url,
-    isDownloadable: true
-  }));
-
-  const allCourses = [...mockCourses, ...downloadableCoursesFormatted];
-  const allCategories = Array.from(new Set(allCourses.map(c => c.category)));
+  const categories = Array.from(new Set(allCourses.map(c => c.category).filter(Boolean)));
+  const allCategories = categories;
 
   const filteredCourses = allCourses.filter(course => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+      (course.instructor || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory = selectedCategory === "all" || course.category === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
-
-  // Listen for downloadable course updates
-  useEffect(() => {
-    const handleCoursesUpdate = () => {
-      try {
-        const saved = localStorage.getItem('downloadable_courses');
-        setDownloadableCourses(saved ? JSON.parse(saved) : []);
-      } catch (e) {
-        console.error("Failed to sync downloadable courses", e);
-      }
-    };
-
-    window.addEventListener('downloadable-courses-updated', handleCoursesUpdate);
-    return () => window.removeEventListener('downloadable-courses-updated', handleCoursesUpdate);
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -1013,7 +784,7 @@ function CoursesView() {
   );
 }
 
-function CourseCard({ course }: { course: typeof mockCourses[0] & { isDownloadable?: boolean; url?: string } }) {
+function CourseCard({ course }: { course: any }) {
   return (
     <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col">
       <div className={cn("h-32 w-full relative", course.thumbnail)}>
@@ -1065,9 +836,20 @@ function CourseCard({ course }: { course: typeof mockCourses[0] & { isDownloadab
         <Button
           className="w-full gap-2 group/btn"
           variant={course.status === 'in-progress' ? 'default' : 'outline'}
-          onClick={() => {
+          onClick={async () => {
             if (course.isDownloadable && course.url) {
               window.open(course.url, '_blank');
+            } else if (course.status === 'recommended') {
+              try {
+                await api.post(`/courses/${course.id}/enroll`);
+                toast.success("Enrolled in course!");
+                // Trigger refresh via window event or refetch
+                window.location.reload(); // Simple refresh for now
+              } catch (e) {
+                toast.error("Failed to enroll");
+              }
+            } else {
+              toast.info("Course access coming soon!");
             }
           }}
         >
@@ -1079,10 +861,10 @@ function CourseCard({ course }: { course: typeof mockCourses[0] & { isDownloadab
   );
 }
 
-function PDHoursView({ pdHours, onOpenCreditDialog }: { pdHours: typeof mockPDHours, onOpenCreditDialog: () => void }) {
+function PDHoursView({ pdHours }: { pdHours: any }) {
   const { user } = useAuth();
   const userName = user?.fullName || "Teacher";
-  const [selectedActivity, setSelectedActivity] = useState<typeof mockPDHours.history[0] | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
   const handleExportPDF = () => {
     const doc = new jsPDF();
 
@@ -1134,10 +916,6 @@ function PDHoursView({ pdHours, onOpenCreditDialog }: { pdHours: typeof mockPDHo
           title="PD Hours Tracking"
           subtitle="Monitor your professional development progress and claim credits"
         />
-        <Button onClick={onOpenCreditDialog} className="gap-2">
-          <PlusCircle className="w-4 h-4" />
-          Request Credit
-        </Button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -1396,269 +1174,7 @@ function PDHoursView({ pdHours, onOpenCreditDialog }: { pdHours: typeof mockPDHo
 }
 
 function InsightsView() {
-  const { user } = useAuth();
-  const userName = user?.fullName || "Teacher";
-  const navigate = useNavigate();
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const handleDownloadPortfolio = () => {
-    const doc = new jsPDF();
-
-    // Title
-    doc.setFontSize(22);
-    doc.setTextColor(41, 128, 185);
-    doc.text("Professional Growth Portfolio", 20, 20);
-
-    // Subtitle
-    doc.setFontSize(16);
-    doc.setTextColor(100);
-    doc.text(`${userName} - Teacher`, 20, 30);
-    doc.setFontSize(10);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 36);
-
-    let yPos = 50;
-
-    // Core Strengths Section
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text("Core Strengths", 20, yPos);
-    yPos += 10;
-
-    const strengthsData = mockInsights.strengths.map(s => [s.name, s.level, s.description]);
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Strength', 'Level', 'Description']],
-      body: strengthsData,
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] },
-      styles: { fontSize: 10 }
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 20;
-
-    // Skill Competencies Section
-    doc.setFontSize(14);
-    doc.text("Skill Competencies (Radar Data)", 20, yPos);
-    yPos += 10;
-
-    const skillsData = mockInsights.skills.map(s => [s.subject, s.A.toString(), s.B.toString(), s.fullMark.toString()]);
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Subject', 'Score (Growth)', 'Benchmark', 'Max Score']],
-      body: skillsData,
-      theme: 'striped',
-      headStyles: { fillColor: [39, 174, 96] }, // Emerald color
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 20;
-
-    // Growth Trends Section
-    doc.setFontSize(14);
-    doc.text("Growth Trends (Cumulative Hours)", 20, yPos);
-    yPos += 10;
-
-    const growthData = mockInsights.growth.map(g => [g.month, `${g.hours}h`]);
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Month', 'Hours']],
-      body: growthData,
-      theme: 'plain',
-      styles: { cellWidth: 50 }
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 20;
-
-    // Recommendations Section
-    doc.setFontSize(14);
-    doc.text("Growth Recommendations", 20, yPos);
-    yPos += 10;
-
-    mockInsights.recommendations.forEach((rec) => {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text(`• ${rec.name} (${rec.focus})`, 25, yPos);
-      yPos += 6;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(rec.reason, 30, yPos);
-      yPos += 10;
-    });
-
-    // Save
-    doc.save("growth_portfolio.pdf");
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <PageHeader
-          title="Professional Insights"
-          subtitle="Data-driven overview of your teaching competencies and growth"
-        />
-        <div className="flex items-center gap-2">
-          <AIAnalysisModal
-            isOpen={isAIModalOpen}
-            onClose={() => setIsAIModalOpen(false)}
-            data={{ insights: mockInsights }}
-            type="teacher"
-            title="Personalized Professional Growth Analysis"
-          />
-          <Button
-            onClick={() => setIsAIModalOpen(true)}
-            variant="outline"
-            className="gap-2 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border-indigo-200 text-indigo-700 font-bold"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            AI Smart Insights
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={handleDownloadPortfolio}>
-            <Download className="w-4 h-4" />
-            Download Growth Portfolio
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Competency Radar */}
-        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" />
-              Skill Competencies
-            </CardTitle>
-            <CardDescription>Based on observation scores and PD completions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={mockInsights.skills}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 150]} tick={false} axisLine={false} />
-                  <Radar
-                    name="Growth"
-                    dataKey="A"
-                    stroke="#2563eb"
-                    fill="#2563eb"
-                    fillOpacity={0.6}
-                  />
-                  <Radar
-                    name="Benchmark"
-                    dataKey="B"
-                    stroke="#94a3b8"
-                    fill="#94a3b8"
-                    fillOpacity={0.2}
-                  />
-                  <Legend />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Growth Trend */}
-        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
-              Professional Growth Trend
-            </CardTitle>
-            <CardDescription>Cumulative PD hours over the academic year</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px] w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockInsights.growth}>
-                  <defs>
-                    <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="hours"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorHours)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Identified Strengths */}
-        <Card className="lg:col-span-1 border-none shadow-xl bg-background/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-primary">
-              <ShieldCheck className="w-5 h-5" />
-              Core Strengths
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockInsights.strengths.map((strength, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-primary/5 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm">{strength.name}</span>
-                  <Badge className="bg-primary/20 text-primary border-none hover:bg-primary/20">{strength.level}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">{strength.description}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Personalized Actions */}
-        <Card className="lg:col-span-2 border-none shadow-xl bg-background/50 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-600">
-              <Sparkles className="w-5 h-5" />
-              Growth Recommendations
-            </CardTitle>
-            <CardDescription>Targeted actions to reach the next competency level</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              {mockInsights.recommendations.map((rec, idx) => (
-                <div key={idx} onClick={() => navigate("/teacher/courses")} className="group p-5 rounded-2xl border border-muted/50 hover:bg-muted/30 transition-all cursor-pointer">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="secondary" className="font-semibold">{rec.focus}</Badge>
-                    <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <h4 className="font-bold mb-1">{rec.name}</h4>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{rec.reason}</p>
-                </div>
-              ))}
-            </div>
-            <div className="pt-2">
-              <Button variant="link" onClick={() => navigate("/teacher/courses")} className="p-0 h-auto gap-2 text-primary font-bold group">
-                Browse related courses
-                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
+  return <PlaceholderView title="Identified Strengths" icon={ShieldCheck} />;
 }
 
 function PlaceholderView({ title, icon: Icon }: { title: string; icon: React.ComponentType<{ className?: string }> }) {
@@ -1692,45 +1208,23 @@ export default function TeacherDashboard() {
   const role = user?.role || "TEACHER";
 
   const navigate = useNavigate();
-  const [goals, setGoals] = useState(() => {
-    try {
-      const saved = localStorage.getItem('goals_data');
-      return saved ? JSON.parse(saved) : initialGoals;
-    } catch (e) {
-      console.error("Failed to load goals", e);
-      return initialGoals;
-    }
-  });
-  const [events, setEvents] = useState<any[]>(initialEvents);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
   const [observations, setObservations] = useState<Observation[]>([]);
-  const [pdHours, setPdHours] = useState(() => {
-    try {
-      const moocSubmissions = localStorage.getItem('mooc_submissions');
-      if (moocSubmissions) {
-        const submissions = JSON.parse(moocSubmissions);
-        const totalHours = submissions.reduce((acc: number, sub: any) => acc + Number(sub.hours || 0), 0);
-        const historyFromSubmissions = submissions.map((sub: any, idx: number) => ({
-          id: sub.id || idx + 100,
-          activity: sub.courseName || "MOOC Evidence Submission",
-          category: "Online Course",
-          date: sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A",
-          hours: Number(sub.hours || 0),
-          status: "Pending"
-        }));
-        return {
-          ...mockPDHours,
-          total: mockPDHours.total + totalHours,
-          history: [...mockPDHours.history, ...historyFromSubmissions]
-        };
-      }
-      return mockPDHours;
-    } catch (e) {
-      console.error("Failed to load PD hours", e);
-      return mockPDHours;
-    }
+  const [pdHours, setPdHours] = useState({
+    total: 0,
+    target: 30,
+    categories: [
+      { name: "Workshops", hours: 0, color: "bg-blue-500" },
+      { name: "Online Courses", hours: 0, color: "bg-purple-500" },
+      { name: "Seminars", hours: 0, color: "bg-emerald-500" }
+    ],
+    history: []
   });
   const [selectedReflectObs, setSelectedReflectObs] = useState<Observation | null>(null);
-  const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
+
 
   // Fetch initial data via API
   useEffect(() => {
@@ -1738,31 +1232,32 @@ export default function TeacherDashboard() {
       try {
         const response = await api.get('/observations');
         if (response.data?.status === 'success') {
-          const apiObservations = response.data?.data?.observations || [];
+          const apiObservations = (response.data?.data?.observations || []).map((obs: any) => {
+            let parsedReflection = obs.detailedReflection;
+            if (typeof obs.detailedReflection === 'string') {
+              try {
+                parsedReflection = JSON.parse(obs.detailedReflection);
+              } catch (e) {
+                // ignore
+              }
+            }
+            return {
+              ...obs,
+              teacher: obs.teacher?.fullName || obs.teacherEmail || 'Unknown Teacher',
+              detailedReflection: parsedReflection || {}
+            };
+          });
+
           // Filter observations for the current teacher
-          let teacherObservations = apiObservations.filter(
+          const teacherObservations = apiObservations.filter(
             (obs: Observation) => obs.teacherId === user?.id || obs.teacherEmail === userEmail || obs.teacher === userName
           );
-
-          // If no observations in API, use mock data but personalize it
-          if (teacherObservations.length === 0) {
-            teacherObservations = mockObservations.map(obs => ({
-              ...obs,
-              teacher: userName,
-              teacherEmail: userEmail
-            }));
-          }
 
           setObservations(teacherObservations);
         }
       } catch (error) {
         console.error("Failed to fetch observations:", error);
-        // Fallback to personalized mock data
-        setObservations(mockObservations.map(obs => ({
-          ...obs,
-          teacher: userName,
-          teacherEmail: userEmail
-        })));
+        setObservations([]);
       }
     };
 
@@ -1774,19 +1269,12 @@ export default function TeacherDashboard() {
           if (apiGoals.length > 0) {
             setGoals(apiGoals);
           } else {
-            // Personalize initial goals if API returns nothing
-            setGoals(initialGoals.map(g => ({
-              ...g,
-              teacher: userName
-            })));
+            setGoals([]);
           }
         }
       } catch (error) {
         console.error("Failed to fetch goals:", error);
-        setGoals(initialGoals.map(g => ({
-          ...g,
-          teacher: userName
-        })));
+        setGoals([]);
       }
     };
 
@@ -1809,11 +1297,11 @@ export default function TeacherDashboard() {
             status: sub.status || "Pending"
           }));
 
-          setPdHours({
-            ...mockPDHours,
-            total: mockPDHours.total + totalHours,
-            history: [...mockPDHours.history, ...historyFromSubmissions]
-          });
+          setPdHours(prev => ({
+            ...prev,
+            total: totalHours,
+            history: historyFromSubmissions
+          }));
         }
       } catch (error) {
         console.error("Failed to fetch MOOCs:", error);
@@ -1831,10 +1319,34 @@ export default function TeacherDashboard() {
       }
     };
 
+    const fetchCourses = async () => {
+      try {
+        const response = await api.get('/courses');
+        if (response.data?.status === 'success') {
+          setCourses(response.data.data.courses || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      }
+    };
+
+    const fetchEnrollments = async () => {
+      try {
+        const response = await api.get('/courses/my-enrollments');
+        if (response.data?.status === 'success') {
+          setEnrolledCourses(response.data.data.enrollments || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch enrollments:", error);
+      }
+    };
+
     fetchObservations();
     fetchGoals();
     fetchMoocsAndPdHours();
     fetchTraining();
+    fetchCourses();
+    fetchEnrollments();
 
     // Socket.io Real-time Sync
     const socket = getSocket();
@@ -1885,6 +1397,21 @@ export default function TeacherDashboard() {
         toast.error(`Your MOOC submission "${updatedSub.courseName}" was not approved.`);
       }
     });
+
+    socket.on('course:created', () => {
+      fetchCourses();
+    });
+
+    socket.on('course:updated', () => {
+      fetchCourses();
+      fetchEnrollments();
+    });
+
+    socket.on('course:deleted', () => {
+      fetchCourses();
+      fetchEnrollments();
+    });
+
     return () => {
       socket.off('observation:created');
       socket.off('observation:updated');
@@ -1892,6 +1419,9 @@ export default function TeacherDashboard() {
       socket.off('goal:updated');
       socket.off('mooc:created');
       socket.off('mooc:updated');
+      socket.off('course:created');
+      socket.off('course:updated');
+      socket.off('course:deleted');
       socket.emit('leave_room', user?.id || userName);
     };
   }, [userName, userEmail, user?.id]);
@@ -1934,9 +1464,7 @@ export default function TeacherDashboard() {
     navigate(`/teacher/observations/${id}`);
   };
 
-  useEffect(() => {
-    localStorage.setItem('goals_data', JSON.stringify(goals));
-  }, [goals]);
+
 
   // Sync training events to localStorage when changed (e.g., registration)
   useEffect(() => {
@@ -2026,8 +1554,8 @@ export default function TeacherDashboard() {
         <Route path="observations/:id" element={<ObservationDetailView observations={userObservations} />} />
         <Route path="goals" element={<GoalsView goals={userGoals} onAddGoal={handleAddGoal} userName={userName} />} />
         <Route path="calendar" element={<CalendarView events={events} onRegister={handleRegister} />} />
-        <Route path="courses" element={<CoursesView />} />
-        <Route path="hours" element={<PDHoursView pdHours={pdHours} onOpenCreditDialog={() => setIsCreditDialogOpen(true)} />} />
+        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
+        <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />
         <Route path="profile" element={
@@ -2148,35 +1676,7 @@ export default function TeacherDashboard() {
         </>
       )}
 
-      {/* Credit Request Dialog */}
-      <Dialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-background/95 backdrop-blur-xl border-none">
-          {getActiveTemplateByType("Other", "MOOC") ? (
-            <div className="space-y-6">
-              <div className="border-b pb-4">
-                <h2 className="text-2xl font-bold">Request PD Credit (Master)</h2>
-                <p className="text-muted-foreground italic">Submit your professional development evidence using the latest official form</p>
-              </div>
-              <DynamicForm
-                fields={getActiveTemplateByType("Other", "MOOC")!.fields}
-                submitLabel="Submit Credit Request"
-                onCancel={() => setIsCreditDialogOpen(false)}
-                onSubmit={(data) => {
-                  toast.success("PD Credit request submitted successfully using Master Template!");
-                  setIsCreditDialogOpen(false);
-                }}
-              />
-            </div>
-          ) : (
-            <MoocEvidenceForm
-              onCancel={() => setIsCreditDialogOpen(false)}
-              onSubmitSuccess={() => setIsCreditDialogOpen(false)}
-              userEmail={userEmail}
-              userName={userName}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+
     </DashboardLayout>
   );
 }

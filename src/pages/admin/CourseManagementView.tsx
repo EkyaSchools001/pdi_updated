@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
@@ -17,105 +17,57 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { courseService } from "@/services/courseService";
+import { getSocket } from "@/lib/socket";
 
 
-const initialCourses = [
-    { id: 1, title: "Differentiated Instruction Workshop", category: "Pedagogy", hours: 4, instructor: "Dr. A. Smith", status: "Active", enrolled: 45 },
-    { id: 2, title: "Digital Literacy in Classroom", category: "Technology", hours: 2, instructor: "Sarah J.", status: "Active", enrolled: 32 },
-    { id: 3, title: "Advanced Formative Assessment", category: "Assessment", hours: 6, instructor: "Prof. R. Doe", status: "Draft", enrolled: 0 },
-    { id: 4, title: "Inclusive Classroom Strategies", category: "Culture", hours: 3, instructor: "Maria G.", status: "Active", enrolled: 28 },
-    { id: 5, title: "Code of Conduct Refresher", category: "Compliance", hours: 1, instructor: "HR Dept", status: "Mandatory", enrolled: 120 },
-];
+// Courses will be fetched from API or loaded from localStorage for downloadables
+const initialCourses: any[] = [];
 
-// Mock enrolled members data
-const mockEnrolledMembers = {
-    1: [
-        { id: 1, name: "Teacher One", email: "teacher1.btmlayout@pdi.com", department: "Science", enrolledDate: "Jan 10, 2024", progress: 75 },
-        { id: 2, name: "Michael Chen", email: "michael.c@ekyaschools.com", department: "Mathematics", enrolledDate: "Jan 12, 2024", progress: 60 },
-        { id: 3, name: "Sarah Johnson", email: "sarah.j@ekyaschools.com", department: "English", enrolledDate: "Jan 15, 2024", progress: 90 },
-        { id: 4, name: "David Miller", email: "david.m@ekyaschools.com", department: "History", enrolledDate: "Jan 18, 2024", progress: 45 },
-        { id: 5, name: "Lisa Wong", email: "lisa.w@ekyaschools.com", department: "Science", enrolledDate: "Jan 20, 2024", progress: 100 },
-    ],
-    2: [
-        { id: 1, name: "John Smith", email: "john.s@ekyaschools.com", department: "Technology", enrolledDate: "Jan 8, 2024", progress: 80 },
-        { id: 2, name: "Maria Garcia", email: "maria.g@ekyaschools.com", department: "Arts", enrolledDate: "Jan 10, 2024", progress: 55 },
-    ],
-    4: [
-        { id: 1, name: "Teacher One", email: "teacher1.btmlayout@pdi.com", department: "Science", enrolledDate: "Jan 5, 2024", progress: 85 },
-        { id: 2, name: "Michael Chen", email: "michael.c@ekyaschools.com", department: "Mathematics", enrolledDate: "Jan 7, 2024", progress: 70 },
-    ],
-    5: [
-        { id: 1, name: "All Staff", email: "staff@ekyaschools.com", department: "All Departments", enrolledDate: "Nov 1, 2023", progress: 100 },
-    ]
-};
+// Enrolled members will be fetched from API
+const mockEnrolledMembers: Record<string, any[]> = {};
 
 export function CourseManagementView() {
-    const [courses, setCourses] = useState(() => {
-        // Load initial mock courses
-        const baseCourses = [...initialCourses];
+    const [courses, setCourses] = useState<any[]>([]);
+    const [pendingCourses, setPendingCourses] = useState<any[]>([]);
 
-        // Load downloadable courses from localStorage
+    // Unified course fetching
+    const fetchCourses = async () => {
         try {
-            const saved = localStorage.getItem('downloadable_courses');
-            if (saved) {
-                const downloadable = JSON.parse(saved);
-                const formattedDownloadable = downloadable.map((dc: any) => ({
-                    id: `dc-${dc.id}`,
-                    title: dc.title,
-                    category: "Downloadable Course", // Explicit category as requested
-                    hours: 0,
-                    instructor: "Admin",
-                    status: "Active",
-                    enrolled: 0,
-                    isDownloadable: true,
-                    url: dc.url,
-                    type: dc.type,
-                    description: dc.description,
-                    uploadedAt: dc.uploadedAt
-                }));
-                return [...baseCourses, ...formattedDownloadable];
-            }
-        } catch (e) {
-            console.error("Failed to load downloadable courses", e);
+            const data = await courseService.getAllCourses();
+            setCourses(data);
+        } catch (error) {
+            console.error("Failed to fetch courses", error);
+            toast.error("Failed to load course catalogue");
         }
-        return baseCourses;
-    });
+    };
 
-    // Listen for updates to downloadable courses
     useEffect(() => {
-        const handleCoursesUpdate = () => {
-            try {
-                const saved = localStorage.getItem('downloadable_courses');
-                if (saved) {
-                    const downloadable = JSON.parse(saved);
-                    const formattedDownloadable = downloadable.map((dc: any) => ({
-                        id: `dc-${dc.id}`,
-                        title: dc.title,
-                        category: "Downloadable Course",
-                        hours: 0,
-                        instructor: "Admin",
-                        status: "Active",
-                        enrolled: 0,
-                        isDownloadable: true,
-                        url: dc.url,
-                        type: dc.type,
-                        description: dc.description,
-                        uploadedAt: dc.uploadedAt
-                    }));
+        const socket = getSocket();
+        socket.on('course:created', fetchCourses);
+        socket.on('course:updated', fetchCourses);
+        socket.on('course:deleted', fetchCourses);
 
-                    setCourses(prev => {
-                        // Filter out existing downloadable courses to prevent duplicates/stale data
-                        const baseCourses = prev.filter(c => !c.id.toString().startsWith('dc-'));
-                        return [...baseCourses, ...formattedDownloadable];
-                    });
-                }
-            } catch (e) {
-                console.error("Failed to sync downloadable courses", e);
+        const fetchPending = async () => {
+            try {
+                const pending = await courseService.getAllCourses('PENDING_APPROVAL');
+                setPendingCourses(pending);
+            } catch (error) {
+                console.error("Failed to fetch pending courses", error);
             }
         };
 
-        window.addEventListener('downloadable-courses-updated', handleCoursesUpdate);
-        return () => window.removeEventListener('downloadable-courses-updated', handleCoursesUpdate);
+        fetchPending();
+        fetchCourses();
+
+        // Listen for internal updates if needed, though API is source of truth
+        window.addEventListener('courses-updated', fetchCourses);
+        return () => {
+            window.removeEventListener('courses-updated', fetchCourses);
+            socket.off('course:created', fetchCourses);
+            socket.off('course:updated', fetchCourses);
+            socket.off('course:deleted', fetchCourses);
+        };
     }, []);
 
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -129,46 +81,64 @@ export function CourseManagementView() {
     const [newCourse, setNewCourse] = useState({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active" });
     const [downloadableResource, setDownloadableResource] = useState({ title: "", type: "link", url: "", description: "" });
 
-    const handleAddCourse = () => {
+    const handleAddCourse = async () => {
         if (!newCourse.title) {
             toast.error("Please enter a course title");
             return;
         }
-        const course = {
-            id: courses.length > 0 ? Math.max(...courses.map(c => c.id)) + 1 : 1,
-            title: newCourse.title,
-            category: newCourse.category,
-            hours: parseInt(newCourse.hours),
-            instructor: newCourse.instructor || "TBD",
-            status: newCourse.status || "Draft",
-            enrolled: 0
-        };
-        setCourses([course, ...courses]);
-        setIsAddOpen(false);
-        setNewCourse({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active" });
-        toast.success("Course added successfully");
+        try {
+            const courseData = {
+                title: newCourse.title,
+                category: newCourse.category,
+                hours: parseInt(newCourse.hours),
+                instructor: newCourse.instructor || "TBD",
+                status: (newCourse.status || "Draft") as any,
+            };
+            const createdCourse = await courseService.createCourse(courseData);
+            setCourses([createdCourse, ...courses]);
+            setIsAddOpen(false);
+            setNewCourse({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active" });
+            toast.success("Course added successfully");
+        } catch (error) {
+            toast.error("Failed to add course");
+        }
     };
 
-    const handleEditCourse = () => {
+    const handleEditCourse = async () => {
         if (!currentCourse?.title) {
             toast.error("Please enter a course title");
             return;
         }
-        setCourses(courses.map(c => c.id === currentCourse.id ? currentCourse : c));
-        setIsEditOpen(false);
-        toast.success("Course updated successfully");
+        try {
+            const updatedCourse = await courseService.updateCourse(currentCourse.id, currentCourse);
+            setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
+            setIsEditOpen(false);
+            toast.success("Course updated successfully");
+        } catch (error) {
+            toast.error("Failed to update course");
+        }
     };
 
-    const handleDeleteCourse = () => {
+    const handleDeleteCourse = async () => {
         if (!currentCourse) return;
-        setCourses(courses.filter(c => c.id !== currentCourse.id));
-        setIsDeleteOpen(false);
-        toast.success("Course deleted successfully");
+        try {
+            await courseService.deleteCourse(currentCourse.id);
+            setCourses(courses.filter(c => c.id !== currentCourse.id));
+            setIsDeleteOpen(false);
+            toast.success("Course deleted successfully");
+        } catch (error) {
+            toast.error("Failed to delete course");
+        }
     };
 
-    const handleStatusChange = (id: number, newStatus: string) => {
-        setCourses(courses.map(c => c.id === id ? { ...c, status: newStatus } : c));
-        toast.success(`Status updated to ${newStatus}`);
+    const handleStatusChange = async (id: string, newStatus: string) => {
+        try {
+            await courseService.updateCourse(id, { status: newStatus as any });
+            setCourses(courses.map(c => c.id === id ? { ...c, status: newStatus } : c));
+            toast.success(`Status updated to ${newStatus}`);
+        } catch (error) {
+            toast.error("Failed to update status");
+        }
     };
 
     return (
@@ -304,37 +274,31 @@ export function CourseManagementView() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDownloadableOpen(false)}>Cancel</Button>
-                        <Button onClick={() => {
+                        <Button onClick={async () => {
                             if (!downloadableResource.title || !downloadableResource.url) {
                                 toast.error("Please fill in all required fields");
                                 return;
                             }
 
-                            // Create new downloadable course object
-                            const newDownloadableCourse = {
-                                id: Date.now().toString(),
-                                title: downloadableResource.title,
-                                type: downloadableResource.type,
-                                url: downloadableResource.url,
-                                description: downloadableResource.description,
-                                uploadedAt: new Date().toISOString(),
-                                uploadedBy: "Admin"
-                            };
+                            try {
+                                await courseService.createCourse({
+                                    title: downloadableResource.title,
+                                    category: "Downloadable Course",
+                                    hours: 0,
+                                    instructor: "Admin",
+                                    status: "Active",
+                                    url: downloadableResource.url,
+                                    description: downloadableResource.description,
+                                    isDownloadable: true
+                                });
 
-                            // Get existing courses from localStorage
-                            const existing = localStorage.getItem('downloadable_courses');
-                            const courses = existing ? JSON.parse(existing) : [];
-
-                            // Add new course and save
-                            courses.push(newDownloadableCourse);
-                            localStorage.setItem('downloadable_courses', JSON.stringify(courses));
-
-                            // Dispatch event to notify other components
-                            window.dispatchEvent(new Event('downloadable-courses-updated'));
-
-                            toast.success(`${downloadableResource.type === 'video' ? 'Video' : 'Course'} uploaded successfully!`);
-                            setDownloadableResource({ title: "", type: "link", url: "", description: "" });
-                            setIsDownloadableOpen(false);
+                                toast.success("Resource uploaded safely to server!");
+                                setDownloadableResource({ title: "", type: "link", url: "", description: "" });
+                                setIsDownloadableOpen(false);
+                                fetchCourses();
+                            } catch (e) {
+                                toast.error("Failed to upload resource to server");
+                            }
                         }}>Upload Resource</Button>
                     </DialogFooter>
                 </DialogContent>
@@ -349,6 +313,81 @@ export function CourseManagementView() {
                     <Filter className="w-4 h-4" />
                 </Button>
             </div>
+
+            {pendingCourses.length > 0 && (
+                <Card className="border-orange-200 bg-orange-50 mb-6 shadow-sm">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-lg font-semibold text-orange-800 flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5" />
+                            Pending Course Approvals
+                        </CardTitle>
+                        <CardDescription className="text-orange-600">
+                            The following courses have been proposed by School Leaders and require your approval.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            {pendingCourses.map(course => (
+                                <div key={course.id} className="flex items-center justify-between p-4 bg-white rounded-lg border border-orange-100 shadow-sm">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="font-semibold text-foreground">{course.title}</h4>
+                                            <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                                                {course.category}
+                                            </Badge>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground flex items-center gap-4">
+                                            <span className="flex items-center gap-1"><User className="w-3 h-3" /> {course.instructor}</span>
+                                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {course.hours}h</span>
+                                        </div>
+                                        {course.description && (
+                                            <p className="text-xs text-muted-foreground mt-2 max-w-2xl whitespace-pre-wrap">
+                                                {course.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-red-600 border-red-200 hover:bg-red-50"
+                                            onClick={async () => {
+                                                if (confirm("Are you sure you want to reject this course proposal?")) {
+                                                    try {
+                                                        await courseService.deleteCourse(course.id);
+                                                        setPendingCourses(prev => prev.filter(c => c.id !== course.id));
+                                                        toast.success("Course proposal rejected.");
+                                                    } catch (e) {
+                                                        toast.error("Failed to reject course.");
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            Reject
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                            onClick={async () => {
+                                                try {
+                                                    await courseService.updateCourse(course.id, { status: "Active" });
+                                                    setPendingCourses(prev => prev.filter(c => c.id !== course.id));
+                                                    // Optionally refresh main list or add to it strictly if we are using real data fully
+                                                    toast.success("Course approved and added to catalogue!");
+                                                } catch (e) {
+                                                    toast.error("Failed to approve course.");
+                                                }
+                                            }}
+                                        >
+                                            Approve
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <Card className="border-none shadow-md">
                 <CardContent className="p-0 overflow-x-auto">
@@ -394,7 +433,7 @@ export function CourseManagementView() {
                                             variant={course.status === 'Active' ? 'default' : course.status === 'Draft' ? 'secondary' : 'destructive'}
                                             className={course.status === 'Active' ? 'bg-green-600' : ''}
                                         >
-                                            {course.status}
+                                            {course.status} {/* status: course.status as any, // Bypass strict literal check for API safety */}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -413,10 +452,10 @@ export function CourseManagementView() {
                                                     <Edit className="w-4 h-4 mr-2" /> Edit Details
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onClick={() => handleStatusChange(course.id, course.status === 'Active' ? 'Draft' : 'Active')}>
-                                                    <Plus className="w-4 h-4 mr-2" /> Toggle Status
+                                                    <ShieldCheck className="w-4 h-4 mr-2" /> Toggle Status
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem className="text-destructive" onClick={() => { setCurrentCourse(course); setIsDeleteOpen(true); }}>
-                                                    <MoreHorizontal className="w-4 h-4 mr-2" /> Delete
+                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>

@@ -36,13 +36,8 @@ interface User {
     lastActive: string | null;
 }
 
-const initialUsers: User[] = [
-    { id: "1", fullName: "Sarah Johnson", email: "sarah.j@school.edu", role: "ADMIN", campusId: "Main Campus", department: null, status: "Active", lastActive: "2 hours ago" },
-    { id: "2", fullName: "Michael Chen", email: "m.chen@school.edu", role: "TEACHER", campusId: "North Campus", department: null, status: "Active", lastActive: "5 hours ago" },
-    { id: "3", fullName: "Elena Rodriguez", email: "elena.r@school.edu", role: "TEACHER", campusId: "Main Campus", department: null, status: "Inactive", lastActive: "2 days ago" },
-    { id: "4", fullName: "David Wilson", email: "d.wilson@school.edu", role: "LEADER", campusId: "South Campus", department: null, status: "Active", lastActive: "1 hour ago" },
-    { id: "5", fullName: "Priya Sharma", email: "p.sharma@school.edu", role: "TEACHER", campusId: "Main Campus", department: null, status: "Active", lastActive: "3 hours ago" },
-];
+// Initial users will be fetched from API
+const initialUsers: User[] = [];
 
 export function UserManagementView() {
     const navigate = useNavigate();
@@ -91,7 +86,7 @@ export function UserManagementView() {
     const uniqueCampuses = Array.from(new Set(users.map(user => user.campusId).filter(Boolean)));
 
     const teacherCount = users.filter(u => u.role === "TEACHER").length;
-    const leaderCount = users.filter(u => u.role === "LEADER").length;
+    const leaderCount = users.filter(u => u.role === "LEADER" || u.role === "SCHOOL_LEADER").length;
 
     const filteredUsers = users.filter(user => {
         // Exclude Superadmin and Management roles from view
@@ -102,7 +97,7 @@ export function UserManagementView() {
             user.role.toLowerCase().includes(searchQuery.toLowerCase());
 
         let matchesTab = true;
-        if (activeTab === "leader") matchesTab = user.role === "LEADER";
+        if (activeTab === "leader") matchesTab = user.role === "LEADER" || user.role === "SCHOOL_LEADER";
         if (activeTab === "teacher") matchesTab = user.role === "TEACHER";
 
         let matchesCampus = true;
@@ -240,7 +235,7 @@ export function UserManagementView() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="TEACHER">Teacher</SelectItem>
-                                                    <SelectItem value="LEADER">Leader</SelectItem>
+                                                    <SelectItem value="SCHOOL_LEADER">School Leader</SelectItem>
                                                     <SelectItem value="ADMIN">Admin</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -291,7 +286,7 @@ export function UserManagementView() {
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="TEACHER">Teacher</SelectItem>
-                                                        <SelectItem value="LEADER">Leader</SelectItem>
+                                                        <SelectItem value="SCHOOL_LEADER">School Leader</SelectItem>
                                                         <SelectItem value="ADMIN">Admin</SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -343,7 +338,7 @@ export function UserManagementView() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="TEACHER">Teacher</SelectItem>
-                                                    <SelectItem value="LEADER">Leader</SelectItem>
+                                                    <SelectItem value="SCHOOL_LEADER">School Leader</SelectItem>
                                                     <SelectItem value="ADMIN">Admin</SelectItem>
                                                 </SelectContent>
                                             </Select>

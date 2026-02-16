@@ -1,9 +1,7 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
-
-const prisma = new PrismaClient();
 
 export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
     try {
@@ -38,7 +36,14 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
 
 export const createTrainingEvent = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, topic, type, date, location, capacity, status, proposedById } = req.body;
+        const { title, topic, type, date, time, location, capacity, description, objectives, status, proposedById } = req.body;
+
+        if (!title || !date || !location) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'Missing required fields: title, date, and location are required'
+            });
+        }
 
         const event = await prisma.trainingEvent.create({
             data: {
@@ -46,8 +51,11 @@ export const createTrainingEvent = async (req: AuthRequest, res: Response) => {
                 topic,
                 type,
                 date,
+                time,
                 location,
-                capacity: parseInt(capacity),
+                capacity: capacity ? parseInt(capacity.toString()) : 30, // Default to 30 if not provided
+                description,
+                objectives,
                 status: status || 'PLANNED',
                 proposedById: proposedById || req.user?.id
             }
@@ -59,9 +67,9 @@ export const createTrainingEvent = async (req: AuthRequest, res: Response) => {
         });
     } catch (error: any) {
         console.error('Error creating training event:', error);
-        res.status(500).json({
+        res.status(error.statusCode || 500).json({
             status: 'error',
-            message: 'Internal server error'
+            message: error.message || 'Internal server error'
         });
     }
 };
@@ -100,6 +108,7 @@ export const registerForEvent = async (req: AuthRequest, res: Response) => {
     }
 };
 
+
 export const updateEventStatus = async (req: AuthRequest, res: Response) => {
     try {
         const { id } = req.params;
@@ -115,6 +124,67 @@ export const updateEventStatus = async (req: AuthRequest, res: Response) => {
             data: { event }
         });
     } catch (error: any) {
+        res.status(500).json({
+            status: 'error',
+            message: 'Internal server error'
+        });
+    }
+};
+
+
+export const deleteTrainingEvent = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Manual cascade: Delete all registrations for this event first
+        await prisma.registration.deleteMany({
+            where: { eventId: id as string }
+        });
+
+        await prisma.trainingEvent.delete({
+            where: { id: id as string }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: null
+        });
+    } catch (error: any) {
+        console.error('Error deleting training event:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Internal server error'
+        });
+    }
+};
+
+export const updateTrainingEvent = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, topic, type, date, time, location, capacity, description, objectives, status } = req.body;
+
+        const event = await prisma.trainingEvent.update({
+            where: { id: id as string },
+            data: {
+                title,
+                topic,
+                type,
+                date,
+                time,
+                location,
+                capacity: capacity ? parseInt(capacity) : undefined,
+                description,
+                objectives,
+                status
+            }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: { event }
+        });
+    } catch (error: any) {
+        console.error('Error updating training event:', error);
         res.status(500).json({
             status: 'error',
             message: 'Internal server error'

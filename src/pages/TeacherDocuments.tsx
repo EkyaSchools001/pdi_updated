@@ -24,58 +24,9 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
-// Mock data - replace with API calls
-const mockDocuments = [
-    {
-        id: "1",
-        title: "Code of Conduct 2025",
-        description: "Updated code of conduct for all teaching staff",
-        version: "2.0",
-        createdAt: "2025-01-15",
-        createdBy: "Admin User",
-        requiresSignature: true,
-        fileUrl: "/documents/code-of-conduct.pdf",
-        fileName: "code-of-conduct-2025.pdf",
-        fileSize: 245000,
-        status: "PENDING",
-        viewedAt: null,
-        acknowledgedAt: null,
-    },
-    {
-        id: "2",
-        title: "Safety Guidelines",
-        description: "Classroom and campus safety procedures",
-        version: "1.5",
-        createdAt: "2025-01-10",
-        createdBy: "Admin User",
-        requiresSignature: false,
-        fileUrl: "/documents/safety-guidelines.pdf",
-        fileName: "safety-guidelines.pdf",
-        fileSize: 180000,
-        status: "ACKNOWLEDGED",
-        viewedAt: "2025-01-12T10:30:00",
-        acknowledgedAt: "2025-01-12T10:35:00",
-    },
-    {
-        id: "3",
-        title: "Data Privacy Policy",
-        description: "Student data handling and privacy guidelines",
-        version: "1.0",
-        createdAt: "2024-12-20",
-        createdBy: "Admin User",
-        requiresSignature: true,
-        fileUrl: "/documents/data-privacy.pdf",
-        fileName: "data-privacy-policy.pdf",
-        fileSize: 320000,
-        status: "SIGNED",
-        viewedAt: "2024-12-22T09:15:00",
-        acknowledgedAt: "2024-12-22T09:20:00",
-        signedAt: "2024-12-22T09:25:00",
-    },
-];
-
 interface Document {
     id: string;
+    documentId: string;
     title: string;
     description: string;
     version: string;
@@ -93,7 +44,7 @@ interface Document {
 
 export default function TeacherDocuments() {
     const { user } = useAuth();
-    const [documents, setDocuments] = useState<Document[]>(mockDocuments);
+    const [documents, setDocuments] = useState<Document[]>([]);
     const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
     const [showViewDialog, setShowViewDialog] = useState(false);
     const [showSignDialog, setShowSignDialog] = useState(false);
@@ -101,6 +52,44 @@ export default function TeacherDocuments() {
     const [signature, setSignature] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
+
+    useEffect(() => {
+        const fetchDocuments = async () => {
+            try {
+                const response = await fetch('/api/documents/my-acknowledgements', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Map API acknowledgements to Document format
+                    const mappedDocs = result.data.acknowledgements.map((ack: any) => ({
+                        id: ack.id,
+                        documentId: ack.documentId,
+                        title: ack.document.title,
+                        description: ack.document.description,
+                        version: ack.document.version,
+                        createdAt: ack.document.createdAt,
+                        createdBy: ack.document.createdBy?.fullName || "Admin",
+                        requiresSignature: ack.document.requiresSignature,
+                        fileUrl: ack.document.fileUrl,
+                        fileName: ack.document.fileName,
+                        fileSize: ack.document.fileSize,
+                        status: ack.status,
+                        viewedAt: ack.viewedAt,
+                        acknowledgedAt: ack.acknowledgedAt,
+                        signedAt: ack.signedAt
+                    }));
+                    setDocuments(mappedDocs);
+                }
+            } catch (error) {
+                console.error("Failed to fetch documents:", error);
+            }
+        };
+
+        fetchDocuments();
+    }, []);
 
     const canvasRef = useState<HTMLCanvasElement | null>(null);
 

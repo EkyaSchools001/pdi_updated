@@ -6,7 +6,7 @@ export interface Course {
     category: string;
     hours: number;
     instructor: string;
-    status: 'Draft' | 'Active' | 'Archived';
+    status: 'Draft' | 'Active' | 'Archived' | 'PENDING_APPROVAL';
     description?: string;
     thumbnail?: string;
     url?: string;

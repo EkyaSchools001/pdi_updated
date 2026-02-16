@@ -21,7 +21,7 @@ router.get('/my-enrollments', getMyEnrollments);
 router
     .route('/')
     .get(getAllCourses)
-    .post(restrictTo('ADMIN', 'SUPERADMIN'), createCourse);
+    .post(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'SCHOOL_LEADER'), createCourse);
 
 router
     .route('/:id')

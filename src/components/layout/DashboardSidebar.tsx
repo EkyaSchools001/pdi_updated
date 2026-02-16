@@ -80,6 +80,7 @@ const managementNav = [
 const navByRole = {
   teacher: teacherNav,
   leader: leaderNav,
+  school_leader: leaderNav,
   admin: adminNav,
   superadmin: adminNav, // Use admin navigation for superadmin for now
   management: managementNav,

@@ -34,7 +34,14 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 
 export const restrictTo = (...roles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+        const userRole = req.user?.role?.toUpperCase().trim() || '';
+        const allowedRoles = roles.map(r => r.toUpperCase().trim());
+
+        console.log(`[AUTH-DEBUG] User Role: '${userRole}' (chars: ${[...userRole].map(c => c.charCodeAt(0)).join(',')})`);
+        console.log(`[AUTH-DEBUG] Required Roles: ${allowedRoles.join(', ')}`);
+
+        if (!req.user || !allowedRoles.includes(userRole)) {
+            console.warn(`[AUTH] Access denied. User Role: '${userRole}', Required: ${allowedRoles.join(', ')}`);
             return next(
                 new AppError('You do not have permission to perform this action', 403)
             );

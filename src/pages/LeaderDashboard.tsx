@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
@@ -21,9 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate, Routes, Route, useParams, useLocation } from "react-router-dom";
 
-// ... (rest of imports)
-
-// ... (previous code)
 
 
 import { Observation } from "@/types/observation";
@@ -39,110 +36,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UnifiedObservationForm } from "@/components/UnifiedObservationForm";
 import { TeacherProfileView } from "@/components/TeacherProfileView";
 import { moocService } from "@/services/moocService";
+import { courseService } from "@/services/courseService";
 import { trainingService } from "@/services/trainingService";
 import { userService } from "@/services/userService";
 
-const teamMembers = [
-  { id: "1", name: "Teacher One", email: "teacher1.btmlayout@pdi.com", role: "Math Teacher", observations: 8, lastObserved: "Jan 15", avgScore: 4.2, pdHours: 32, completionRate: 85 },
-  { id: "2", name: "Teacher Two", email: "teacher2.jpnagar@pdi.com", role: "Science Teacher", observations: 6, lastObserved: "Jan 12", avgScore: 3.8, pdHours: 24, completionRate: 60 },
-  { id: "3", name: "Teacher Three", email: "teacher3.itpl@pdi.com", role: "English Teacher", observations: 7, lastObserved: "Jan 10", avgScore: 4.0, pdHours: 40, completionRate: 100 },
-  { id: "4", name: "Bharath", email: "bharath.superadmin@pdi.com", role: "Super Admin", observations: 5, lastObserved: "Dec 20", avgScore: 3.5, pdHours: 18, completionRate: 45 },
-];
 
-const recentObservations = [
-  { id: "1", teacher: "Teacher One", domain: "Instruction", date: "Jan 15", score: 4, notes: "Excellent engagement strategies used.", hasReflection: true, reflection: "I will focus on pacing next time.", teacherReflection: "I will focus on pacing next time." },
-  { id: "2", teacher: "Teacher Two", domain: "Assessment", date: "Jan 12", score: 3, notes: "Good formative assessment, but check for understanding more frequently.", hasReflection: false, reflection: "", teacherReflection: "" },
-  { id: "3", teacher: "Teacher Three", domain: "Classroom Management", date: "Jan 10", score: 4, notes: "Classroom transitions were smooth.", hasReflection: true, reflection: "Thank you for the feedback.", teacherReflection: "Thank you for the feedback." },
-];
+// Mock data removed in favor of API calls
 
-const domainAverages = [
-  { domain: "Instruction", average: 3.8, count: 24 },
-  { domain: "Classroom Management", average: 4.1, count: 18 },
-  { domain: "Assessment", average: 3.5, count: 15 },
-  { domain: "Professionalism", average: 4.3, count: 12 },
-];
 
-const initialGoals = [
-  { id: "1", teacher: "Teacher One", title: "Instructional Clarity", category: "Instruction", progress: 75, status: "In Progress", dueDate: "Mar 30" },
-  { id: "2", teacher: "Teacher Two", title: "Student Engagement", category: "Management", progress: 40, status: "In Progress", dueDate: "Apr 15" },
-  { id: "3", teacher: "Teacher Three", title: "Assessment Diversity", category: "Assessment", progress: 90, status: "Near Completion", dueDate: "Mar 10" },
-  { id: "4", teacher: "Teacher One", title: "Data-Driven Feedback", category: "Assessment", progress: 55, status: "In Progress", dueDate: "May 20" },
-];
-
-const initialTrainingEvents = [
-  {
-    id: "1",
-    title: "Differentiated Instruction Workshop",
-    topic: "Pedagogy",
-    type: "Pedagogy",
-    date: "Feb 15, 2026",
-    time: "09:00 AM",
-    location: "Auditorium A",
-    registered: 12,
-    capacity: 20,
-    status: "Approved",
-    spotsLeft: 8,
-    isAdminCreated: true,
-    registrants: [
-      { id: "u1", name: "Teacher One", email: "teacher1.btmlayout@pdi.com", dateRegistered: "Jan 12, 2026" },
-      { id: "u2", name: "Teacher Two", email: "teacher2.jpnagar@pdi.com", dateRegistered: "Jan 14, 2026" },
-      { id: "u3", name: "Teacher Three", email: "teacher3.itpl@pdi.com", dateRegistered: "Jan 15, 2026" },
-    ]
-  },
-  {
-    id: "2",
-    title: "Digital Literacy in Classroom",
-    topic: "Technology",
-    type: "Technology",
-    date: "Feb 18, 2026",
-    time: "02:00 PM",
-    location: "Computer Lab 1",
-    registered: 18,
-    capacity: 25,
-    status: "Approved",
-    spotsLeft: 7,
-    isAdminCreated: true,
-    registrants: [
-      { id: "u4", name: "Teacher Three", email: "teacher3.itpl@pdi.com", dateRegistered: "Jan 20, 2026" },
-      { id: "u5", name: "Teacher Two", email: "teacher2.jpnagar@pdi.com", dateRegistered: "Jan 21, 2026" },
-    ]
-  },
-  { id: "3", title: "Social-Emotional Learning Hub", topic: "Culture", type: "Culture", date: "Feb 22, 2026", time: "11:00 AM", location: "Conference Room B", registered: 8, capacity: 15, status: "Approved", spotsLeft: 7, isAdminCreated: true, registrants: [] },
-  { id: "4", title: "Advanced Formative Assessment", topic: "Assessment", type: "Assessment", date: "Feb 25, 2026", time: "03:30 PM", location: "Main Library", registered: 15, capacity: 20, status: "Pending", spotsLeft: 5, isAdminCreated: true, registrants: [] },
-  { id: "5", title: "Instructional Design Workshop", topic: "Pedagogy", type: "Pedagogy", date: "Feb 13, 2026", time: "09:00 AM", location: "TRC 1", registered: 10, capacity: 15, status: "Approved", spotsLeft: 5, isAdminCreated: true, registrants: [] },
-];
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
   const userName = user?.fullName || "School Leader";
   const role = user?.role || "LEADER";
 
-  const [team, setTeam] = useState(teamMembers);
+  console.log("LeaderDashboard: Mounting...", { user, role, userName });
+
+  const [team, setTeam] = useState<any[]>([]);
   const [observations, setObservations] = useState<Observation[]>([]);
-  const [goals, setGoals] = useState(() => {
-    try {
-      const saved = localStorage.getItem('goals_data');
-      const parsed = saved ? JSON.parse(saved) : initialGoals;
-      return Array.isArray(parsed) ? parsed : initialGoals;
-    } catch (e) {
-      console.error("Failed to parse goals", e);
-      return initialGoals;
-    }
-  });
-  const [training, setTraining] = useState(() => {
-    try {
-      const saved = localStorage.getItem('training_events_data');
-      const parsed = saved ? JSON.parse(saved) : initialTrainingEvents;
-      return Array.isArray(parsed) ? parsed : initialTrainingEvents;
-    } catch (e) {
-      console.error("Failed to parse training events", e);
-      return initialTrainingEvents;
-    }
-  });
+  const [goals, setGoals] = useState<any[]>([]);
+  const [training, setTraining] = useState<any[]>([]);
+
+  // Computed Stats
+  const domainAverages = useMemo(() => {
+    const domains = ["Pedagogy", "Technology", "Assessment", "Curriculum"];
+    return domains.map(domainName => {
+      const domainObs = observations.filter(o => o.domain === domainName);
+      const avg = domainObs.length > 0
+        ? Number((domainObs.reduce((acc, o) => acc + (o.score || 0), 0) / domainObs.length).toFixed(1))
+        : 0;
+      return {
+        domain: domainName,
+        average: avg,
+        count: domainObs.length
+      };
+    });
+  }, [observations]);
+
+  const systemAvgScore = useMemo(() => {
+    if (observations.length === 0) return "0.0";
+    const total = observations.reduce((acc, o) => acc + (o.score || 0), 0);
+    return (total / observations.length).toFixed(1);
+  }, [observations]);
+
+
+  console.log("LeaderDashboard: State initialized", { teamLength: team.length, observationsLength: observations.length });
 
   const fetchObservations = async () => {
     try {
       const response = await api.get('/observations');
+      console.log("LeaderDashboard: fetchObservations response", response.data);
       if (response.data?.status === 'success') {
         const apiObservations = (response.data?.data?.observations || []).map((obs: any) => {
           // Parse detailedReflection if it's a string
@@ -180,12 +123,12 @@ export default function LeaderDashboard() {
         if (apiObservations.length > 0) {
           setObservations(apiObservations);
         } else {
-          setObservations(recentObservations);
+          setObservations([]);
         }
       }
     } catch (error) {
       console.error("Failed to fetch observations:", error);
-      setObservations(recentObservations);
+      setObservations([]);
     }
   };
 
@@ -222,24 +165,31 @@ export default function LeaderDashboard() {
       ]);
 
       if (apiTeachers && apiTeachers.length > 0) {
-        const mappedTeam = apiTeachers.map((teacher: any) => {
-          const userMoocs = allMoocs.filter((m: any) => m.userId === teacher.id && m.status === 'APPROVED');
-          const moocHours = userMoocs.reduce((sum: number, m: any) => sum + Number(m.hours || 0), 0);
-
-          const mockData = teamMembers.find(t => t.email === teacher.email);
-
+        const mappedTeam = apiTeachers.map(teacher => {
           return {
             id: teacher.id,
             name: teacher.fullName,
             email: teacher.email,
-            role: teacher.role || mockData?.role || 'Teacher',
-            observations: mockData?.observations || 0,
-            lastObserved: mockData?.lastObserved || 'Never',
-            avgScore: mockData?.avgScore || 0,
-            pdHours: (mockData?.pdHours || 0) + moocHours,
-            completionRate: Math.min(100, Math.round(((mockData?.pdHours || 0) + moocHours) / 40 * 100))
+            role: teacher.role || 'Teacher',
+            observations: 0,
+            lastObserved: 'N/A',
+            avgScore: 0,
+            pdHours: (() => {
+              const teacherSubmissions = allMoocs.filter((s: any) =>
+                (s.userId === teacher.id || s.email === teacher.email || s.teacherEmail === teacher.email) && s.status === 'APPROVED'
+              );
+              return teacherSubmissions.reduce((acc: number, s: any) => acc + Number(s.hours || 0), 0);
+            })(),
+            completionRate: (() => {
+              const teacherSubmissions = allMoocs.filter((s: any) =>
+                (s.userId === teacher.id || s.email === teacher.email || s.teacherEmail === teacher.email) && s.status === 'APPROVED'
+              );
+              const hours = teacherSubmissions.reduce((acc: number, s: any) => acc + Number(s.hours || 0), 0);
+              return Math.min(100, Math.round((hours / 20) * 100));
+            })(),
           };
         });
+        console.log("Fetched Team Data:", mappedTeam); // DEBUG LOG
         setTeam(mappedTeam);
       }
     } catch (error) {
@@ -329,9 +279,8 @@ export default function LeaderDashboard() {
     };
   }, []);
 
+
   useEffect(() => {
-    localStorage.setItem('goals_data', JSON.stringify(goals));
-    // Dispatch custom event for same-window updates if needed, though 'storage' event handles cross-tab
     window.dispatchEvent(new Event('local-goals-update'));
   }, [goals]);
 
@@ -384,13 +333,15 @@ export default function LeaderDashboard() {
     };
   }, []);
 
+  console.log("LeaderDashboard: Rendering...", { role, userName, collapsed: false }); // collapsed state is managed in layout but good to know we got here
+
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
       <Routes>
-        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} />} />
-        <Route path="team" element={<TeamManagementView team={team} />} />
+        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} />} />
+        <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
         <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
-        <Route path="observations" element={<ObservationsManagementView observations={observations} />} />
+        <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
         <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
         <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
@@ -401,13 +352,13 @@ export default function LeaderDashboard() {
         <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
         <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
         <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
-        <Route path="reports" element={<ReportsView team={team} />} />
+        <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
       </Routes>
     </DashboardLayout>
   );
 }
 
-function DashboardOverview({ team, observations, userName }: { team: typeof teamMembers, observations: Observation[], userName: string }) {
+function DashboardOverview({ team, observations, userName, systemAvgScore, domainAverages }: { team: any[], observations: Observation[], userName: string, systemAvgScore: string, domainAverages: any[] }) {
   const navigate = useNavigate();
 
   return (
@@ -436,14 +387,14 @@ function DashboardOverview({ team, observations, userName }: { team: typeof team
         />
         <StatCard
           title="Average Score"
-          value="3.9"
+          value={systemAvgScore}
           subtitle="System wide"
           icon={TrendingUp}
           onClick={() => navigate("/leader/performance")}
         />
         <StatCard
           title="PD Participation"
-          value={`${Math.round(team.reduce((acc, m) => acc + m.pdHours, 0) / team.length)}h`}
+          value={`${team.length > 0 ? Math.round(team.reduce((acc, m) => acc + (m.pdHours || 0), 0) / team.length) : 0}h`}
           subtitle="Avg hours per staff"
           icon={Clock}
           onClick={() => navigate("/leader/participation")}
@@ -591,7 +542,7 @@ function DashboardOverview({ team, observations, userName }: { team: typeof team
   );
 }
 
-function TeamManagementView({ team }: { team: typeof teamMembers }) {
+function TeamManagementView({ team, observations, goals, systemAvgScore }: { team: any[], observations: Observation[], goals: any[], systemAvgScore: string }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -636,21 +587,21 @@ function TeamManagementView({ team }: { team: typeof teamMembers }) {
         />
         <StatCard
           title="Observations"
-          value="24"
+          value={observations.length}
           subtitle="This quarter"
           icon={Eye}
           onClick={() => navigate("/leader/observations")}
         />
         <StatCard
           title="Avg Performance"
-          value="3.9"
+          value={systemAvgScore}
           subtitle="Across all domains"
           icon={TrendingUp}
           onClick={() => navigate("/leader/performance")}
         />
         <StatCard
           title="Active Goals"
-          value="12"
+          value={goals.filter(g => g.status !== 'COMPLETED').length}
           subtitle="Pending completion"
           icon={Target}
           onClick={() => navigate("/leader/goals")}
@@ -684,7 +635,7 @@ function TeamManagementView({ team }: { team: typeof teamMembers }) {
                         </div>
                         <div>
                           <p className="font-bold text-foreground group-hover:text-primary transition-colors">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">Staff ID: #EDU-{member.id}00{member.id}</p>
+                          <p className="text-sm text-muted-foreground">Staff ID: #EDU-{member.id.substring(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
@@ -750,7 +701,7 @@ function TeamManagementView({ team }: { team: typeof teamMembers }) {
   );
 }
 
-function TeacherDetailsView({ team, observations, goals }: { team: typeof teamMembers, observations: Observation[], goals: typeof initialGoals }) {
+function TeacherDetailsView({ team, observations, goals }: { team: any[], observations: Observation[], goals: any[] }) {
   const { teacherId } = useParams();
   const navigate = useNavigate();
   const teacher = team.find(t => t.id === teacherId);
@@ -778,7 +729,7 @@ function TeacherDetailsView({ team, observations, goals }: { team: typeof teamMe
   );
 }
 
-function PDParticipationView({ team }: { team: typeof teamMembers }) {
+function PDParticipationView({ team }: { team: any[] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -992,13 +943,13 @@ function PDParticipationView({ team }: { team: typeof teamMembers }) {
   );
 }
 
-function PDCalendarView({ training, setTraining }: { training: typeof initialTrainingEvents, setTraining: React.Dispatch<React.SetStateAction<typeof initialTrainingEvents>> }) {
+function PDCalendarView({ training, setTraining }: { training: any[], setTraining: React.Dispatch<React.SetStateAction<any[]>> }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 15)); // Default to Feb 15, 2026
 
   // Edit State
-  const [editingEvent, setEditingEvent] = useState<typeof initialTrainingEvents[0] | null>(null);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
   // Helper to parse "MMM d, yyyy" string to Date object
   const parseEventDate = (dateStr: string) => {
@@ -1107,7 +1058,7 @@ function PDCalendarView({ training, setTraining }: { training: typeof initialTra
         />
         <StatCard
           title="Capacity Util."
-          value={`${Math.round((training.reduce((acc, e) => acc + e.registered, 0) / training.reduce((acc, e) => acc + e.capacity, 0)) * 100)}%`}
+          value={`${training.reduce((acc, e) => acc + (e.capacity || 0), 0) > 0 ? Math.round((training.reduce((acc, e) => acc + (e.registered || 0), 0) / training.reduce((acc, e) => acc + (e.capacity || 0), 0)) * 100) : 0}%`}
           subtitle="Seat occupancy"
           icon={Rocket}
         />
@@ -1422,7 +1373,7 @@ function PDCalendarView({ training, setTraining }: { training: typeof initialTra
   );
 }
 
-function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.SetStateAction<typeof initialTrainingEvents>> }) {
+function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.SetStateAction<any[]>> }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
@@ -1435,6 +1386,8 @@ function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.
     objectives: ""
   });
 
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date || !formData.type) {
@@ -1443,14 +1396,19 @@ function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.
     }
 
     try {
-      const newSession = await trainingService.createEvent({
-        ...formData,
-        date: format(new Date(formData.date), "MMM d, yyyy"),
-        status: "Pending",
-        topic: formData.type
+      await courseService.createCourse({
+        title: formData.title,
+        category: formData.type,
+        hours: 2, // Default
+        instructor: "School Leader",
+        status: "PENDING_APPROVAL",
+        description: `${formData.description}\n\nProposed Details:\nDate: ${formData.date}\nTime: ${formData.time}\nLocation: ${formData.location}\nCapacity: ${formData.capacity}`,
+        isDownloadable: false
       });
 
-      setTraining(prev => [...prev, newSession]);
+      // Do NOT update local training state as per requirements
+      // setTraining(prev => [...prev, newSession]); 
+
       toast.success("Course proposal submitted for admin approval!");
       navigate("/leader/calendar");
     } catch (error) {
@@ -1576,10 +1534,10 @@ function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.
   );
 }
 
-function ReportsView({ team }: { team: typeof teamMembers }) {
+function ReportsView({ team, observations }: { team: any[], observations: Observation[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sendingId, setSendingId] = useState<string | null>(null);
-  const [selectedTeacher, setSelectedTeacher] = useState<typeof teamMembers[0] | null>(null);
+  const [selectedTeacher, setSelectedTeacher] = useState<any | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
@@ -1598,12 +1556,12 @@ function ReportsView({ team }: { team: typeof teamMembers }) {
     const matchesPerformance = performanceFilter === "all" ||
       (performanceFilter === "high" && t.avgScore >= 4.0) ||
       (performanceFilter === "proficient" && t.avgScore >= 3.0 && t.avgScore < 4.0) ||
-      (performanceFilter === "support" && t.avgScore < 3.0);
+      (performanceFilter === "support" && (t.avgScore > 0 && t.avgScore < 3.0));
 
     return matchesSearch && matchesRole && matchesPerformance;
   });
 
-  const handleEmailReport = (teacher: typeof teamMembers[0]) => {
+  const handleEmailReport = (teacher: any) => {
     setSendingId(teacher.id);
     const email = `${teacher.name.toLowerCase().replace(' ', '.')}@school.edu`;
 
@@ -1632,14 +1590,14 @@ function ReportsView({ team }: { team: typeof teamMembers }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           title="Reports Generated"
-          value="24"
-          subtitle="Last 30 days"
+          value={observations.length}
+          subtitle="Total observations"
           icon={FileText}
         />
         <StatCard
           title="Pending Reviews"
-          value="5"
-          subtitle="Require approval"
+          value={observations.filter(o => !o.hasReflection).length}
+          subtitle="Require reflection"
           icon={Clock}
         />
         <StatCard
@@ -1840,10 +1798,10 @@ function ReportsView({ team }: { team: typeof teamMembers }) {
   );
 }
 
-function TeacherGoalsView({ goals }: { goals: typeof initialGoals }) {
+function TeacherGoalsView({ goals }: { goals: any[] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGoal, setSelectedGoal] = useState<typeof initialGoals[0] | null>(null);
+  const [selectedGoal, setSelectedGoal] = useState<any | null>(null);
   const [reviewFeedback, setReviewFeedback] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -2040,6 +1998,7 @@ function TeacherGoalsView({ goals }: { goals: typeof initialGoals }) {
               <thead>
                 <tr className="bg-muted/30 border-b">
                   <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Teacher</th>
+                  <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Email</th>
                   <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Goal Target</th>
                   <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground">Category</th>
                   <th className="text-left p-6 text-sm font-bold uppercase tracking-wider text-muted-foreground w-1/4">Progress</th>
@@ -2052,6 +2011,9 @@ function TeacherGoalsView({ goals }: { goals: typeof initialGoals }) {
                   <tr key={goal.id} className="hover:bg-primary/5 transition-colors group">
                     <td className="p-6">
                       <p className="font-bold text-foreground">{goal.teacher}</p>
+                    </td>
+                    <td className="p-6">
+                      <p className="text-sm text-foreground">{goal.teacherEmail || "-"}</p>
                     </td>
                     <td className="p-6">
                       <p className="font-semibold">{goal.title}</p>
@@ -2162,7 +2124,7 @@ function TeacherGoalsView({ goals }: { goals: typeof initialGoals }) {
   );
 }
 
-function ObservationReportView({ observations, team }: { observations: Observation[], team: typeof teamMembers }) {
+function ObservationReportView({ observations, team }: { observations: Observation[], team: any[] }) {
   const { obsId } = useParams();
   const navigate = useNavigate();
   const observation = observations.find(o => o.id === obsId);
@@ -2578,7 +2540,7 @@ function ObservationReportView({ observations, team }: { observations: Observati
   );
 }
 
-function ObservationsManagementView({ observations }: { observations: Observation[] }) {
+function ObservationsManagementView({ observations, systemAvgScore }: { observations: Observation[], systemAvgScore: string }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -2628,7 +2590,7 @@ function ObservationsManagementView({ observations }: { observations: Observatio
         />
         <StatCard
           title="Average Score"
-          value="3.9"
+          value={systemAvgScore}
           subtitle="Institutional avg"
           icon={Star}
           onClick={() => navigate("/leader/performance")}
@@ -2706,8 +2668,8 @@ function ObservationsManagementView({ observations }: { observations: Observatio
 
 function ObserveView({ setObservations, setTeam, team, observations }: {
   setObservations: React.Dispatch<React.SetStateAction<Observation[]>>,
-  setTeam: React.Dispatch<React.SetStateAction<typeof teamMembers>>,
-  team: typeof teamMembers,
+  setTeam: React.Dispatch<React.SetStateAction<any[]>>,
+  team: any[],
   observations: Observation[]
 }) {
   const navigate = useNavigate();
@@ -2798,7 +2760,7 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 
 
 
-function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: typeof teamMembers }) {
+function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: any[] }) {
   const navigate = useNavigate();
 
   return (
@@ -2825,7 +2787,24 @@ function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.Set
               submitLabel="Assign Goal"
               onCancel={() => navigate("/leader/goals")}
               onSubmit={async (data) => {
-                const targetTeacher = team.find(t => t.name === (data.g1 || "Unknown Teacher"));
+                console.log("Goal Submission Data (Template):", data); // DEBUG LOG
+                console.log("Current Team State:", team); // DEBUG LOG
+
+                if (!data.g1 || data.g1 === "Unknown Teacher") {
+                  toast.error("Please select a teacher.");
+                  return;
+                }
+                const targetTeacher = team.find(t => t.name === data.g1);
+
+                if (!targetTeacher) {
+                  toast.error("Selected teacher not found in team records.");
+                  return;
+                }
+
+                if (!targetTeacher.email) {
+                  toast.error("Selected teacher is missing an email address. Cannot assign goal.");
+                  return;
+                }
 
                 const newGoal = {
                   teacher: data.g1 || "Unknown Teacher",
@@ -2861,14 +2840,26 @@ function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.Set
       ) : (
         <GoalSettingForm
           teachers={team}
-          defaultCoachName="Dr. Sarah Johnson"
+          defaultCoachName="Rohit"
           onCancel={() => navigate("/leader/goals")}
           onSubmit={async (data) => {
             const targetTeacher = team.find(t => t.name === data.educatorName);
 
+            if (!targetTeacher) {
+              toast.error("Selected teacher not found in team records.");
+              return;
+            }
+
+            const emailToSave = data.teacherEmail || targetTeacher.email;
+
+            if (!emailToSave) {
+              toast.error("Selected teacher is missing an email address.");
+              return;
+            }
+
             const newGoal = {
               teacher: data.educatorName,
-              teacherEmail: targetTeacher?.email,
+              teacherEmail: emailToSave,
               title: data.goalForYear,
               category: data.pillarTag,
               progress: 0,

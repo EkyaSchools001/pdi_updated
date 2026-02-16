@@ -27,4 +27,9 @@ export const createGoalSchema = z.object({
     dueDate: z.string(),
     isSchoolAligned: z.boolean().optional().default(false),
     category: z.string().optional(),
+    assignedBy: z.string().optional(),
+    actionStep: z.string().optional(),
+    campus: z.string().optional(),
+    status: z.string().optional(),
+    progress: z.number().optional(),
 });

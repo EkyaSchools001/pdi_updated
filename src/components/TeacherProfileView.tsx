@@ -246,7 +246,7 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="text-sm font-bold text-foreground">{obs.observerName || "Dr. Sarah Johnson"}</p>
+                                                    <p className="text-sm font-bold text-foreground">{obs.observerName || "Rohit"}</p>
                                                     <p className="text-[10px] text-muted-foreground">{obs.observerRole || "Head of School"}</p>
                                                 </td>
                                                 <td className="p-4 text-right pr-6">

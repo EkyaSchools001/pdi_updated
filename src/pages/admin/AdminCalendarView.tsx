@@ -130,28 +130,41 @@ export function AdminCalendarView() {
         }
     };
 
-    const handleEditEvent = () => {
+    const handleEditEvent = async () => {
         if (!currentEvent?.title || !currentEvent?.date) {
             toast.error("Please fill in required fields");
             return;
         }
 
-        const updatedEvent = {
-            ...currentEvent,
-            date: typeof currentEvent.date === 'string' ? currentEvent.date : formatDateStr(currentEvent.date),
-            topic: currentEvent.type // Sync topic with type
-        };
+        try {
+            const updatedData = {
+                ...currentEvent,
+                date: typeof currentEvent.date === 'string' ? currentEvent.date : formatDateStr(currentEvent.date),
+                topic: currentEvent.type // Sync topic with type
+            };
 
-        setTraining(training.map((t: any) => t.id === updatedEvent.id ? updatedEvent : t));
-        setIsEditOpen(false);
-        toast.success("Event updated successfully");
+            const savedEvent = await trainingService.updateEvent(currentEvent.id, updatedData);
+
+            setTraining(training.map((t: any) => t.id === savedEvent.id ? savedEvent : t));
+            setIsEditOpen(false);
+            toast.success("Event updated successfully");
+        } catch (error) {
+            console.error("Failed to update event", error);
+            toast.error("Failed to update event");
+        }
     };
 
-    const handleDeleteEvent = () => {
+    const handleDeleteEvent = async () => {
         if (!currentEvent) return;
-        setTraining(training.filter(t => t.id !== currentEvent.id));
-        setIsDeleteOpen(false);
-        toast.success("Event deleted successfully");
+        try {
+            await trainingService.deleteEvent(currentEvent.id);
+            setTraining(training.filter(t => t.id !== currentEvent.id));
+            setIsDeleteOpen(false);
+            toast.success("Event deleted successfully");
+        } catch (error) {
+            console.error("Failed to delete event", error);
+            toast.error("Failed to delete event");
+        }
     };
 
     const handleManageSession = (event: any) => {

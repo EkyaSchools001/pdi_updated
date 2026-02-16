@@ -16,7 +16,7 @@ const app: Application = express();
 app.use(helmet({
     contentSecurityPolicy: false, // Disable CSP to avoid potential issues with frontend assets
     crossOriginEmbedderPolicy: false, // Allow iframes
-    xFrameOptions: { action: "sameorigin" }, // Allow same-origin iframes
+    xFrameOptions: false, // Disable to allow cross-port iframes in dev
 }));
 app.use(cors({
     origin: [

@@ -96,13 +96,14 @@ const formSchema = z.object({
         required_error: "Please select a pillar",
     }),
     additionalNotes: z.string().optional(),
+    teacherEmail: z.string().email("Invalid email address").optional(),
 });
 
 interface GoalSettingFormProps {
     onSubmit: (data: z.infer<typeof formSchema>) => void;
     defaultCoachName?: string;
     onCancel: () => void;
-    teachers: { id: string; name: string }[];
+    teachers: { id: string; name: string; email?: string }[];
 }
 
 export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, teachers }: GoalSettingFormProps) {
@@ -111,6 +112,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
         defaultValues: {
             coachName: defaultCoachName,
             educatorName: "",
+            teacherEmail: "",
             additionalNotes: "",
         },
     });
@@ -149,7 +151,16 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Name of the Educator *</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select
+                                                onValueChange={(value) => {
+                                                    field.onChange(value);
+                                                    const selectedTeacher = teachers.find(t => t.name === value);
+                                                    if (selectedTeacher?.email) {
+                                                        form.setValue("teacherEmail", selectedTeacher.email);
+                                                    }
+                                                }}
+                                                defaultValue={field.value}
+                                            >
                                                 <FormControl>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Select educator" />
@@ -163,6 +174,21 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="teacherEmail"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Teacher Email</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Teacher email" {...field} readOnly className="bg-muted" />
+                                            </FormControl>
+                                            <FormDescription>Auto-populated based on selection</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}

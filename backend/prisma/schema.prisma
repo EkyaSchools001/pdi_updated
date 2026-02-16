@@ -81,6 +81,7 @@ model ObservationDomain {
 model Goal {
   id              String   @id @default(uuid())
   teacherId       String
+  teacherEmail    String?
   title           String
   description     String?
   progress        Int      @default(0)
@@ -88,6 +89,9 @@ model Goal {
   status          String   @default("IN_PROGRESS")
   isSchoolAligned Boolean  @default(false)
   category        String?
+  assignedBy      String?
+  actionStep      String?
+  campus          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -103,6 +107,9 @@ model TrainingEvent {
   location     String
   capacity     Int
   status       String         @default("PLANNED")
+  time         String?
+  description  String?
+  objectives   String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   registrations Registration[]

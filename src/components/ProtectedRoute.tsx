@@ -27,7 +27,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
         // Redirect to their respective dashboard if they try to access an unauthorized route
         const defaultPath =
             user.role === 'ADMIN' ? '/admin' :
-                user.role === 'LEADER' ? '/leader' : '/teacher';
+                (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') ? '/leader' : '/teacher';
 
         return <Navigate to={defaultPath} replace />;
     }

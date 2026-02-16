@@ -6,7 +6,7 @@ interface User {
     id: string;
     fullName: string;
     email: string;
-    role: 'ADMIN' | 'LEADER' | 'TEACHER' | 'MANAGEMENT' | 'SUPERADMIN';
+    role: 'ADMIN' | 'LEADER' | 'SCHOOL_LEADER' | 'TEACHER' | 'MANAGEMENT' | 'SUPERADMIN';
     avatarUrl?: string;
     department?: string;
     campusId?: string;
@@ -53,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 navigate('/admin');
                 break;
             case 'LEADER':
+            case 'SCHOOL_LEADER':
                 navigate('/leader');
                 break;
             case 'TEACHER':
