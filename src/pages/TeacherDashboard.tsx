@@ -711,30 +711,12 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
 
       <Dialog open={isMoocFormOpen} onOpenChange={setIsMoocFormOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6 bg-background/95 backdrop-blur-xl border-none">
-          {getActiveTemplateByType("Other", "MOOC") ? (
-            <div className="space-y-6">
-              <div className="border-b pb-4">
-                <h2 className="text-2xl font-bold">MOOC Submission (Master)</h2>
-                <p className="text-muted-foreground italic">Submit your course evidence using the latest official form</p>
-              </div>
-              <DynamicForm
-                fields={getActiveTemplateByType("Other", "MOOC")!.fields}
-                submitLabel="Submit MOOC Evidence"
-                onCancel={() => setIsMoocFormOpen(false)}
-                onSubmit={(data) => {
-                  toast.success("MOOC Evidence submitted successfully using Master Template!");
-                  setIsMoocFormOpen(false);
-                }}
-              />
-            </div>
-          ) : (
-            <MoocEvidenceForm
-              onCancel={() => setIsMoocFormOpen(false)}
-              onSubmitSuccess={() => setIsMoocFormOpen(false)}
-              userEmail={userEmail}
-              userName={userName}
-            />
-          )}
+          <MoocEvidenceForm
+            onCancel={() => setIsMoocFormOpen(false)}
+            onSubmitSuccess={() => setIsMoocFormOpen(false)}
+            userEmail={userEmail}
+            userName={userName}
+          />
         </DialogContent>
       </Dialog>
 
