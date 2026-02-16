@@ -9,16 +9,27 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-    // Clear existing data in correct order
+    // Clear existing data in correct order to avoid foreign key constraints
+    console.log('Clearing existing data...');
+
+    // 1. Delete records that reference User or other models
+    await prisma.courseEnrollment.deleteMany({});
     await prisma.moocSubmission.deleteMany({});
     await prisma.registration.deleteMany({});
     await prisma.pDHour.deleteMany({});
     await prisma.goal.deleteMany({});
-    await prisma.observationDomain.deleteMany({});
-    await prisma.observation.deleteMany({});
     await prisma.documentAcknowledgement.deleteMany({});
+    await prisma.observationDomain.deleteMany({});
+
+    // 2. Delete parent records that are referenced by the ones above
+    await prisma.observation.deleteMany({});
     await prisma.document.deleteMany({});
     await prisma.trainingEvent.deleteMany({});
+    await prisma.course.deleteMany({});
+    await prisma.formTemplate.deleteMany({});
+    await prisma.systemSettings.deleteMany({});
+
+    // 3. Finally delete users
     await prisma.user.deleteMany({});
 
     console.log('Cleared existing data.');
