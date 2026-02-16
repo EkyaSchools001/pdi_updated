@@ -110,11 +110,24 @@ export function CourseManagementView() {
             return;
         }
         try {
-            const updatedCourse = await courseService.updateCourse(currentCourse.id, currentCourse);
+            // Sanitize payload to only include updatable fields
+            const updatePayload = {
+                title: currentCourse.title,
+                category: currentCourse.category,
+                hours: Number(currentCourse.hours),
+                instructor: currentCourse.instructor,
+                status: currentCourse.status,
+                description: currentCourse.description,
+                url: currentCourse.url,
+                isDownloadable: currentCourse.isDownloadable
+            };
+
+            const updatedCourse = await courseService.updateCourse(currentCourse.id, updatePayload);
             setCourses(courses.map(c => c.id === updatedCourse.id ? updatedCourse : c));
             setIsEditOpen(false);
             toast.success("Course updated successfully");
         } catch (error) {
+            console.error("Failed to update course:", error);
             toast.error("Failed to update course");
         }
     };
