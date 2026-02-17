@@ -1,11 +1,21 @@
 import api from "@/lib/api";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { DynamicForm } from "@/components/DynamicForm";
+import { toast } from "sonner";
+import { ChevronLeft } from "lucide-react";
+import { getActiveTemplateByType, initialTemplates } from "@/lib/template-utils";
+import { Observation } from "@/types/observation";
 
-// ... existing imports
+// Defined locally to fix missing import
+const teamMembers: any[] = []; // Placeholder
 
 function ObserveView({ setObservations, setTeam, team, observations }: {
     setObservations: React.Dispatch<React.SetStateAction<Observation[]>>,
-    setTeam: React.Dispatch<React.SetStateAction<typeof teamMembers>>,
-    team: typeof teamMembers,
+    setTeam: React.Dispatch<React.SetStateAction<any[]>>,
+    team: any[],
     observations: Observation[]
 }) {
     const navigate = useNavigate();
