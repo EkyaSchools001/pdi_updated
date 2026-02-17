@@ -36,13 +36,25 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
 
 export const createTrainingEvent = async (req: AuthRequest, res: Response) => {
     try {
-        const { title, topic, type, date, time, location, capacity, description, objectives, status, proposedById } = req.body;
+        const { title, topic, type, date, time, location, capacity, description, objectives, status, proposedById, schoolId } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ status: 'error', message: 'User not authenticated' });
+        }
 
         if (!title || !date || !location) {
             return res.status(400).json({
                 status: 'error',
                 message: 'Missing required fields: title, date, and location are required'
             });
+        }
+
+        // Fetch user to get campusId if schoolId not provided
+        let campusId = schoolId;
+        if (!campusId) {
+            const user = await prisma.user.findUnique({ where: { id: userId } });
+            campusId = user?.campusId;
         }
 
         const event = await prisma.trainingEvent.create({
@@ -57,7 +69,11 @@ export const createTrainingEvent = async (req: AuthRequest, res: Response) => {
                 description,
                 objectives,
                 status: status || 'PLANNED',
-                proposedById: proposedById || req.user?.id
+                proposedById: proposedById || userId,
+                createdById: userId, // Capture creator
+                schoolId: campusId, // Default to creator's campus
+                attendanceEnabled: false,
+                attendanceClosed: false
             }
         });
 

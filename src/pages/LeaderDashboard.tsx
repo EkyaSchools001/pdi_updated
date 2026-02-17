@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit } from "lucide-react";
+import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate, Routes, Route, useParams, useLocation } from "react-router-dom";
@@ -30,7 +30,7 @@ import { LeaderPerformanceAnalytics } from "@/components/LeaderPerformanceAnalyt
 import { AIAnalysisModal } from "@/components/AIAnalysisModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getActiveTemplateByType } from "@/lib/template-utils";
+
 import { DynamicForm } from "@/components/DynamicForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UnifiedObservationForm } from "@/components/UnifiedObservationForm";
@@ -44,6 +44,9 @@ import { userService } from "@/services/userService";
 // Mock data removed in favor of API calls
 
 
+
+import AttendanceRegister from "@/pages/AttendanceRegister";
+import EventAttendanceView from "@/pages/EventAttendanceView";
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
@@ -284,54 +287,7 @@ export default function LeaderDashboard() {
     window.dispatchEvent(new Event('local-goals-update'));
   }, [goals]);
 
-  // Sync training events to localStorage when changed in Leader view (propose course etc)
-  useEffect(() => {
-    localStorage.setItem('training_events_data', JSON.stringify(training));
-    window.dispatchEvent(new Event('training-events-updated'));
-  }, [training]);
 
-  // Listen for updates from other dashboards/tabs
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'observations_data' && e.newValue) {
-        try {
-          setObservations(JSON.parse(e.newValue));
-        } catch (err) {
-          console.error("Failed to sync observation data", err);
-        }
-      }
-      if (e.key === 'training_events_data' && e.newValue) {
-        try {
-          setTraining(JSON.parse(e.newValue));
-        } catch (err) {
-          console.error("Failed to sync training data", err);
-        }
-      }
-    };
-
-    const handleCustomTrainingEvent = () => {
-      const saved = localStorage.getItem('training_events_data');
-      if (saved) {
-        try {
-          const newData = JSON.parse(saved);
-          setTraining(prev => {
-            // Prevent infinite loops by comparing with current state
-            if (JSON.stringify(prev) === JSON.stringify(newData)) return prev;
-            return newData;
-          });
-        } catch (err) {
-          console.error("Failed to sync training data via custom event", err);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('training-events-updated', handleCustomTrainingEvent);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('training-events-updated', handleCustomTrainingEvent);
-    };
-  }, []);
 
   console.log("LeaderDashboard: Rendering...", { role, userName, collapsed: false }); // collapsed state is managed in layout but good to know we got here
 
@@ -348,11 +304,8 @@ export default function LeaderDashboard() {
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
         <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeam} />} />
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
-        <Route path="participation" element={<PDParticipationView team={team} />} />
-        <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
-        <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
-        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
-        <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
+        <Route path="attendance" element={<AttendanceRegister />} />
+        <Route path="attendance/:id" element={<EventAttendanceView />} />
       </Routes>
     </DashboardLayout>
   );
@@ -948,8 +901,20 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
   const [searchQuery, setSearchQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 15)); // Default to Feb 15, 2026
 
-  // Edit State
+  // Edit & Creation State
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    type: "Pedagogy",
+    date: new Date(2026, 1, 15),
+    time: "09:00 AM",
+    location: "",
+    capacity: 30,
+    description: "",
+    objectives: ""
+  });
 
   // Helper to parse "MMM d, yyyy" string to Date object
   const parseEventDate = (dateStr: string) => {
@@ -984,21 +949,79 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
   // Get dates that have events for highlighting
   const eventDates = safeTraining.map(e => parseEventDate(e.date));
 
+  const handleScheduleEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEvent.title || !newEvent.date) {
+      toast.error("Please fill in required fields");
+      return;
+    }
+
+    try {
+      const eventData = {
+        title: newEvent.title,
+        type: newEvent.type,
+        topic: newEvent.type,
+        date: formatDateStr(newEvent.date),
+        time: newEvent.time,
+        location: newEvent.location,
+        capacity: newEvent.capacity,
+        description: newEvent.description,
+        objectives: newEvent.objectives,
+        status: "Approved"
+      };
+
+      const response = await trainingService.createEvent(eventData);
+      setTraining(prev => [...prev, response]);
+      setIsScheduleOpen(false);
+      setNewEvent({
+        title: "",
+        type: "Pedagogy",
+        date: new Date(2026, 1, 15),
+        time: "09:00 AM",
+        location: "",
+        capacity: 30,
+        description: "",
+        objectives: ""
+      });
+      toast.success("Event scheduled successfully");
+    } catch (error) {
+      console.error("Error scheduling event:", error);
+      toast.error("Failed to schedule event.");
+    }
+  };
+
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
 
     try {
-      // For now, we only have updateStatus in trainingService
-      // If we need to update more fields, we'd need a fuller update API
-      await trainingService.updateStatus(editingEvent.id, editingEvent.status);
+      const updatedData = {
+        ...editingEvent,
+        date: typeof editingEvent.date === 'string' ? editingEvent.date : formatDateStr(editingEvent.date),
+        topic: editingEvent.type || editingEvent.topic
+      };
 
-      setTraining(prev => prev.map(ev => ev.id === editingEvent.id ? editingEvent : ev));
+      const savedEvent = await trainingService.updateEvent(editingEvent.id, updatedData);
+      setTraining(prev => prev.map(ev => ev.id === editingEvent.id ? savedEvent : ev));
       setEditingEvent(null);
       toast.success("Event details updated successfully");
     } catch (error) {
       console.error("Failed to update event:", error);
       toast.error("Failed to update event.");
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!editingEvent) return;
+    try {
+      await trainingService.deleteEvent(editingEvent.id);
+      setTraining(prev => prev.filter(t => t.id !== editingEvent.id));
+      setIsDeleteOpen(false);
+      setEditingEvent(null);
+      toast.success("Event deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      toast.error("Failed to delete event.");
     }
   };
 
@@ -1034,6 +1057,10 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
             <Button variant="outline" onClick={() => navigate("/leader/calendar/responses")}>
               <FileText className="mr-2 w-4 h-4" />
               Course Evidence Responses
+            </Button>
+            <Button variant="outline" onClick={() => setIsScheduleOpen(true)}>
+              <Plus className="mr-2 w-4 h-4" />
+              Schedule Event
             </Button>
             <Button onClick={() => navigate("/leader/calendar/propose")}>
               <Plus className="mr-2 w-4 h-4" />
@@ -1361,12 +1388,137 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="ghost" onClick={() => setEditingEvent(null)}>Cancel</Button>
-                <Button type="submit">Save Changes</Button>
+              <div className="flex justify-between items-center pt-4">
+                <Button type="button" variant="destructive" size="sm" onClick={() => setIsDeleteOpen(true)}>
+                  <Trash2 className="mr-2 w-4 h-4" />
+                  Delete Event
+                </Button>
+                <div className="flex gap-3">
+                  <Button type="button" variant="ghost" onClick={() => setEditingEvent(null)}>Cancel</Button>
+                  <Button type="submit">Save Changes</Button>
+                </div>
               </div>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Schedule Event Dialog */}
+      <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule Training Event</DialogTitle>
+            <DialogDescription>Add a new session to the PD calendar for your campus.</DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleScheduleEvent} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="event-title">Event Title</Label>
+              <Input
+                id="event-title"
+                placeholder="Workshop Name"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="event-type">Type</Label>
+                <Select
+                  value={newEvent.type}
+                  onValueChange={(val) => setNewEvent({ ...newEvent, type: val })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pedagogy">Pedagogy</SelectItem>
+                    <SelectItem value="Technology">Technology</SelectItem>
+                    <SelectItem value="Assessment">Assessment</SelectItem>
+                    <SelectItem value="Culture">Culture</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !newEvent.date && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {newEvent.date ? formatDateStr(newEvent.date) : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={newEvent.date}
+                      onSelect={(d) => d && setNewEvent({ ...newEvent, date: d })}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="event-time">Time</Label>
+                <Input
+                  id="event-time"
+                  placeholder="09:00 AM"
+                  value={newEvent.time}
+                  onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="event-capacity">Capacity</Label>
+                <Input
+                  id="event-capacity"
+                  type="number"
+                  value={newEvent.capacity}
+                  onChange={(e) => setNewEvent({ ...newEvent, capacity: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="event-location">Location</Label>
+              <Input
+                id="event-location"
+                placeholder="Room/Lab Name"
+                value={newEvent.location}
+                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="ghost" onClick={() => setIsScheduleOpen(false)}>Cancel</Button>
+              <Button type="submit">Schedule Event</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive font-bold">Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{editingEvent?.title}</strong>? This action cannot be undone and will remove it from the calendar for all staff members.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 pt-4">
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteEvent}>Confirm Delete</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
@@ -2762,6 +2914,30 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 
 function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: any[] }) {
   const navigate = useNavigate();
+  const [goalTemplate, setGoalTemplate] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      try {
+        const response = await api.get('/templates');
+        if (response.data?.status === 'success') {
+          const templates = response.data.data.templates || [];
+          const active = templates.find((t: any) => t.type === 'Goal Setting' && t.status === 'Active');
+          if (active) setGoalTemplate(active);
+        }
+      } catch (error) {
+        console.error("Failed to fetch goal template", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTemplate();
+  }, []);
+
+  if (loading) {
+    return <div className="p-12 text-center text-muted-foreground">Loading goal template...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -2777,11 +2953,11 @@ function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.Set
         </div>
       </div>
 
-      {getActiveTemplateByType("Goal Setting") ? (
+      {goalTemplate ? (
         <Card className="border-none shadow-premium bg-background/50 backdrop-blur-sm">
           <CardContent className="pt-6">
             <DynamicForm
-              fields={getActiveTemplateByType("Goal Setting")!.fields.map(f =>
+              fields={goalTemplate.fields.map((f: any) =>
                 f.id === "g1" ? { ...f, type: "select" as const, options: team.map(t => t.name) } : f
               )}
               submitLabel="Assign Goal"

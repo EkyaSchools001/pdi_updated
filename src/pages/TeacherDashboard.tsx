@@ -57,7 +57,8 @@ import {
   Link as LinkIcon,
   Paperclip,
   ClipboardCheck,
-  Tag
+  Tag,
+  ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AcknowledgementsView } from "@/components/documents/AcknowledgementsView";
@@ -82,7 +83,7 @@ import { Label } from "@/components/ui/label";
 import { format, parse, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { getActiveTemplateByType } from "@/lib/template-utils";
+
 import { DynamicForm } from "@/components/DynamicForm";
 import { trainingService } from "@/services/trainingService";
 import {
@@ -118,6 +119,8 @@ import { ReflectionForm } from "@/components/ReflectionForm";
 import { MoocEvidenceForm } from "@/components/MoocEvidenceForm";
 
 import { TeacherProfileView } from "@/components/TeacherProfileView";
+import TeacherAttendance from "@/pages/TeacherAttendance";
+import AttendanceForm from "@/pages/AttendanceForm";
 
 // Removed local Observation interface in favor of shared type
 
@@ -299,6 +302,7 @@ function ObservationsView({
 function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (goal: NewGoal) => void, userName: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newGoal, setNewGoal] = useState({ title: "", description: "", dueDate: "" });
+  const [filter, setFilter] = useState<string>("all");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,11 +312,43 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
     setIsDialogOpen(false);
   };
 
+  const filteredGoals = goals.filter(goal => {
+    if (filter === "all") return true;
+    if (filter === "school") return goal.isSchoolAligned;
+    if (filter === "professional") return !goal.isSchoolAligned;
+    if (filter === "completed") return goal.progress === 100;
+    if (filter === "in-progress") return (goal.progress || 0) < 100;
+    return true;
+  });
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Professional Goals" subtitle="Track your growth and align with school priorities" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <PageHeader title="Professional Goals" subtitle="Track your growth and align with school priorities" />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Filter className="w-4 h-4" />
+              {filter === "all" ? "All Goals" :
+                filter === "school" ? "School Priorities" :
+                  filter === "professional" ? "Professional Practice" :
+                    filter === "completed" ? "Completed" : "In Progress"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Filter Goals</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setFilter("all")}>All Goals</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter("school")}>School Priorities</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter("professional")}>Professional Practice</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter("completed")}>Completed</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFilter("in-progress")}>In Progress</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {goals.map((goal) => (
+        {filteredGoals.map((goal) => (
           <GoalCard key={goal.id} goal={goal} />
         ))}
 
@@ -388,6 +424,7 @@ function CalendarView({
 }) {
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 25)); // Set a default date in center of mock data
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string | "all">("all");
 
   const parseEventDate = (dateStr: string) => {
     try {
@@ -397,14 +434,18 @@ function CalendarView({
     }
   };
 
+  const eventTypes = Array.from(new Set(events.map(e => e.topic || e.type).filter(Boolean)));
+
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.topic.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (!date) return matchesSearch;
+    const matchesType = selectedType === "all" || (event.topic || event.type) === selectedType;
+
+    if (!date) return matchesSearch && matchesType;
 
     const eventDate = parseEventDate(event.date);
-    return isSameDay(eventDate, date) && matchesSearch;
+    return isSameDay(eventDate, date) && matchesSearch && matchesType;
   });
 
   const formatDateStr = (d: Date | string) => {
@@ -539,6 +580,28 @@ function CalendarView({
                 <p className="text-sm font-medium text-muted-foreground mt-1">
                   {filteredEvents.length} session{filteredEvents.length !== 1 && 's'} identified for this period
                 </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="w-4 h-4" />
+                      {selectedType === "all" ? "All Types" : selectedType}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                      All Types
+                    </DropdownMenuItem>
+                    {eventTypes.map(type => (
+                      <DropdownMenuItem key={type} onClick={() => setSelectedType(type)}>
+                        {type}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </CardHeader>
@@ -847,6 +910,14 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
   const { user } = useAuth();
   const userName = user?.fullName || "Teacher";
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | "all">("all");
+
+  const categories = Array.from(new Set(pdHours.history.map((h: any) => h.category).filter(Boolean)));
+
+  const filteredHistory = pdHours.history.filter((item: any) => {
+    return selectedCategory === "all" || item.category === selectedCategory;
+  });
+
   const handleExportPDF = () => {
     const doc = new jsPDF();
 
@@ -863,7 +934,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
 
     // Create table
     const tableColumn = ["Activity", "Category", "Date", "Hours", "Status"];
-    const tableRows = pdHours.history.map(item => [
+    const tableRows = filteredHistory.map((item: any) => [
       item.activity,
       item.category,
       item.date,
@@ -914,7 +985,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
                 <span>{Math.round((pdHours.total / pdHours.target) * 100)}%</span>
               </div>
               <div className="h-4 w-full bg-muted rounded-full overflow-hidden flex">
-                {pdHours.categories.map((cat, idx) => (
+                {pdHours.categories.map((cat: any, idx: number) => (
                   <div
                     key={idx}
                     className={cn("h-full transition-all duration-500", cat.color)}
@@ -925,7 +996,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              {pdHours.categories.map((cat, idx) => (
+              {pdHours.categories.map((cat: any, idx: number) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <div className={cn("w-2 h-2 rounded-full", cat.color)} />
@@ -976,10 +1047,32 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
             <CardTitle className="text-xl font-bold">Activity History</CardTitle>
             <CardDescription>A detailed log of all your PD activities</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
-            <Download className="w-4 h-4" />
-            Export PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Filter className="w-4 h-4" />
+                  {selectedCategory === "all" ? "All Categories" : selectedCategory}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSelectedCategory("all")}>
+                  All Categories
+                </DropdownMenuItem>
+                {categories.map((category: any) => (
+                  <DropdownMenuItem key={category} onClick={() => setSelectedCategory(category)}>
+                    {category}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
+              <Download className="w-4 h-4" />
+              Export PDF
+            </Button>
+          </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <Table>
@@ -994,7 +1087,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pdHours.history.map((row) => (
+              {filteredHistory.map((row: any) => (
                 <TableRow key={row.id} className="group hover:bg-muted/30 border-muted/50 transition-colors">
                   <TableCell className="font-medium">{row.activity}</TableCell>
                   <TableCell>
@@ -1153,6 +1246,10 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
       )}
     </div>
   );
+}
+
+function AttendanceView() {
+  return <PlaceholderView title="My Attendance" icon={ClipboardList} />;
 }
 
 function InsightsView() {
@@ -1448,15 +1545,7 @@ export default function TeacherDashboard() {
 
 
 
-  // Sync training events to localStorage when changed (e.g., registration)
-  useEffect(() => {
-    localStorage.setItem('training_events_data', JSON.stringify(events));
-  }, [events]);
 
-  // Placeholder for any other side effects if needed
-  useEffect(() => {
-    // Legacy localStorage MOOC sync removed in favor of API and Sockets
-  }, []);
 
 
 
@@ -1511,6 +1600,24 @@ export default function TeacherDashboard() {
     );
   }, [goals, user?.id, userName]);
 
+  const [reflectionTemplate, setReflectionTemplate] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      try {
+        const response = await api.get('/templates');
+        if (response.data?.status === 'success') {
+          const templates = response.data.data.templates || [];
+          const active = templates.find((t: any) => t.type === 'Reflection' && t.status === 'Active');
+          if (active) setReflectionTemplate(active);
+        }
+      } catch (error) {
+        console.error("Failed to fetch reflection template", error);
+      }
+    };
+    fetchTemplate();
+  }, []);
+
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
       <Routes>
@@ -1536,6 +1643,8 @@ export default function TeacherDashboard() {
         <Route path="observations/:id" element={<ObservationDetailView observations={userObservations} />} />
         <Route path="goals" element={<GoalsView goals={userGoals} onAddGoal={handleAddGoal} userName={userName} />} />
         <Route path="calendar" element={<CalendarView events={events} onRegister={handleRegister} />} />
+        <Route path="attendance" element={<TeacherAttendance />} />
+        <Route path="attendance/:eventId" element={<AttendanceForm />} />
         <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
@@ -1568,7 +1677,7 @@ export default function TeacherDashboard() {
       {/* Reflection Dialog */}
       {selectedReflectObs && (
         <>
-          {getActiveTemplateByType("Reflection") ? (
+          {reflectionTemplate ? (
             <Dialog open={!!selectedReflectObs} onOpenChange={() => setSelectedReflectObs(null)}>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
@@ -1576,9 +1685,10 @@ export default function TeacherDashboard() {
                   <DialogDescription>Based on the Ekya Danielson Framework</DialogDescription>
                 </DialogHeader>
                 <DynamicForm
-                  fields={getActiveTemplateByType("Reflection")!.fields}
+                  fields={reflectionTemplate.fields}
                   submitLabel="Submit Reflection"
                   onCancel={() => setSelectedReflectObs(null)}
+
                   onSubmit={(data) => {
                     const reflection: DetailedReflection = {
                       teacherName: userName,

@@ -20,6 +20,8 @@ app.use(helmet({
 }));
 app.use(cors({
     origin: [
+        /^http:\/\/localhost:\d+$/,
+        /^http:\/\/127\.0\.0\.1:\d+$/,
         'http://localhost:8081',
         'http://localhost:8080',
         'http://127.0.0.1:8080',

@@ -11,6 +11,11 @@ import trainingRoutes from './trainingRoutes';
 import statsRoutes from './statsRoutes';
 import courseRoutes from './courseRoutes';
 
+import templateRoutes from './templateRoutes';
+import settingsRoutes from './settingsRoutes';
+import pdRoutes from './pdRoutes';
+import attendanceRoutes from './attendanceRoutes';
+
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -23,5 +28,9 @@ router.use('/mooc', moocRoutes);
 router.use('/training', trainingRoutes);
 router.use('/stats', statsRoutes);
 router.use('/courses', courseRoutes);
+router.use('/templates', templateRoutes);
+router.use('/settings', settingsRoutes);
+router.use('/pd', pdRoutes);
+router.use('/attendance', attendanceRoutes);
 
 export default router;

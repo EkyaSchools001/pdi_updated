@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 export interface FormField {
     id: string;
@@ -34,45 +35,81 @@ export interface FormField {
     options?: string[]; // For select, radio
 }
 
-import { initialTemplates } from "@/lib/template-utils";
-
 export function FormTemplatesView() {
-    const [templates, setTemplates] = useState<typeof initialTemplates>(() => {
-        const saved = localStorage.getItem("form_templates");
-        return saved ? JSON.parse(saved) : initialTemplates;
-    });
+    const [templates, setTemplates] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchTemplates = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/templates');
+            if (response.data.status === 'success') {
+                // Parse structure if it's a string, ensuring fields exist
+                const parsedTemplates = response.data.data.templates.map((t: any) => {
+                    let structure = t.structure;
+                    if (typeof structure === 'string') {
+                        try {
+                            structure = JSON.parse(structure);
+                        } catch (e) {
+                            structure = [];
+                        }
+                    }
+                    return {
+                        ...t,
+                        fields: structure || [], // Ensure fields is always an array
+                        questions: (structure || []).length,
+                        lastUpdated: new Date(t.updatedAt).toLocaleDateString()
+                    };
+                });
+                setTemplates(parsedTemplates);
+            }
+        } catch (error) {
+            console.error("Failed to fetch templates:", error);
+            toast.error("Failed to load form templates");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        localStorage.setItem("form_templates", JSON.stringify(templates));
-        // Broadcast change for other views (e.g., Dynamic Forms)
-        window.dispatchEvent(new Event("form-templates-updated"));
-    }, [templates]);
+        fetchTemplates();
+    }, []);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [newTemplate, setNewTemplate] = useState({ title: "", type: "Observation" as any, version: "1.0", targetRole: "Teacher", targetBlock: "All", fields: [] as FormField[] });
-    const [editingTemplate, setEditingTemplate] = useState<typeof initialTemplates[0] | null>(null);
-    const [templateToDelete, setTemplateToDelete] = useState<typeof initialTemplates[0] | null>(null);
-    const [previewTemplate, setPreviewTemplate] = useState<typeof initialTemplates[0] | null>(null);
+    const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+    const [templateToDelete, setTemplateToDelete] = useState<any | null>(null);
+    const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
 
-    const handleCreateTemplate = () => {
+    const handleCreateTemplate = async () => {
         if (!newTemplate.title) {
             toast.error("Please enter a template title");
             return;
         }
-        const template = {
-            id: templates.length + 1,
-            ...newTemplate,
-            status: "Draft",
-            lastUpdated: "Just now",
-            questions: newTemplate.fields.length
-        };
-        setTemplates([template, ...templates]);
-        setIsCreateOpen(false);
-        setNewTemplate({ title: "", type: "Observation", version: "1.0", targetRole: "Teacher", targetBlock: "All", fields: [] });
-        toast.success("Template created successfully");
+
+        try {
+            const payload = {
+                name: newTemplate.title, // Map title to name for backend
+                type: newTemplate.type,
+                structure: newTemplate.fields, // Backend expects JSON, controller handles stringify? No, controller expects structure object/array and stringifies it.
+                isDefault: false
+            };
+
+            const response = await api.post('/templates', payload);
+
+            if (response.data.status === 'success') {
+                toast.success("Template created successfully");
+                setIsCreateOpen(false);
+                setNewTemplate({ title: "", type: "Observation", version: "1.0", targetRole: "Teacher", targetBlock: "All", fields: [] });
+                fetchTemplates();
+            }
+        } catch (error) {
+            console.error("Failed to create template:", error);
+            toast.error("Failed to create template");
+        }
     };
 
     const addNewTemplateField = () => {
@@ -114,15 +151,32 @@ export function FormTemplatesView() {
         });
     };
 
-    const handleEditTemplate = () => {
+    const handleEditTemplate = async () => {
         if (!editingTemplate || !editingTemplate.title) {
             toast.error("Please enter a template title");
             return;
         }
-        setTemplates(templates.map(t => t.id === editingTemplate.id ? { ...editingTemplate, lastUpdated: "Just now", questions: editingTemplate.fields.length } : t));
-        setIsEditOpen(false);
-        setEditingTemplate(null);
-        toast.success("Template updated successfully");
+
+        try {
+            const payload = {
+                name: editingTemplate.title, // Map title to name
+                type: editingTemplate.type,
+                structure: editingTemplate.fields,
+                isDefault: editingTemplate.isDefault
+            };
+
+            const response = await api.put(`/templates/${editingTemplate.id}`, payload);
+
+            if (response.data.status === 'success') {
+                toast.success("Template updated successfully");
+                setIsEditOpen(false);
+                setEditingTemplate(null);
+                fetchTemplates();
+            }
+        } catch (error) {
+            console.error("Failed to update template:", error);
+            toast.error("Failed to update template");
+        }
     };
 
     const addField = () => {
@@ -168,39 +222,59 @@ export function FormTemplatesView() {
         });
     };
 
-    const handleDeleteTemplate = () => {
+    const handleDeleteTemplate = async () => {
         if (!templateToDelete) return;
-        setTemplates(templates.filter(t => t.id !== templateToDelete.id));
-        setIsDeleteOpen(false);
-        setTemplateToDelete(null);
-        toast.success("Template deleted successfully");
+
+        try {
+            await api.delete(`/templates/${templateToDelete.id}`);
+            toast.success("Template deleted successfully");
+            setIsDeleteOpen(false);
+            setTemplateToDelete(null);
+            fetchTemplates();
+        } catch (error) {
+            console.error("Failed to delete template:", error);
+            toast.error("Failed to delete template");
+        }
     };
 
-    const onEdit = (template: typeof initialTemplates[0]) => {
-        setEditingTemplate(template);
+    const onEdit = (template: any) => {
+        // Backend uses 'name', frontend uses 'title'. Ensure we map correctly.
+        setEditingTemplate({
+            ...template,
+            title: template.name || template.title // Handle both cases
+        });
         setIsEditOpen(true);
     };
 
-    const onDelete = (template: typeof initialTemplates[0]) => {
+    const onDelete = (template: any) => {
         setTemplateToDelete(template);
         setIsDeleteOpen(true);
     };
 
-    const onPreview = (template: typeof initialTemplates[0]) => {
+    const onPreview = (template: any) => {
         setPreviewTemplate(template);
         setIsPreviewOpen(true);
     };
 
-    const onDuplicate = (template: typeof initialTemplates[0]) => {
-        const duplicatedTemplate = {
-            ...template,
-            id: Math.max(...templates.map(t => t.id), 0) + 1,
-            title: `${template.title} (Copy)`,
-            lastUpdated: "Just now",
-            status: "Draft"
-        };
-        setTemplates([duplicatedTemplate, ...templates]);
-        toast.success(`Duplicated ${template.title}`);
+    const onDuplicate = async (template: any) => {
+        try {
+            const payload = {
+                name: `${template.title || template.name} (Copy)`,
+                type: template.type,
+                structure: template.fields,
+                isDefault: false
+            };
+
+            const response = await api.post('/templates', payload);
+
+            if (response.data.status === 'success') {
+                toast.success(`Duplicated ${template.title || template.name}`);
+                fetchTemplates();
+            }
+        } catch (error) {
+            console.error("Failed to duplicate template:", error);
+            toast.error("Failed to duplicate template");
+        }
     };
 
     return (

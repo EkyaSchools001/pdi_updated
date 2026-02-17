@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { DynamicForm } from "@/components/DynamicForm";
 import { toast } from "sonner";
 import { ChevronLeft } from "lucide-react";
-import { getActiveTemplateByType, initialTemplates } from "@/lib/template-utils";
+import { initialTemplates } from "@/lib/template-utils";
 import { Observation } from "@/types/observation";
 
 // Defined locally to fix missing import
@@ -20,14 +21,39 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 }) {
     const navigate = useNavigate();
 
-    // Get active template or fallback to master template (ID 1)
-    const template = getActiveTemplateByType("Observation") || initialTemplates.find(t => t.id === 1);
+    const [template, setTemplate] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTemplate = async () => {
+            try {
+                const response = await api.get('/templates');
+                if (response.data?.status === 'success') {
+                    const templates = response.data.data.templates || [];
+                    const active = templates.find((t: any) => t.type === 'Observation' && t.status === 'Active');
+                    if (active) {
+                        setTemplate(active);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch templates", error);
+                toast.error("Failed to load observation template");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTemplate();
+    }, []);
+
+    if (loading) {
+        return <div className="p-12 text-center text-muted-foreground">Loading template...</div>;
+    }
 
     if (!template) {
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center">
                 <h3 className="text-xl font-semibold mb-2">Template Not Found</h3>
-                <p className="text-muted-foreground mb-4">The observation template could not be loaded.</p>
+                <p className="text-muted-foreground mb-4">No active observation template found. Please contact an administrator.</p>
                 <Button onClick={() => navigate("/leader")}>Return to Dashboard</Button>
             </div>
         );

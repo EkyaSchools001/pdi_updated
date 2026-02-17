@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import api from "@/lib/api";
 
 // --- Interfaces ---
 
@@ -161,21 +162,62 @@ export function SystemSettingsView() {
     // --- Effects ---
 
     useEffect(() => {
-        const loadSettings = () => {
+        // Fetch settings from API
+        const loadSettings = async () => {
             try {
-                const stored = localStorage.getItem("platform_settings");
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    // Merge with defaults to ensure new fields exists
-                    setSettings({ ...defaultSettings, ...parsed });
+                // Fetch all settings. The backend returns an array of { key, value }
+                // We need to map them back to our `PlatformSettings` structure.
+                const response = await api.get('/settings');
 
-                    // Restore integration statuses if saved
-                    if (parsed._integrationStatuses) {
-                        setIntegrationStatuses(parsed._integrationStatuses);
+                if (response.data.status === 'success') {
+                    const fetchedSettings = response.data.data.settings;
+
+                    // Start with defaults
+                    let newSettings = { ...defaultSettings };
+                    let newIntegrationStatuses = { ...integrationStatuses };
+
+                    // Process each setting
+                    fetchedSettings.forEach((setting: any) => {
+                        try {
+                            const value = JSON.parse(setting.value);
+
+                            if (setting.key === 'platform_settings') {
+                                // If we stored the whole object (legacy/simple)
+                                newSettings = { ...newSettings, ...value };
+                            } else if (setting.key === 'integration_statuses') {
+                                newIntegrationStatuses = value;
+                            } else {
+                                // If we start storing keys individually later
+                                // (newSettings as any)[setting.key] = value;
+                            }
+                        } catch (e) {
+                            console.error(`Failed to parse setting ${setting.key}`, e);
+                        }
+                    });
+
+                    // Handle legacy "platform_settings" key if it exists in the fetched list
+                    // If your backend `getAllSettings` returns the rows, we iterate them.
+
+                    // However, we might want to standardize on storing the whole object in one key for now 
+                    // to match the previous localStorage structure and minimize refactoring.
+                    // Let's see if we can find a key "platform_settings" in the array.
+                    const mainSettings = fetchedSettings.find((s: any) => s.key === "platform_settings");
+                    if (mainSettings) {
+                        try {
+                            const parsed = JSON.parse(mainSettings.value);
+                            newSettings = { ...newSettings, ...parsed };
+                            if (parsed._integrationStatuses) {
+                                newIntegrationStatuses = parsed._integrationStatuses;
+                            }
+                        } catch (e) { }
                     }
+
+                    setSettings(newSettings);
+                    setIntegrationStatuses(newIntegrationStatuses);
                 }
             } catch (e) {
                 console.error("Failed to load settings", e);
+                toast.error("Failed to load system settings");
             } finally {
                 setIsLoading(false);
             }
@@ -185,17 +227,26 @@ export function SystemSettingsView() {
 
     // --- Handlers ---
 
-    const handleSave = () => {
+    const handleSave = async () => {
         try {
             const toSave = {
                 ...settings,
                 _integrationStatuses: integrationStatuses // Hack to persist local UI state
             };
-            localStorage.setItem("platform_settings", JSON.stringify(toSave));
+
+            // We use the 'upsert' endpoint which expects { key, value }
+            const payload = {
+                key: "platform_settings",
+                value: toSave // Backend stringifies it? No, controller says `value: JSON.stringify(value)` so we pass object.
+            };
+
+            await api.post('/settings/upsert', payload);
+
             toast.success("Settings saved successfully", {
-                description: "All changes across tabs have been applied."
+                description: "All changes have been applied to the database."
             });
         } catch (e) {
+            console.error(e);
             toast.error("Failed to save settings");
         }
     }

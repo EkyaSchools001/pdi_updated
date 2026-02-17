@@ -21,6 +21,7 @@ import {
   Building2,
   HeartPulse,
   AlertTriangle,
+  ClipboardList,
 } from "lucide-react";
 import { Role, RoleBadge } from "../RoleBadge";
 import { Button } from "../ui/button";
@@ -37,6 +38,7 @@ const teacherNav = [
   { title: "Observations", icon: Eye, path: "/teacher/observations" },
   { title: "Goals", icon: Target, path: "/teacher/goals" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/teacher/calendar" },
+  { title: "Attendance", icon: ClipboardList, path: "/teacher/attendance" },
   { title: "Courses", icon: Book, path: "/teacher/courses" },
   { title: "PD Hours", icon: Clock, path: "/teacher/hours" },
   { title: "Documents", icon: FileCheck, path: "/teacher/documents" },
@@ -52,6 +54,7 @@ const leaderNav = [
   { title: "PD Participation", icon: Clock, path: "/leader/participation" },
   { title: "Performance", icon: TrendingUp, path: "/leader/performance" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/leader/calendar" },
+  { title: "Attendance Register", icon: ClipboardList, path: "/leader/attendance" },
   { title: "Reports", icon: FileText, path: "/leader/reports" },
 ];
 
@@ -61,6 +64,7 @@ const adminNav = [
   { title: "Form Templates", icon: FileText, path: "/admin/forms" },
   { title: "Course Catalogue", icon: Book, path: "/admin/courses" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/admin/calendar" },
+  { title: "Attendance Register", icon: ClipboardList, path: "/admin/attendance" },
   { title: "Documents", icon: FileCheck, path: "/admin/documents" },
   { title: "Reports", icon: FileText, path: "/admin/reports" },
   { title: "Settings", icon: Settings, path: "/admin/settings" },

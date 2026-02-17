@@ -30,8 +30,10 @@ model User {
   sentObservations     Observation[]             @relation("Observer")
   receivedObservations Observation[]             @relation("Teacher")
   proposedEvents       TrainingEvent[]           @relation("ProposedEvents")
+  createdEvents        TrainingEvent[]           @relation("CreatedEvents")
   goals                Goal[]
   registrations        Registration[]
+  attendanceRecords    EventAttendance[]
   pdHours              PDHour[]
   createdDocuments     Document[]
   acknowledgements     DocumentAcknowledgement[]
@@ -99,22 +101,29 @@ model Goal {
 }
 
 model TrainingEvent {
-  id           String         @id @default(uuid())
-  title        String
-  topic        String
-  type         String
-  date         String
-  location     String
-  capacity     Int
-  status       String         @default("PLANNED")
-  time         String?
-  description  String?
-  objectives   String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  registrations Registration[]
-  proposedById String?
-  proposedBy   User?          @relation("ProposedEvents", fields: [proposedById], references: [id])
+  id                    String            @id @default(uuid())
+  title                 String
+  topic                 String
+  type                  String
+  date                  String
+  location              String
+  capacity              Int
+  status                String            @default("PLANNED")
+  time                  String?
+  description           String?
+  objectives            String?
+  schoolId              String?
+  createdById           String?
+  attendanceEnabled     Boolean           @default(false)
+  attendanceTriggeredAt DateTime?
+  attendanceClosed      Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  registrations         Registration[]
+  attendanceRecords     EventAttendance[]
+  proposedById          String?
+  proposedBy            User?             @relation("ProposedEvents", fields: [proposedById], references: [id])
+  createdBy             User?             @relation("CreatedEvents", fields: [createdById], references: [id])
 }
 
 model Registration {
@@ -128,6 +137,27 @@ model Registration {
 
   @@unique([eventId, userId])
 }
+
+model EventAttendance {
+  id           String   @id @default(uuid())
+  eventId      String
+  teacherId    String
+  teacherName  String
+  teacherEmail String
+  mobile       String?
+  employeeId   String?
+  department   String?
+  schoolId     String?
+  submittedAt  DateTime @default(now())
+  status       Boolean  @default(true) // attendance_status
+
+  event   TrainingEvent @relation(fields: [eventId], references: [id])
+  teacher User          @relation(fields: [teacherId], references: [id])
+
+  @@unique([eventId, teacherEmail])
+}
+
+
 
 model PDHour {
   id       String   @id @default(uuid())

@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, FileText, Book, Calendar, Settings, Activity } from "lucide-react";
+import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Link, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
@@ -18,6 +18,8 @@ import AdminDocumentManagement from "./AdminDocumentManagement";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
+import AttendanceRegister from "@/pages/AttendanceRegister";
+import EventAttendanceView from "@/pages/EventAttendanceView";
 
 interface DashboardUser {
   id: string;
@@ -47,10 +49,11 @@ export default function AdminDashboard() {
     const fetchData = async () => {
       try {
         // 1. Fetch Backend Stats
-        const [obsResponse, usersResponse, statsResponse] = await Promise.all([
+        const [obsResponse, usersResponse, statsResponse, templatesResponse] = await Promise.all([
           api.get('/observations'),
           api.get('/users'),
-          api.get('/stats/admin')
+          api.get('/stats/admin'),
+          api.get('/templates')
         ]);
 
         setObservations(obsResponse.data?.data?.observations || []);
@@ -60,9 +63,8 @@ export default function AdminDashboard() {
 
         const backendStats = statsResponse.data?.data;
 
-        // 2. Form Stats (LocalStorage)
-        const savedForms = localStorage.getItem("form_templates");
-        const forms = savedForms ? JSON.parse(savedForms) : [];
+        // 2. Form Stats (from API)
+        const forms = templatesResponse.data?.data?.templates || [];
         const activeForms = forms.filter((f: any) => f.status === 'Active').length;
 
         setStats({
@@ -116,6 +118,8 @@ export default function AdminDashboard() {
         <Route path="forms" element={<FormTemplatesView />} />
         <Route path="courses" element={<CourseManagementView />} />
         <Route path="calendar" element={<AdminCalendarView />} />
+        <Route path="attendance" element={<AttendanceRegister />} />
+        <Route path="attendance/:id" element={<EventAttendanceView />} />
         <Route path="documents" element={<AdminDocumentManagement />} />
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />
