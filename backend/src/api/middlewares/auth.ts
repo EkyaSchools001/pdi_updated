@@ -34,14 +34,32 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 
 export const restrictTo = (...roles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
-        const userRole = req.user?.role?.toUpperCase().trim() || '';
-        const allowedRoles = roles.map(r => r.toUpperCase().trim());
+        const rawRole = req.user?.role || '';
+        // Remove underscores and multiple spaces for normalization
+        let userRole = rawRole.toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 
-        console.log(`[AUTH-DEBUG] User Role: '${userRole}' (chars: ${[...userRole].map(c => c.charCodeAt(0)).join(',')})`);
-        console.log(`[AUTH-DEBUG] Required Roles: ${allowedRoles.join(', ')}`);
+        // Final normalization to base roles
+        if (userRole.includes('SCHOOL LEADER') || userRole === 'LEADER') {
+            userRole = 'LEADER';
+        }
 
-        if (!req.user || !allowedRoles.includes(userRole)) {
-            console.warn(`[AUTH] Access denied. User Role: '${userRole}', Required: ${allowedRoles.join(', ')}`);
+        const allowedRoles = roles.map(r => {
+            const role = r.toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+            if (role.includes('SCHOOL LEADER') || role === 'LEADER') return 'LEADER';
+            return role;
+        });
+
+        // Always allow SUPERADMIN to everything
+        if (userRole === 'SUPERADMIN') {
+            return next();
+        }
+
+        const isAllowed = allowedRoles.includes(userRole);
+
+        console.log(`[AUTH-DEBUG] Raw: '${rawRole}' -> Normalized: '${userRole}' | Required: [${allowedRoles.join(', ')}] | Result: ${isAllowed ? 'PASS' : 'FAIL'}`);
+
+        if (!req.user || !isAllowed) {
+            console.warn(`[AUTH] Access denied. User Role: '${userRole}', Required: [${allowedRoles.join(', ')}]`);
             return next(
                 new AppError(`Permission denied. Role '${userRole}' is not authorized. Required: [${allowedRoles.join(', ')}]`, 403)
             );

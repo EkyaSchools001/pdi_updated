@@ -10,10 +10,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useFormFlow } from "@/hooks/useFormFlow";
 
 export default function AttendanceForm() {
     const { eventId } = useParams();
     const navigate = useNavigate();
+    const { getRedirectionPath } = useFormFlow();
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [event, setEvent] = useState<any>(null);
@@ -82,7 +84,8 @@ export default function AttendanceForm() {
 
             if (response.data.status === "success") {
                 toast.success("Attendance submitted successfully!");
-                navigate("/teacher/attendance");
+                const redirectPath = getRedirectionPath("Attendance Submission", user?.role || "");
+                navigate(redirectPath || "/teacher/attendance");
             }
         } catch (error: any) {
             if (error.response?.status === 409) {

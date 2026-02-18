@@ -7,12 +7,12 @@ const router = Router();
 // All routes require authentication
 router.use(protect);
 
-// Settings routes - Admin only
+// Settings routes - All authenticated users can read for access control
 router.route('/')
-    .get(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.getAllSettings);
+    .get(settingsController.getAllSettings);
 
 router.route('/:key')
-    .get(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.getSetting);
+    .get(settingsController.getSetting);
 
 router.route('/upsert')
     .post(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.upsertSetting);

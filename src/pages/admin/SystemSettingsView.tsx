@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import {
-    Settings, Bell, Lock, Globe, Mail, Save, Server, Shield, Key, Smartphone, FileText, Layout, Database, School, CheckCircle2, AlertCircle
+    Settings, Bell, Lock, Globe, Mail, Save, Server, Shield, Key, Smartphone, Layout, Database, School, CheckCircle2, AlertCircle, Workflow, Play, Edit, RotateCw
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 // --- Interfaces ---
 
@@ -46,6 +47,18 @@ interface IntegrationSettings {
     colorClass: string;
 }
 
+interface WorkflowConfig {
+    id: string;
+    name: string;
+    description: string;
+    status: 'active' | 'inactive';
+    webhookUrl: string;
+    lastRun?: string;
+    lastStatus?: 'success' | 'failed';
+    schedule: string;
+}
+
+
 interface PlatformSettings {
     schoolName: string;
     domain: string;
@@ -57,7 +70,12 @@ interface PlatformSettings {
     };
     security: SecuritySettings;
     emailTemplates: EmailTemplate[];
-    integrations: IntegrationSettings[]; // We'll store status here, logic handles the rest
+    integrations: IntegrationSettings[];
+    automation: {
+        n8nBaseUrl: string;
+        apiKey: string;
+        workflows: WorkflowConfig[];
+    };
 }
 
 // --- Default Data ---
@@ -121,6 +139,60 @@ See full details on your dashboard.`,
     }
 ];
 
+const defaultWorkflows: WorkflowConfig[] = [
+    {
+        id: 'user-sync',
+        name: 'HR User Sync',
+        description: 'Syncs new employee data from Darwinbox/CSV to the Users database.',
+        status: 'active',
+        webhookUrl: 'https://n8n.schoolhub.edu/webhook/user-sync',
+        schedule: 'Daily 8:00 AM',
+        lastRun: '2 hours ago',
+        lastStatus: 'success'
+    },
+    {
+        id: 'obs-feedback',
+        name: 'Observation Feedback Loop',
+        description: 'Sends instant Slack/Email notifications when an observation is submitted.',
+        status: 'active',
+        webhookUrl: 'https://n8n.schoolhub.edu/webhook/obs-feedback',
+        schedule: 'Real-time (Webhook)',
+        lastRun: '10 mins ago',
+        lastStatus: 'success'
+    },
+    {
+        id: 'weekly-report',
+        name: 'Weekly Leadership Report',
+        description: 'Generates and emails PDF stats summary to school leaders.',
+        status: 'active',
+        webhookUrl: 'https://n8n.schoolhub.edu/webhook/weekly-report',
+        schedule: 'Mon 8:00 AM',
+        lastRun: 'Yesterday',
+        lastStatus: 'success'
+    },
+    {
+        id: 'training-reminders',
+        name: 'Training Reminders',
+        description: 'Sends reminder emails to training attendees 24 hours before event.',
+        status: 'inactive',
+        webhookUrl: 'https://n8n.schoolhub.edu/webhook/training-reminders',
+        schedule: 'Daily 9:00 AM',
+        lastRun: 'Never',
+        lastStatus: undefined
+    },
+    {
+        id: 'doc-expiry',
+        name: 'Document Expiry Alert',
+        description: 'Checks for expiring certifications and notifies users.',
+        status: 'active',
+        webhookUrl: 'https://n8n.schoolhub.edu/webhook/doc-expiry',
+        schedule: 'Daily 1:00 AM',
+        lastRun: '12 hours ago',
+        lastStatus: 'success'
+    }
+];
+
+
 const defaultSettings: PlatformSettings = {
     schoolName: "Springfield High School",
     domain: "school.edu",
@@ -137,18 +209,22 @@ const defaultSettings: PlatformSettings = {
         sessionTimeout: "30",
     },
     emailTemplates: defaultEmailTemplates,
-    integrations: [
-        // We won't store the full object in valid JSON usually, but for this mock, it's fine.
-        // In a real app, we'd store config Separately.
-        // We'll initialize state with the map below.
-    ] as any
+    integrations: [] as any,
+    automation: {
+        n8nBaseUrl: 'https://n8n.schoolhub.edu',
+        apiKey: '',
+        workflows: defaultWorkflows
+    }
 };
 
 export function SystemSettingsView() {
     // --- State ---
+    const { user } = useAuth();
+    const isSuperAdmin = user?.role === 'SUPERADMIN';
     const [isLoading, setIsLoading] = useState(true);
     const [settings, setSettings] = useState<PlatformSettings>(defaultSettings);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('welcome');
+    const [runningWorkflowId, setRunningWorkflowId] = useState<string | null>(null);
 
     // Derived state for integration UI (since we can't store icons in localStorage JSON)
     // We maintain the status in `settings.integrations`, but render using this map
@@ -184,6 +260,10 @@ export function SystemSettingsView() {
                             if (setting.key === 'platform_settings') {
                                 // If we stored the whole object (legacy/simple)
                                 newSettings = { ...newSettings, ...value };
+                                // Ensure automation object exists if loaded from older config
+                                if (!newSettings.automation) {
+                                    newSettings.automation = defaultSettings.automation;
+                                }
                             } else if (setting.key === 'integration_statuses') {
                                 newIntegrationStatuses = value;
                             } else {
@@ -208,6 +288,9 @@ export function SystemSettingsView() {
                             newSettings = { ...newSettings, ...parsed };
                             if (parsed._integrationStatuses) {
                                 newIntegrationStatuses = parsed._integrationStatuses;
+                            }
+                            if (!newSettings.automation) {
+                                newSettings.automation = defaultSettings.automation;
                             }
                         } catch (e) { }
                     }
@@ -277,6 +360,44 @@ export function SystemSettingsView() {
         toast.info(`${id === 'google' ? 'Google Workspace' : id.toUpperCase()} ${status}`);
     };
 
+    // --- Automation Handlers ---
+
+    const updateAutomationConfig = (field: keyof PlatformSettings['automation'], value: any) => {
+        setSettings(prev => ({
+            ...prev,
+            automation: { ...prev.automation, [field]: value }
+        }));
+    };
+
+    const toggleWorkflow = (id: string) => {
+        const workflows = settings.automation.workflows.map(wf =>
+            wf.id === id ? { ...wf, status: wf.status === 'active' ? 'inactive' : 'active' as const } : wf
+        );
+        updateAutomationConfig('workflows', workflows);
+        toast.info("Workflow status updated");
+    };
+
+    const runWorkflow = async (id: string) => {
+        setRunningWorkflowId(id);
+        const workflow = settings.automation.workflows.find(w => w.id === id);
+
+        // Simulate API call to n8n
+        // In real impl: await axios.post(workflow.webhookUrl)
+        setTimeout(() => {
+            setRunningWorkflowId(null);
+
+            // Update last run time mock
+            const workflows = settings.automation.workflows.map(wf =>
+                wf.id === id ? { ...wf, lastRun: 'Just now', lastStatus: 'success' as const } : wf
+            );
+            updateAutomationConfig('workflows', workflows);
+
+            toast.success(`Workflow "${workflow?.name}" trigger submitted!`, {
+                description: "The execution has started in n8n."
+            });
+        }, 2000);
+    };
+
     const selectedTemplate = settings.emailTemplates.find(t => t.id === selectedTemplateId) || settings.emailTemplates[0];
 
     if (isLoading) return <div>Loading settings...</div>;
@@ -310,6 +431,9 @@ export function SystemSettingsView() {
                     </TabsTrigger>
                     <TabsTrigger value="integrations" className="w-full justify-start gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                         <Globe className="w-4 h-4" /> Integrations
+                    </TabsTrigger>
+                    <TabsTrigger value="workflows" className="w-full justify-start gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                        <Workflow className="w-4 h-4" /> Workflows (n8n)
                     </TabsTrigger>
                 </TabsList>
 
@@ -641,8 +765,126 @@ export function SystemSettingsView() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+                    {/* Automation (n8n) Tab */}
+                    <TabsContent value="workflows" className="m-0 space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>Automation Workflows (n8n)</CardTitle>
+                                        <CardDescription>Manage automated backend processes and integrations.</CardDescription>
+                                    </div>
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex gap-2 items-center px-3 py-1">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                        Service Online
+                                    </Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Global Config */}
+                                <div className="p-4 bg-muted/40 rounded-lg border space-y-4">
+                                    <h3 className="font-medium text-sm text-foreground flex items-center gap-2">
+                                        <Server className="w-4 h-4" /> Server Configuration
+                                    </h3>
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label>n8n Base URL</Label>
+                                            <Input
+                                                value={settings.automation.n8nBaseUrl}
+                                                onChange={(e) => updateAutomationConfig('n8nBaseUrl', e.target.value)}
+                                                placeholder="https://n8n.yourdomain.com"
+                                            />
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label>API Key</Label>
+                                            <Input
+                                                type="password"
+                                                value={settings.automation.apiKey}
+                                                onChange={(e) => updateAutomationConfig('apiKey', e.target.value)}
+                                                placeholder="••••••••••••••••"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-4">
+                                    {settings.automation.workflows.map((workflow) => (
+                                        <div
+                                            key={workflow.id}
+                                            className={cn(
+                                                "flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg transition-all",
+                                                workflow.status === 'active' ? "bg-card shadow-sm" : "bg-muted/30 opacity-80"
+                                            )}
+                                        >
+                                            <div className="flex gap-4 mb-4 sm:mb-0">
+                                                <div className={cn(
+                                                    "p-2 rounded-lg mt-1",
+                                                    workflow.status === 'active' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                                                )}>
+                                                    <Workflow className="w-5 h-5" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <h4 className="font-semibold">{workflow.name}</h4>
+                                                        {workflow.status === 'active' ? (
+                                                            <Badge variant="default" className="text-[10px] h-5 px-1.5">Active</Badge>
+                                                        ) : (
+                                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Inactive</Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground">{workflow.description}</p>
+                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
+                                                        <span className="flex items-center gap-1">
+                                                            <RotateCw className="w-3 h-3" /> {workflow.schedule}
+                                                        </span>
+                                                        {workflow.lastRun && (
+                                                            <span className="flex items-center gap-1">
+                                                                <span className={cn(
+                                                                    "w-1.5 h-1.5 rounded-full",
+                                                                    workflow.lastStatus === 'success' ? "bg-green-500" : "bg-red-500"
+                                                                )} />
+                                                                Last run: {workflow.lastRun}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                                                <Switch
+                                                    checked={workflow.status === 'active'}
+                                                    onCheckedChange={() => toggleWorkflow(workflow.id)}
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    disabled={workflow.status === 'inactive' || runningWorkflowId === workflow.id}
+                                                    onClick={() => runWorkflow(workflow.id)}
+                                                    className="w-full sm:w-auto"
+                                                >
+                                                    {runningWorkflowId === workflow.id ? (
+                                                        <>
+                                                            <RotateCw className="w-3 h-3 mr-2 animate-spin" /> Running...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Play className="w-3 h-3 mr-2" /> Run Now
+                                                        </>
+                                                    )}
+                                                </Button>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <Settings className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </div>
             </Tabs>
         </div>
-    )
+    );
 }

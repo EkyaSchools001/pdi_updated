@@ -22,9 +22,11 @@ import {
   HeartPulse,
   AlertTriangle,
   ClipboardList,
+  Shield,
 } from "lucide-react";
 import { Role, RoleBadge } from "../RoleBadge";
 import { Button } from "../ui/button";
+import { useAccessControl } from "@/hooks/useAccessControl";
 
 interface DashboardSidebarProps {
   role: Role;
@@ -81,19 +83,27 @@ const managementNav = [
   { title: "Reports", icon: FileText, path: "/management/reports" },
 ];
 
+const superAdminNav = [
+  ...adminNav,
+  { title: "SuperAdmin Console", icon: Shield, path: "/admin/superadmin" },
+];
+
 const navByRole = {
   teacher: teacherNav,
   leader: leaderNav,
   school_leader: leaderNav,
   admin: adminNav,
-  superadmin: adminNav, // Use admin navigation for superadmin for now
+  superadmin: superAdminNav,
   management: managementNav,
 };
 
 export function DashboardSidebar({ role, userName, collapsed, onToggle }: DashboardSidebarProps) {
+  const { isModuleEnabled } = useAccessControl();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const navItems = navByRole[role.toLowerCase() as keyof typeof navByRole];
+  const allNavItems = navByRole[role.toLowerCase() as keyof typeof navByRole];
+
+  const navItems = allNavItems.filter(item => isModuleEnabled(item.path, role));
 
   return (
     <aside

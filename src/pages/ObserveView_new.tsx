@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { ChevronLeft } from "lucide-react";
 import { initialTemplates } from "@/lib/template-utils";
 import { Observation } from "@/types/observation";
+import { useFormFlow } from "@/hooks/useFormFlow";
+import { useAuth } from "@/hooks/useAuth";
 
 // Defined locally to fix missing import
 const teamMembers: any[] = []; // Placeholder
@@ -21,6 +23,8 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 }) {
     const navigate = useNavigate();
 
+    const { user } = useAuth();
+    const { getRedirectionPath } = useFormFlow();
     const [template, setTemplate] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -148,7 +152,9 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
                                     const newObs = response.data.data.observation;
                                     setObservations(prev => [newObs, ...prev]);
                                     toast.success(`Observation recorded successfully!`);
-                                    navigate("/leader");
+
+                                    const redirectPath = getRedirectionPath(template.title, user?.role || "");
+                                    navigate(redirectPath || "/leader");
                                 }
                             } catch (error) {
                                 console.error("Failed to submit observation", error);

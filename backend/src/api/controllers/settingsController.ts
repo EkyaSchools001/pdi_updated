@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../infrastructure/utils/AppError';
+import { getIO } from '../../core/socket';
 
 const prisma = new PrismaClient();
 
@@ -58,6 +59,15 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
                 value: JSON.stringify(value)
             }
         });
+
+        // Broadcast the update via Socket.io
+        try {
+            const io = getIO();
+            io.emit('SETTINGS_UPDATED', { key, value });
+            console.log(`[SOCKET] Broadcasted update for setting: ${key}`);
+        } catch (socketErr) {
+            console.error('[SOCKET] Failed to broadcast setting update:', socketErr);
+        }
 
         res.status(200).json({
             status: 'success',

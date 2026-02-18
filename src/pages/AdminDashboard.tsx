@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList } from "lucide-react";
+import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList, Shield } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Link, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
@@ -14,12 +14,14 @@ import { CourseManagementView } from "./admin/CourseManagementView";
 import { AdminCalendarView } from "./admin/AdminCalendarView";
 import { AdminReportsView } from "./admin/AdminReportsView";
 import { SystemSettingsView } from "./admin/SystemSettingsView";
+import { SuperAdminView } from "./admin/SuperAdminView";
 import AdminDocumentManagement from "./AdminDocumentManagement";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
+import { useAccessControl } from "@/hooks/useAccessControl";
 
 interface DashboardUser {
   id: string;
@@ -112,7 +114,7 @@ export default function AdminDashboard() {
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
       <Routes>
-        <Route index element={<DashboardOverview recentUsers={recentUsers} stats={stats} />} />
+        <Route index element={<DashboardOverview recentUsers={recentUsers} stats={stats} role={role} />} />
         <Route path="users" element={<UserManagementView />} />
         <Route path="profile/:userId" element={<AdminTeacherProfileView observations={observations} />} />
         <Route path="forms" element={<FormTemplatesView />} />
@@ -123,6 +125,7 @@ export default function AdminDashboard() {
         <Route path="documents" element={<AdminDocumentManagement />} />
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />
+        <Route path="superadmin" element={<SuperAdminView />} />
       </Routes>
     </DashboardLayout>
   );
@@ -183,8 +186,9 @@ const adminModules = [
 
 
 
-function DashboardOverview({ recentUsers, stats }: {
+function DashboardOverview({ recentUsers, stats, role }: {
   recentUsers: DashboardUser[],
+  role: string,
   stats: {
     users: { total: number, new: number },
     training: { total: number, thisMonth: number },
@@ -192,6 +196,7 @@ function DashboardOverview({ recentUsers, stats }: {
     courses: { total: number, new: number }
   }
 }) {
+  const { isModuleEnabled } = useAccessControl();
   return (
     <>
       <PageHeader
@@ -202,31 +207,39 @@ function DashboardOverview({ recentUsers, stats }: {
       {/* Stats Overview */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <StatCard
-            title="Total Users"
-            value={stats.users?.total?.toString() || "0"}
-            subtitle={`+${stats.users?.new || 0} this month`}
-            icon={Users}
-            trend={{ value: stats.users?.new || 0, isPositive: true }}
-          />
-          <StatCard
-            title="Active Forms"
-            value={stats.forms?.active?.toString() || "0"}
-            subtitle="All systems active"
-            icon={FileText}
-          />
-          <StatCard
-            title="Courses"
-            value={stats.courses?.total?.toString() || "0"}
-            subtitle={`${stats.courses?.new || 0} new downloadable`}
-            icon={Book}
-          />
-          <StatCard
-            title="Training Events"
-            value={stats.training?.total?.toString() || "0"}
-            subtitle={`${stats.training?.thisMonth || 0} this month`}
-            icon={Calendar}
-          />
+          {isModuleEnabled('/admin/users', role) && (
+            <StatCard
+              title="Total Users"
+              value={stats.users?.total?.toString() || "0"}
+              subtitle={`+${stats.users?.new || 0} this month`}
+              icon={Users}
+              trend={{ value: stats.users?.new || 0, isPositive: true }}
+            />
+          )}
+          {isModuleEnabled('/admin/forms', role) && (
+            <StatCard
+              title="Active Forms"
+              value={stats.forms?.active?.toString() || "0"}
+              subtitle="All systems active"
+              icon={FileText}
+            />
+          )}
+          {isModuleEnabled('/admin/courses', role) && (
+            <StatCard
+              title="Courses"
+              value={stats.courses?.total?.toString() || "0"}
+              subtitle={`${stats.courses?.new || 0} new downloadable`}
+              icon={Book}
+            />
+          )}
+          {isModuleEnabled('/admin/calendar', role) && (
+            <StatCard
+              title="Training Events"
+              value={stats.training?.total?.toString() || "0"}
+              subtitle={`${stats.training?.thisMonth || 0} this month`}
+              icon={Calendar}
+            />
+          )}
         </div>
       )}
 
@@ -236,119 +249,127 @@ function DashboardOverview({ recentUsers, stats }: {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
           {/* New Registrations Card */}
-          <div className="dashboard-card p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-sm text-foreground">New Registrations</h3>
-              <Users className="w-4 h-4 text-primary" />
-            </div>
-            <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
-              {recentUsers.length > 0 ? (
-                recentUsers.map((u) => (
-                  <div key={u.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{u.fullName}</span>
-                      <span className="text-xs text-muted-foreground">{u.role}</span>
+          {isModuleEnabled('/admin/users', role) && (
+            <div className="dashboard-card p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm text-foreground">New Registrations</h3>
+                <Users className="w-4 h-4 text-primary" />
+              </div>
+              <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
+                {recentUsers.length > 0 ? (
+                  recentUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{u.fullName}</span>
+                        <span className="text-xs text-muted-foreground">{u.role}</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(u.createdAt), { addSuffix: true })}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(u.createdAt), { addSuffix: true })}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-muted-foreground text-center py-4">No recent registrations</div>
-              )}
+                  ))
+                ) : (
+                  <div className="text-sm text-muted-foreground text-center py-4">No recent registrations</div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
+                <Link to="/admin/users">Review All</Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
-              <Link to="/admin/users">Review All</Link>
-            </Button>
-          </div>
+          )}
 
           {/* Pending Forms Card */}
-          <div className="dashboard-card p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-sm text-foreground">Pending Form Reviews</h3>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600">2</span>
-            </div>
-            <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
-              {[
-                { title: "Walkthrough: Gr 5 Math", author: "J. Doe", status: "Waiting" },
-                { title: "Self-Reflection Q3", author: "M. Smith", status: "Waiting" },
-                { title: "Peer Obsv: Science", author: "K. Williams", status: "Reviewed" },
-              ].map((f, i) => (
-                <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer">
-                  <div className="flex flex-col truncate max-w-[120px]">
-                    <span className="font-medium truncate">{f.title}</span>
-                    <span className="text-xs text-muted-foreground">{f.author}</span>
+          {isModuleEnabled('/admin/forms', role) && (
+            <div className="dashboard-card p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm text-foreground">Pending Form Reviews</h3>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600">2</span>
+              </div>
+              <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
+                {[
+                  { title: "Walkthrough: Gr 5 Math", author: "J. Doe", status: "Waiting" },
+                  { title: "Self-Reflection Q3", author: "M. Smith", status: "Waiting" },
+                  { title: "Peer Obsv: Science", author: "K. Williams", status: "Reviewed" },
+                ].map((f, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer">
+                    <div className="flex flex-col truncate max-w-[120px]">
+                      <span className="font-medium truncate">{f.title}</span>
+                      <span className="text-xs text-muted-foreground">{f.author}</span>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${f.status === 'Waiting' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{f.status}</span>
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${f.status === 'Waiting' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>{f.status}</span>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
+                <Link to="/admin/forms">Go to Approvals</Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
-              <Link to="/admin/forms">Go to Approvals</Link>
-            </Button>
-          </div>
+          )}
 
           {/* Recent Course Enrollments */}
-          <div className="dashboard-card p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-sm text-foreground">Recent Enrollments</h3>
-              <Book className="w-4 h-4 text-primary" />
-            </div>
-            <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
-              {[
-                { user: "Teacher One", course: "Diff. Instruction", date: "Today" },
-                { user: "Teacher Two", course: "Tech Integration", date: "Yesterday" },
-                { user: "Teacher Three", course: "Diff. Instruction", date: "Yesterday" },
-              ].map((e, i) => (
-                <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 transition-colors">
-                  <div className="flex flex-col truncate max-w-[140px]">
-                    <span className="font-medium truncate">{e.user}</span>
-                    <span className="text-xs text-muted-foreground truncate">{e.course}</span>
+          {isModuleEnabled('/admin/courses', role) && (
+            <div className="dashboard-card p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm text-foreground">Recent Enrollments</h3>
+                <Book className="w-4 h-4 text-primary" />
+              </div>
+              <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
+                {[
+                  { user: "Teacher One", course: "Diff. Instruction", date: "Today" },
+                  { user: "Teacher Two", course: "Tech Integration", date: "Yesterday" },
+                  { user: "Teacher Three", course: "Diff. Instruction", date: "Yesterday" },
+                ].map((e, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 transition-colors">
+                    <div className="flex flex-col truncate max-w-[140px]">
+                      <span className="font-medium truncate">{e.user}</span>
+                      <span className="text-xs text-muted-foreground truncate">{e.course}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{e.date}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{e.date}</span>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
+                <Link to="/admin/courses">View Catalogue</Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
-              <Link to="/admin/courses">View Catalogue</Link>
-            </Button>
-          </div>
+          )}
 
           {/* Upcoming Event RSVPs */}
-          <div className="dashboard-card p-4 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-medium text-sm text-foreground">Event RSVPs</h3>
-              <Calendar className="w-4 h-4 text-primary" />
-            </div>
-            <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
-              {[
-                { event: "Feb 15: Pedagogy Dept", user: "Alice M.", status: "Going" },
-                { event: "Feb 15: Pedagogy Dept", user: "John D.", status: "Going" },
-                { event: "Feb 18: Digital Safety", user: "Robert F.", status: "Maybe" },
-              ].map((e, i) => (
-                <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 transition-colors">
-                  <div className="flex flex-col truncate max-w-[130px]">
-                    <span className="font-medium truncate">{e.event}</span>
-                    <span className="text-xs text-muted-foreground">{e.user}</span>
+          {isModuleEnabled('/admin/calendar', role) && (
+            <div className="dashboard-card p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm text-foreground">Event RSVPs</h3>
+                <Calendar className="w-4 h-4 text-primary" />
+              </div>
+              <div className="space-y-3 flex-1 overflow-auto max-h-[200px] pr-1">
+                {[
+                  { event: "Feb 15: Pedagogy Dept", user: "Alice M.", status: "Going" },
+                  { event: "Feb 15: Pedagogy Dept", user: "John D.", status: "Going" },
+                  { event: "Feb 18: Digital Safety", user: "Robert F.", status: "Maybe" },
+                ].map((e, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-muted/40 transition-colors">
+                    <div className="flex flex-col truncate max-w-[130px]">
+                      <span className="font-medium truncate">{e.event}</span>
+                      <span className="text-xs text-muted-foreground">{e.user}</span>
+                    </div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${e.status === 'Going' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{e.status}</span>
                   </div>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${e.status === 'Going' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{e.status}</span>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
+                <Link to="/admin/calendar">Manage Calendar</Link>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full mt-3 text-xs" asChild>
-              <Link to="/admin/calendar">Manage Calendar</Link>
-            </Button>
-          </div>
+          )}
 
         </div>
-      </div >
+      </div>
 
       {/* Admin Modules Grid */}
-      < div className="mb-8" >
+      <div className="mb-8">
         <h2 className="text-xl font-semibold text-foreground mb-4">Platform Management</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adminModules.map((module) => (
+          {adminModules.filter(module => isModuleEnabled(module.path, role)).map((module) => (
             <Link
               key={module.title}
               to={module.path}
@@ -368,7 +389,7 @@ function DashboardOverview({ recentUsers, stats }: {
       </div >
 
       {/* Recent Activity & Audit Log Preview */}
-      < div className="grid lg:grid-cols-2 gap-8" >
+      <div className="grid lg:grid-cols-2 gap-8">
         {/* Recent Activity */}
         < div >
           <div className="flex items-center justify-between mb-4">

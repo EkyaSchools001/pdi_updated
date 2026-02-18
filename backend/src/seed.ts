@@ -12,27 +12,20 @@ async function main() {
     // Clear existing data in correct order to avoid foreign key constraints
     console.log('Clearing existing data...');
 
-    // 1. Delete records that reference User or other models
-    await prisma.courseEnrollment.deleteMany({});
-    await prisma.moocSubmission.deleteMany({});
-    await prisma.registration.deleteMany({});
-    await prisma.pDHour.deleteMany({});
-    await prisma.goal.deleteMany({});
-    await prisma.documentAcknowledgement.deleteMany({});
-    await prisma.observationDomain.deleteMany({});
+    const tables = [
+        'courseEnrollment', 'moocSubmission', 'registration', 'pDHour',
+        'goal', 'documentAcknowledgement', 'observationDomain', 'observation',
+        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings', 'user'
+    ];
 
-    // 2. Delete parent records that are referenced by the ones above
-    await prisma.observation.deleteMany({});
-    await prisma.document.deleteMany({});
-    await prisma.trainingEvent.deleteMany({});
-    await prisma.course.deleteMany({});
-    await prisma.formTemplate.deleteMany({});
-    await prisma.systemSettings.deleteMany({});
-
-    // 3. Finally delete users
-    await prisma.user.deleteMany({});
-
-    console.log('Cleared existing data.');
+    for (const table of tables) {
+        try {
+            await (prisma as any)[table].deleteMany({});
+            console.log(`Cleared ${table}`);
+        } catch (e) {
+            console.warn(`Could not clear ${table}, maybe it depends on something else.`);
+        }
+    }
 
     const defaultPassword = 'password123'; // Fallback if needed, but we have specific ones
 
@@ -48,8 +41,16 @@ async function main() {
 
     for (const u of users) {
         const hashedPassword = await bcrypt.hash(u.pass, 10);
-        await prisma.user.create({
-            data: {
+        await prisma.user.upsert({
+            where: { email: u.email },
+            update: {
+                fullName: u.name,
+                passwordHash: hashedPassword,
+                role: u.role as any,
+                campusId: u.campusId,
+                department: u.department
+            },
+            create: {
                 fullName: u.name,
                 email: u.email,
                 passwordHash: hashedPassword,
@@ -60,7 +61,41 @@ async function main() {
         });
     }
 
-    console.log('Seed data created successfully with users from Excel!');
+    // Seed default access matrix config
+    const defaultAccessMatrix = [
+        { moduleId: 'users', moduleName: 'User Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'forms', moduleName: 'Form Templates', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'courses', moduleName: 'Course Catalogue', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'calendar', moduleName: 'Training Calendar', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'documents', moduleName: 'Documents', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'reports', moduleName: 'Reports & Analytics', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: false } },
+        { moduleId: 'settings', moduleName: 'System Settings', roles: { SUPERADMIN: true, ADMIN: false, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'attendance', moduleName: 'Attendance', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'observations', moduleName: 'Observations', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'goals', moduleName: 'Goal Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'hours', moduleName: 'PD Hours Tracking', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'insights', moduleName: 'Data Insights', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+    ];
+
+    const defaultFormFlows = [
+        { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
+        { id: '2', formName: 'Annual Goal Setting', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
+        { id: '3', formName: 'MOOC Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
+        { id: '4', formName: 'Self-Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+    ];
+
+    await prisma.systemSettings.upsert({
+        where: { key: 'access_matrix_config' },
+        update: {
+            value: JSON.stringify({ accessMatrix: defaultAccessMatrix, formFlows: defaultFormFlows })
+        },
+        create: {
+            key: 'access_matrix_config',
+            value: JSON.stringify({ accessMatrix: defaultAccessMatrix, formFlows: defaultFormFlows })
+        }
+    });
+
+    console.log('Seed data created successfully with users and default access matrix!');
 }
 
 main()

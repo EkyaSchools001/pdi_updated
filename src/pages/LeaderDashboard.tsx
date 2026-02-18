@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
@@ -296,7 +297,7 @@ export default function LeaderDashboard() {
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
       <Routes>
-        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} />} />
+        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} role={role} />} />
         <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
         <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
         <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
@@ -316,8 +317,23 @@ export default function LeaderDashboard() {
   );
 }
 
-function DashboardOverview({ team, observations, userName, systemAvgScore, domainAverages }: { team: any[], observations: Observation[], userName: string, systemAvgScore: string, domainAverages: any[] }) {
+function DashboardOverview({
+  team,
+  observations,
+  userName,
+  systemAvgScore,
+  domainAverages,
+  role
+}: {
+  team: any[],
+  observations: Observation[],
+  userName: string,
+  systemAvgScore: string,
+  domainAverages: any[],
+  role: string
+}) {
   const navigate = useNavigate();
+  const { isModuleEnabled } = useAccessControl();
 
   return (
     <>
@@ -328,173 +344,193 @@ function DashboardOverview({ team, observations, userName, systemAvgScore, domai
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-        <StatCard
-          title="Team Members"
-          value={team.length}
-          subtitle="Direct reports"
-          icon={Users}
-          onClick={() => navigate("/leader/team")}
-        />
-        <StatCard
-          title="Observations This Month"
-          value={observations.length}
-          subtitle="Goal: 24"
-          icon={Eye}
-          trend={{ value: 15, isPositive: true }}
-          onClick={() => navigate("/leader/observations")}
-        />
-        <StatCard
-          title="Average Score"
-          value={systemAvgScore}
-          subtitle="System wide"
-          icon={TrendingUp}
-          onClick={() => navigate("/leader/performance")}
-        />
-        <StatCard
-          title="PD Participation"
-          value={`${team.length > 0 ? Math.round(team.reduce((acc, m) => acc + (m.pdHours || 0), 0) / team.length) : 0}h`}
-          subtitle="Avg hours per staff"
-          icon={Clock}
-          onClick={() => navigate("/leader/participation")}
-        />
+        {isModuleEnabled('/leader/team', role) && (
+          <StatCard
+            title="Team Members"
+            value={team.length}
+            subtitle="Direct reports"
+            icon={Users}
+            onClick={() => navigate("/leader/team")}
+          />
+        )}
+        {isModuleEnabled('/leader/observations', role) && (
+          <StatCard
+            title="Observations This Month"
+            value={observations.length}
+            subtitle="Goal: 24"
+            icon={Eye}
+            trend={{ value: 15, isPositive: true }}
+            onClick={() => navigate("/leader/observations")}
+          />
+        )}
+        {isModuleEnabled('/leader/performance', role) && (
+          <StatCard
+            title="Average Score"
+            value={systemAvgScore}
+            subtitle="System wide"
+            icon={TrendingUp}
+            onClick={() => navigate("/leader/performance")}
+          />
+        )}
+        {isModuleEnabled('/leader/hours', role) && (
+          <StatCard
+            title="PD Participation"
+            value={`${team.length > 0 ? Math.round(team.reduce((acc, m) => acc + (m.pdHours || 0), 0) / team.length) : 0}h`}
+            subtitle="Avg hours per staff"
+            icon={Clock}
+            onClick={() => navigate("/leader/participation")}
+          />
+        )}
       </div>
 
       {/* Main Content Grid */}
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Team Overview */}
-        <div className="lg:col-span-2">
+        {isModuleEnabled('/leader/team', role) && (
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-foreground">Team Overview</h2>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/leader/team")}>
+                View All
+              </Button>
+            </div>
+
+            <div className="dashboard-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Teacher</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Observations</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Observed</th>
+                      <th className="text-left p-4 text-sm font-medium text-muted-foreground">Avg Score</th>
+                      <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {team.map((member) => (
+                      <tr key={member.id} className="border-t hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium text-foreground">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                          </div>
+                        </td>
+                        <td className="p-4 text-foreground">{member.observations}</td>
+                        <td className="p-4 text-muted-foreground">{member.lastObserved}</td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success font-bold text-sm">
+                            {member.avgScore}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <Button variant="outline" size="sm" onClick={() => navigate("/leader/observe")}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Observe
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Domain Performance */}
+        {isModuleEnabled('/leader/observations', role) && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-foreground">Domain Performance</h2>
+              </div>
+            </div>
+
+            <div className="dashboard-card p-5 space-y-5">
+              {domainAverages.map((domain) => (
+                <div key={domain.domain}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-foreground">{domain.domain}</span>
+                    <span className="text-sm text-muted-foreground">{domain.average}/5</span>
+                  </div>
+                  <Progress value={domain.average * 20} className="h-2" />
+                  <p className="text-xs text-muted-foreground mt-1">{domain.count} observations</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Observations */}
+      {isModuleEnabled('/leader/observations', role) && (
+        <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">Team Overview</h2>
+              <h2 className="text-xl font-semibold text-foreground">Recent Observations</h2>
             </div>
             <Button variant="ghost" size="sm" onClick={() => navigate("/leader/team")}>
               View All
             </Button>
           </div>
 
-          <div className="dashboard-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Teacher</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Observations</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Last Observed</th>
-                    <th className="text-left p-4 text-sm font-medium text-muted-foreground">Avg Score</th>
-                    <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {team.map((member) => (
-                    <tr key={member.id} className="border-t hover:bg-muted/30 transition-colors">
-                      <td className="p-4">
-                        <div>
-                          <p className="font-medium text-foreground">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">{member.role}</p>
-                        </div>
-                      </td>
-                      <td className="p-4 text-foreground">{member.observations}</td>
-                      <td className="p-4 text-muted-foreground">{member.lastObserved}</td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success font-bold text-sm">
-                          {member.avgScore}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <Button variant="outline" size="sm" onClick={() => navigate("/leader/observe")}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Observe
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Domain Performance */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">Domain Performance</h2>
-            </div>
-          </div>
-
-          <div className="dashboard-card p-5 space-y-5">
-            {domainAverages.map((domain) => (
-              <div key={domain.domain}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">{domain.domain}</span>
-                  <span className="text-sm text-muted-foreground">{domain.average}/5</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {observations.map((obs) => (
+              <div
+                key={obs.id}
+                className="dashboard-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/20 group"
+                onClick={() => navigate(`/leader/observations/${obs.id}`)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-sm text-muted-foreground">{obs.date}</span>
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-success/10 text-success font-bold text-sm">
+                    {obs.score}
+                  </span>
                 </div>
-                <Progress value={domain.average * 20} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">{domain.count} observations</p>
+                <p className="font-medium text-foreground mb-1 group-hover:text-primary transition-colors">{obs.teacher}</p>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {obs.domain}
+                </span>
               </div>
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Recent Observations */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-foreground">Recent Observations</h2>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/leader/team")}>
-            View All
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {observations.map((obs) => (
-            <div
-              key={obs.id}
-              className="dashboard-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/20 group"
-              onClick={() => navigate(`/leader/observations/${obs.id}`)}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <span className="text-sm text-muted-foreground">{obs.date}</span>
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-success/10 text-success font-bold text-sm">
-                  {obs.score}
-                </span>
-              </div>
-              <p className="font-medium text-foreground mb-1 group-hover:text-primary transition-colors">{obs.teacher}</p>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                {obs.domain}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Quick Actions */}
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/goals")}>
-          <Target className="w-6 h-6 text-primary" />
-          <div className="text-left">
-            <p className="font-medium">Teacher Goals</p>
-            <p className="text-sm text-muted-foreground">Manage development goals</p>
-          </div>
-        </Button>
+        {isModuleEnabled('/teacher/goals', role) && (
+          <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/goals")}>
+            <Target className="w-6 h-6 text-primary" />
+            <div className="text-left">
+              <p className="font-medium">Teacher Goals</p>
+              <p className="text-sm text-muted-foreground">Manage development goals</p>
+            </div>
+          </Button>
+        )}
 
-        <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/calendar")}>
-          <Calendar className="w-6 h-6 text-primary" />
-          <div className="text-left">
-            <p className="font-medium">Manage Calendar</p>
-            <p className="text-sm text-muted-foreground">Schedule training events</p>
-          </div>
-        </Button>
+        {isModuleEnabled('/leader/calendar', role) && (
+          <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/calendar")}>
+            <Calendar className="w-6 h-6 text-primary" />
+            <div className="text-left">
+              <p className="font-medium">Manage Calendar</p>
+              <p className="text-sm text-muted-foreground">Schedule training events</p>
+            </div>
+          </Button>
+        )}
 
-        <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/reports")}>
-          <FileText className="w-6 h-6 text-primary" />
-          <div className="text-left">
-            <p className="font-medium">Export Reports</p>
-            <p className="text-sm text-muted-foreground">Generate data exports</p>
-          </div>
-        </Button>
+        {isModuleEnabled('/admin/reports', role) && (
+          <Button variant="outline" className="h-auto p-6 flex flex-col items-start gap-2" onClick={() => navigate("/leader/reports")}>
+            <FileText className="w-6 h-6 text-primary" />
+            <div className="text-left">
+              <p className="font-medium">Export Reports</p>
+              <p className="text-sm text-muted-foreground">Generate data exports</p>
+            </div>
+          </Button>
+        )}
       </div>
     </>
   );

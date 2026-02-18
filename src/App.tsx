@@ -12,6 +12,7 @@ import ManagementDashboard from "./pages/ManagementDashboard";
 import NotFound from "./pages/NotFound";
 
 import { AuthProvider } from "./hooks/useAuth";
+import { PermissionProvider } from "./contexts/PermissionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -27,50 +28,52 @@ const App = () => (
         v7_relativeSplatPath: true
       }}>
         <AuthProvider>
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Auth />} />
+          <PermissionProvider>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Auth />} />
 
-              <Route
-                path="/teacher/*"
-                element={
-                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'SUPERADMIN']}>
-                    <TeacherDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/teacher/*"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN', 'SUPERADMIN']}>
+                      <TeacherDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/leader/*"
-                element={
-                  <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
-                    <LeaderDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/leader/*"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LeaderDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/admin/*"
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/admin/*"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/management/*"
-                element={
-                  <ProtectedRoute allowedRoles={['MANAGEMENT', 'SUPERADMIN']}>
-                    <ManagementDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/management/*"
+                  element={
+                    <ProtectedRoute allowedRoles={['MANAGEMENT', 'SUPERADMIN']}>
+                      <ManagementDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ErrorBoundary>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
+          </PermissionProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

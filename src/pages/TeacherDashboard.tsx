@@ -5,6 +5,7 @@ import { Routes, Route, Link, useLocation, useNavigate, useParams } from "react-
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccessControl } from "@/hooks/useAccessControl";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
@@ -137,7 +138,8 @@ const DashboardOverview = ({
   onView,
   onReflect,
   userName,
-  pdHours
+  pdHours,
+  role
 }: {
   goals: any[],
   events: any[],
@@ -146,9 +148,11 @@ const DashboardOverview = ({
   onView: (id: string) => void,
   onReflect: (obs: Observation) => void,
   userName: string,
-  pdHours: any
+  pdHours: any,
+  role: string
 }) => {
   const navigate = useNavigate();
+  const { isModuleEnabled } = useAccessControl();
   const schoolAlignedGoals = goals.filter(g => g.isSchoolAligned).length;
   const reflectionsCount = observations.filter(o => o.hasReflection).length;
   const upcomingTrainings = events.filter(e => !e.isRegistered).length;
@@ -171,96 +175,110 @@ const DashboardOverview = ({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-        <StatCard
-          title="PD Hours Completed"
-          value={pdHours.total}
-          subtitle="This school year"
-          icon={Clock}
-          trend={{ value: 12, isPositive: true }}
+        {isModuleEnabled('/teacher/hours', role) && (
+          <StatCard
+            title="PD Hours Completed"
+            value={pdHours.total}
+            subtitle="This school year"
+            icon={Clock}
+            trend={{ value: 12, isPositive: true }}
 
-          onClick={() => navigate("/teacher/hours")}
-        />
-        <StatCard
-          title="Observations"
-          value={observations.length}
-          subtitle={`${reflectionsCount} with reflections`}
-          icon={Eye}
+            onClick={() => navigate("/teacher/hours")}
+          />
+        )}
+        {isModuleEnabled('/teacher/observations', role) && (
+          <StatCard
+            title="Observations"
+            value={observations.length}
+            subtitle={`${reflectionsCount} with reflections`}
+            icon={Eye}
 
-          onClick={() => navigate("/teacher/observations")}
-        />
-        <StatCard
-          title="Active Goals"
-          value={goals.length}
-          subtitle={`${schoolAlignedGoals} school-aligned`}
-          icon={Target}
+            onClick={() => navigate("/teacher/observations")}
+          />
+        )}
+        {isModuleEnabled('/teacher/goals', role) && (
+          <StatCard
+            title="Active Goals"
+            value={goals.length}
+            subtitle={`${schoolAlignedGoals} school-aligned`}
+            icon={Target}
 
-          onClick={() => navigate("/teacher/goals")}
-        />
-        <StatCard
-          title="Upcoming Training"
-          value={upcomingTrainings}
-          subtitle="Next: Jan 25"
-          icon={Calendar}
+            onClick={() => navigate("/teacher/goals")}
+          />
+        )}
+        {isModuleEnabled('/teacher/calendar', role) && (
+          <StatCard
+            title="Upcoming Training"
+            value={upcomingTrainings}
+            subtitle="Next: Jan 25"
+            icon={Calendar}
 
-          onClick={() => navigate("/teacher/calendar")}
-        />
+            onClick={() => navigate("/teacher/calendar")}
+          />
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
+        {isModuleEnabled('/teacher/observations', role) && (
+          <div className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">Recent Observations</h2>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/teacher/observations">
+                  View All
+                  <TrendingUp className="ml-2 w-4 h-4" />
+                </Link>
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {observations.slice(0, 3).map((obs) => (
+                <ObservationCard
+                  key={obs.id}
+                  observation={obs}
+                  onView={() => onView(obs.id)}
+                  onReflect={() => onReflect(obs)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isModuleEnabled('/teacher/goals', role) && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-foreground">My Goals</h2>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/teacher/goals">View All</Link>
+              </Button>
+            </div>
+            <div className="space-y-4">
+              {goals.map((goal) => (
+                <GoalCard key={goal.id} goal={goal} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isModuleEnabled('/teacher/calendar', role) && (
+        <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">Recent Observations</h2>
+            <h2 className="text-xl font-semibold text-foreground">Upcoming Training</h2>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/teacher/observations">
-                View All
-                <TrendingUp className="ml-2 w-4 h-4" />
-              </Link>
+              <Link to="/teacher/calendar">View Calendar</Link>
             </Button>
           </div>
-          <div className="space-y-4">
-            {observations.slice(0, 3).map((obs) => (
-              <ObservationCard
-                key={obs.id}
-                observation={obs}
-                onView={() => onView(obs.id)}
-                onReflect={() => onReflect(obs)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event) => (
+              <TrainingEventCard
+                key={event.id}
+                event={event}
+                onRegister={() => onRegister(event.id)}
               />
             ))}
           </div>
         </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">My Goals</h2>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/teacher/goals">View All</Link>
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {goals.map((goal) => (
-              <GoalCard key={goal.id} goal={goal} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Upcoming Training</h2>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/teacher/calendar">View Calendar</Link>
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event) => (
-            <TrainingEventCard
-              key={event.id}
-              event={event}
-              onRegister={() => onRegister(event.id)}
-            />
-          ))}
-        </div>
-      </div>
+      )}
     </>
   );
 }
@@ -1631,6 +1649,7 @@ export default function TeacherDashboard() {
             onReflect={setSelectedReflectObs}
             userName={userName}
             pdHours={pdHours}
+            role={role}
           />
         } />
         <Route path="observations" element={
