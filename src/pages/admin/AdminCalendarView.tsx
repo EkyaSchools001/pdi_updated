@@ -6,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, Clock, MapPin, Map, Users } from "lucide-react";
+import { Search, Plus, Filter, Clock, MapPin, Map, Users, Lock, Users2, CheckCircle2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -164,6 +165,20 @@ export function AdminCalendarView() {
         } catch (error) {
             console.error("Failed to delete event", error);
             toast.error("Failed to delete event");
+        }
+    };
+
+    const handleToggleAttendance = async (eventId: string, action: 'enable' | 'close') => {
+        try {
+            const updatedEvent = await trainingService.toggleAttendance(eventId, action);
+            setTraining(training.map((ev: any) => ev.id === eventId ? { ...ev, ...updatedEvent } : ev));
+            if (currentEvent && currentEvent.id === eventId) {
+                setCurrentEvent({ ...currentEvent, ...updatedEvent });
+            }
+            toast.success(`Attendance ${action === 'enable' ? 'enabled' : 'closed'} successfully`);
+        } catch (error) {
+            console.error(`Failed to ${action} attendance:`, error);
+            toast.error(`Failed to ${action} attendance`);
         }
     };
 
@@ -599,6 +614,31 @@ export function AdminCalendarView() {
                                 </div>
                             </div>
                             <div className="pt-4 border-t mt-2">
+                                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-muted/20 mb-4">
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-bold flex items-center gap-2">
+                                            <Users2 className="w-4 h-4 text-primary" />
+                                            Attendance Control
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground">
+                                            Enable staff to mark their presence for this session.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-2 text-right">
+                                        <div className="flex items-center gap-3">
+                                            <span className={cn(
+                                                "text-[10px] font-black uppercase tracking-tighter transition-colors",
+                                                (currentEvent.attendanceEnabled && !currentEvent.attendanceClosed) ? "text-primary" : "text-muted-foreground"
+                                            )}>
+                                                {(currentEvent.attendanceEnabled && !currentEvent.attendanceClosed) ? "Live" : "Disabled"}
+                                            </span>
+                                            <Switch
+                                                checked={currentEvent.attendanceEnabled && !currentEvent.attendanceClosed}
+                                                onCheckedChange={(checked) => handleToggleAttendance(currentEvent.id, checked ? 'enable' : 'close')}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                                 <Button variant="destructive" size="sm" className="w-full" onClick={() => { setIsEditOpen(false); setIsDeleteOpen(true); }}>
                                     Delete Event
                                 </Button>

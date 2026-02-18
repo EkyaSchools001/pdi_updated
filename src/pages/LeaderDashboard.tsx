@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2 } from "lucide-react";
+import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { Link, useNavigate, Routes, Route, useParams, useLocation } from "react-router-dom";
 
 
@@ -299,6 +301,9 @@ export default function LeaderDashboard() {
         <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
         <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
         <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
+        <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
+        <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
+        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
         <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
@@ -905,6 +910,8 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isRegistrantsOpen, setIsRegistrantsOpen] = useState(false);
+  const [selectedRegistrants, setSelectedRegistrants] = useState<any[]>([]);
   const [newEvent, setNewEvent] = useState({
     title: "",
     type: "Pedagogy",
@@ -948,6 +955,20 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
 
   // Get dates that have events for highlighting
   const eventDates = safeTraining.map(e => parseEventDate(e.date));
+
+  const handleToggleAttendance = async (eventId: string, action: 'enable' | 'close') => {
+    try {
+      const updatedEvent = await trainingService.toggleAttendance(eventId, action);
+      setTraining(prev => prev.map(ev => ev.id === eventId ? { ...ev, ...updatedEvent } : ev));
+      if (editingEvent && editingEvent.id === eventId) {
+        setEditingEvent({ ...editingEvent, ...updatedEvent });
+      }
+      toast.success(`Attendance ${action === 'enable' ? 'enabled' : 'closed'} successfully`);
+    } catch (error) {
+      console.error(`Failed to ${action} attendance:`, error);
+      toast.error(`Failed to ${action} attendance`);
+    }
+  };
 
   const handleScheduleEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1023,6 +1044,14 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
       console.error("Failed to delete event:", error);
       toast.error("Failed to delete event.");
     }
+  };
+
+
+
+  const handleViewRegistrants = (event: any) => {
+    setSelectedRegistrants(event.registrants || []);
+    setEditingEvent(event);
+    setIsRegistrantsOpen(true);
   };
 
   const handleRegister = async (eventId: string) => {
@@ -1282,6 +1311,15 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                             ) : (
                               <div className="flex items-center justify-end gap-2 text-right">
                                 <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-9 px-4 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-bold flex items-center gap-2"
+                                  onClick={() => handleViewRegistrants(session)}
+                                >
+                                  <Users2 className="w-4 h-4" />
+                                  Registrants
+                                </Button>
+                                <Button
                                   className="h-10 px-6 rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white shadow-lg shadow-slate-900/20 transition-all active:scale-[0.98] font-black uppercase tracking-tighter text-xs"
                                   onClick={() => handleRegister(session.id)}
                                 >
@@ -1386,6 +1424,36 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                   value={editingEvent.location}
                   onChange={(e) => setEditingEvent({ ...editingEvent, location: e.target.value })}
                 />
+              </div>
+
+
+              {/* Attendance Control Section */}
+              <div className="pt-4 border-t border-muted/20">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-muted/20">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold flex items-center gap-2">
+                      <Users2 className="w-4 h-4 text-primary" />
+                      Attendance Control
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      Enable staff to mark their presence for this session.
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        "text-[10px] font-black uppercase tracking-tighter transition-colors",
+                        (editingEvent.attendanceEnabled && !editingEvent.attendanceClosed) ? "text-primary" : "text-muted-foreground"
+                      )}>
+                        {(editingEvent.attendanceEnabled && !editingEvent.attendanceClosed) ? "Live" : "Disabled"}
+                      </span>
+                      <Switch
+                        checked={editingEvent.attendanceEnabled && !editingEvent.attendanceClosed}
+                        onCheckedChange={(checked) => handleToggleAttendance(editingEvent.id, checked ? 'enable' : 'close')}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-between items-center pt-4">
@@ -1521,7 +1589,79 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      {/* Registrants Dialog */}
+      <Dialog open={isRegistrantsOpen} onOpenChange={setIsRegistrantsOpen}>
+        <DialogContent className="sm:max-w-[700px] rounded-[2rem] overflow-hidden border-none shadow-2xl p-0">
+          <div className="bg-zinc-950 text-white p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-20 translate-x-20 pointer-events-none" />
+            <div className="relative z-10">
+              <h2 className="text-2xl font-black tracking-tight bg-gradient-to-r from-primary to-info bg-clip-text text-transparent">
+                Registered Participants
+              </h2>
+              <p className="text-zinc-400 font-medium text-sm mt-1 uppercase tracking-[0.2em]">
+                {editingEvent?.title}
+              </p>
+            </div>
+          </div>
+          <div className="p-8 bg-background">
+            <div className="rounded-2xl border border-muted/20 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/5">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-black uppercase tracking-widest text-[10px] py-4">Participant Name</TableHead>
+                    <TableHead className="font-black uppercase tracking-widest text-[10px] py-4">Contact Detail</TableHead>
+                    <TableHead className="font-black uppercase tracking-widest text-[10px] py-4 text-right">Registration Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedRegistrants.length > 0 ? (
+                    selectedRegistrants.map((registrant) => (
+                      <TableRow key={registrant.id} className="hover:bg-primary/5 transition-colors group">
+                        <TableCell className="py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm group-hover:bg-primary group-hover:text-white transition-all">
+                              {registrant.name.split(' ').map((n: string) => n[0]).join('')}
+                            </div>
+                            <span className="font-bold text-foreground">{registrant.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-5">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-muted-foreground">{registrant.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-5 text-right font-medium text-muted-foreground">
+                          {registrant.dateRegistered}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="py-20 text-center">
+                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                          <div className="w-16 h-16 rounded-3xl bg-muted/50 flex items-center justify-center">
+                            <Users2 className="w-8 h-8 opacity-20" />
+                          </div>
+                          <p className="font-bold italic">No registrations for this event yet.</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="mt-8 flex justify-end">
+              <Button
+                className="h-12 px-8 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-xs"
+                onClick={() => setIsRegistrantsOpen(false)}
+              >
+                Close View
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }
 

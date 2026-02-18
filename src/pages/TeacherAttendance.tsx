@@ -48,7 +48,7 @@ export default function TeacherAttendance() {
     // For now, I'll filter by Completed and show availability.
 
     const relevantEvents = events.filter(e =>
-        (e.status === 'Completed' || e.status === 'COMPLETED') &&
+        (e.status === 'Completed' || e.status === 'COMPLETED' || e.attendanceEnabled) &&
         (!e.schoolId || e.schoolId === userData?.campusId) // Filter by school if event has schoolId match
     );
 
@@ -63,7 +63,7 @@ export default function TeacherAttendance() {
         <div className="p-6 space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Attendance
                     </h1>
                     <p className="text-muted-foreground mt-2">
@@ -75,17 +75,17 @@ export default function TeacherAttendance() {
                 </div>
             </div>
 
-            <Card className="border-none shadow-premium bg-card/50 backdrop-blur-sm">
+            <Card className="border-none shadow-premium bg-card backdrop-blur-sm">
                 <CardContent className="pt-6">
-                    <div className="rounded-md border border-white/5 overflow-hidden">
+                    <div className="rounded-md border border-border overflow-hidden">
                         <Table>
-                            <TableHeader className="bg-white/5">
-                                <TableRow className="hover:bg-transparent border-white/5">
-                                    <TableHead className="text-gray-400">Event Name</TableHead>
-                                    <TableHead className="text-gray-400">Date</TableHead>
-                                    <TableHead className="text-gray-400">Location</TableHead>
-                                    <TableHead className="text-gray-400">Status</TableHead>
-                                    <TableHead className="text-right text-gray-400">Action</TableHead>
+                            <TableHeader className="bg-muted/50">
+                                <TableRow className="hover:bg-transparent border-border">
+                                    <TableHead className="text-foreground">Event Name</TableHead>
+                                    <TableHead className="text-foreground">Date</TableHead>
+                                    <TableHead className="text-foreground">Location</TableHead>
+                                    <TableHead className="text-foreground">Status</TableHead>
+                                    <TableHead className="text-right text-foreground">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -97,8 +97,8 @@ export default function TeacherAttendance() {
                                     </TableRow>
                                 ) : (
                                     sortedEvents.map((event) => (
-                                        <TableRow key={event.id} className="hover:bg-white/5 border-white/5 transition-colors">
-                                            <TableCell className="font-medium text-white">
+                                        <TableRow key={event.id} className="hover:bg-muted/30 border-border transition-colors">
+                                            <TableCell className="font-medium text-foreground">
                                                 {event.title}
                                                 <div className="text-xs text-muted-foreground">{event.topic}</div>
                                             </TableCell>

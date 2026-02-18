@@ -21,23 +21,26 @@ export const toggleAttendance = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ status: 'error', message: 'Event not found' });
         }
 
-        // Creator Validation
-        if (event.createdById && event.createdById !== userId && req.user?.role !== 'SUPERADMIN') {
-            return res.status(403).json({ status: 'error', message: 'Only the event creator can manage attendance' });
+        // Permission Validation: Creator, ADMIN, SUPERADMIN, or LEADER
+        const userRole = (req.user?.role || '').toUpperCase().trim();
+        const isAuthorized = event.createdById === userId ||
+            ['ADMIN', 'SUPERADMIN', 'LEADER', 'SCHOOL_LEADER', 'MANAGEMENT'].includes(userRole);
+
+        if (!isAuthorized) {
+            return res.status(403).json({
+                status: 'error',
+                message: `Permission denied. Role '${userRole}' is not authorized to manage attendance for this event. Required: [ADMIN, SUPERADMIN, LEADER, SCHOOL_LEADER, MANAGEMENT]`
+            });
         }
 
-        // Only completed events can have attendance enabled
-        if (action === 'enable' && event.status !== 'Completed' && event.status !== 'COMPLETED') {
-            if (event.status !== 'Completed' && event.status !== 'COMPLETED') {
-                return res.status(400).json({ status: 'error', message: 'Event must be marked as Completed before enabling attendance' });
-            }
-        }
 
         const updateData: any = {};
         if (action === 'enable') {
             updateData.attendanceEnabled = true;
+            updateData.attendanceClosed = false;
             updateData.attendanceTriggeredAt = new Date();
         } else if (action === 'close') {
+            updateData.attendanceEnabled = false;
             updateData.attendanceClosed = true;
         }
 

@@ -103,7 +103,7 @@ export default function AttendanceForm() {
 
     return (
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
-            <Card className="w-full max-w-lg border-none shadow-premium bg-card/50 backdrop-blur-sm">
+            <Card className="w-full max-w-lg border-none shadow-premium bg-card backdrop-blur-sm">
                 <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
                         <Button variant="ghost" size="sm" className="-ml-3 h-8 w-8 p-0" onClick={() => navigate("/teacher/attendance")}>
@@ -111,8 +111,8 @@ export default function AttendanceForm() {
                         </Button>
                         <Badge variant="outline" className="border-primary/20 text-primary">Attendance Form</Badge>
                     </div>
-                    <CardTitle className="text-2xl">{event.title}</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="text-2xl text-foreground">{event.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground font-medium">
                         {format(new Date(event.date), "MMMM d, yyyy")} • {event.location}
                     </CardDescription>
                 </CardHeader>
@@ -166,13 +166,13 @@ export default function AttendanceForm() {
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-2 pt-4 border-t border-white/5">
+                        <div className="flex items-center space-x-2 pt-4 border-t border-border">
                             <Checkbox
                                 id="confirm"
                                 checked={confirmed}
                                 onCheckedChange={(c) => setConfirmed(c as boolean)}
                             />
-                            <Label htmlFor="confirm" className="text-sm font-normal cursor-pointer">
+                            <Label htmlFor="confirm" className="text-sm font-normal cursor-pointer text-foreground">
                                 I confirm that I attended this training session in person/virtually.
                             </Label>
                         </div>

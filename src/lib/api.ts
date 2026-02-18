@@ -67,7 +67,8 @@ api.interceptors.response.use(
                 toast.error('Session expired. Please log in again.');
             }
         } else if (status === 403) {
-            toast.error('You do not have permission to perform this action.');
+            const message = (error.response?.data as any)?.message || 'You do not have permission to perform this action.';
+            toast.error(message);
         } else if (status === 404) {
             toast.error('Resource not found.');
         } else if (status === 500) {

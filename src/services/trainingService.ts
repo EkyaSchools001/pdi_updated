@@ -41,5 +41,10 @@ export const trainingService = {
     async updateEvent(id: string, data: any) {
         const response = await api.put(`/training/${id}`, data);
         return response.data.data.event;
+    },
+
+    async toggleAttendance(id: string, action: 'enable' | 'close') {
+        const response = await api.post(`/attendance/${id}/toggle`, { action });
+        return response.data.data.event;
     }
 };

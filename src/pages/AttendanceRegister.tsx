@@ -77,7 +77,7 @@ export default function AttendanceRegister() {
         <div className="p-6 space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
                         Attendance Register
                     </h1>
                     <p className="text-muted-foreground mt-2">
@@ -89,20 +89,20 @@ export default function AttendanceRegister() {
                 </div>
             </div>
 
-            <Card className="border-none shadow-premium bg-card/50 backdrop-blur-sm">
+            <Card className="border-none shadow-premium bg-card backdrop-blur-sm">
                 <CardHeader>
                     <CardTitle>My Events</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border border-white/5 overflow-hidden">
+                    <div className="rounded-md border border-border overflow-hidden">
                         <Table>
-                            <TableHeader className="bg-white/5">
-                                <TableRow className="hover:bg-transparent border-white/5">
-                                    <TableHead className="text-gray-400">Event Name</TableHead>
-                                    <TableHead className="text-gray-400">Date</TableHead>
-                                    <TableHead className="text-gray-400">Status</TableHead>
-                                    <TableHead className="text-gray-400">Attendance</TableHead>
-                                    <TableHead className="text-right text-gray-400">Actions</TableHead>
+                            <TableHeader className="bg-muted/50">
+                                <TableRow className="hover:bg-transparent border-border">
+                                    <TableHead className="text-foreground">Event Name</TableHead>
+                                    <TableHead className="text-foreground">Date</TableHead>
+                                    <TableHead className="text-foreground">Status</TableHead>
+                                    <TableHead className="text-foreground">Attendance</TableHead>
+                                    <TableHead className="text-right text-foreground">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -114,16 +114,16 @@ export default function AttendanceRegister() {
                                     </TableRow>
                                 ) : (
                                     sortedEvents.map((event) => (
-                                        <TableRow key={event.id} className="hover:bg-white/5 border-white/5 transition-colors">
-                                            <TableCell className="font-medium text-white">
+                                        <TableRow key={event.id} className="hover:bg-muted/30 border-border transition-colors">
+                                            <TableCell className="font-medium text-foreground">
                                                 {event.title}
                                                 <div className="text-xs text-muted-foreground">{event.type}</div>
                                             </TableCell>
                                             <TableCell>{format(new Date(event.date), "MMM d, yyyy")}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className={
-                                                    event.status === 'Completed' || event.status === 'COMPLETED' ? "border-green-500 text-green-500" :
-                                                        event.status === 'Ongoing' ? "border-blue-500 text-blue-500" : "border-yellow-500 text-yellow-500"
+                                                    event.status === 'Completed' || event.status === 'COMPLETED' ? "border-green-500 text-green-600 font-medium" :
+                                                        event.status === 'Ongoing' ? "border-blue-500 text-blue-600 font-medium" : "border-yellow-500 text-yellow-600 font-medium"
                                                 }>
                                                     {event.status}
                                                 </Badge>
@@ -135,7 +135,7 @@ export default function AttendanceRegister() {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => navigate(`${event.id}`)}
-                                                    className="text-gray-400 hover:text-white hover:bg-white/10"
+                                                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                                 >
                                                     <Eye className="w-4 h-4 mr-2" />
                                                     View

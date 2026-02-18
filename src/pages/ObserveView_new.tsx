@@ -161,3 +161,5 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
         </div>
     );
 }
+
+export default ObserveView;

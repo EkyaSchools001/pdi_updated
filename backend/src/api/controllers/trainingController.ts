@@ -11,7 +11,9 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
                     include: {
                         user: {
                             select: {
+                                id: true,
                                 fullName: true,
+                                email: true,
                                 role: true
                             }
                         }
@@ -21,9 +23,20 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
             orderBy: { date: 'asc' }
         });
 
+        // Map registrations to registrants for frontend compatibility
+        const mappedEvents = events.map(event => ({
+            ...event,
+            registrants: event.registrations.map(reg => ({
+                id: reg.user.id,
+                name: reg.user.fullName,
+                email: reg.user.email,
+                dateRegistered: reg.registrationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            }))
+        }));
+
         res.status(200).json({
             status: 'success',
-            data: { events }
+            data: { events: mappedEvents }
         });
     } catch (error: any) {
         console.error('Error fetching training events:', error);

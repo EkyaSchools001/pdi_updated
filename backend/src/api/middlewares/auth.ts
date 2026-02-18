@@ -43,7 +43,7 @@ export const restrictTo = (...roles: string[]) => {
         if (!req.user || !allowedRoles.includes(userRole)) {
             console.warn(`[AUTH] Access denied. User Role: '${userRole}', Required: ${allowedRoles.join(', ')}`);
             return next(
-                new AppError('You do not have permission to perform this action', 403)
+                new AppError(`Permission denied. Role '${userRole}' is not authorized. Required: [${allowedRoles.join(', ')}]`, 403)
             );
         }
         next();

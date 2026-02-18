@@ -8,7 +8,7 @@ const router = Router();
 router.use(protect);
 
 // Global Admin View
-router.get('/admin/all', restrictTo('ADMIN', 'SUPERADMIN'), attendanceController.getAllAttendance);
+router.get('/admin/all', restrictTo('ADMIN', 'SUPERADMIN', 'LEADER'), attendanceController.getAllAttendance);
 
 // Event specific routes
 router.post('/:id/toggle', attendanceController.toggleAttendance); // Enable/Close
