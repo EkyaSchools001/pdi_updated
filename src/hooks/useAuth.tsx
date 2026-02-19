@@ -30,21 +30,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const navigate = useNavigate();
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('auth_token');
-        const storedUser = localStorage.getItem('user_data');
+        // Use sessionStorage so each tab has its own independent session.
+        // This allows different users to be logged in simultaneously in different tabs.
+        const storedToken = sessionStorage.getItem('auth_token');
+        const storedUser = sessionStorage.getItem('user_data');
 
         if (storedToken && storedUser) {
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
+        } else {
+            setToken(null);
+            setUser(null);
         }
+
         setIsLoading(false);
     }, []);
 
     const login = (newToken: string, userData: User) => {
         setToken(newToken);
         setUser(userData);
-        localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('user_data', JSON.stringify(userData));
+        // Store in sessionStorage — tab-scoped, not shared across tabs
+        sessionStorage.setItem('auth_token', newToken);
+        sessionStorage.setItem('user_data', JSON.stringify(userData));
 
         // Auto-redirect based on role
         switch (userData.role) {
@@ -70,8 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = () => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
+        sessionStorage.removeItem('auth_token');
+        sessionStorage.removeItem('user_data');
         navigate('/login');
     };
 

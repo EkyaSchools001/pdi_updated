@@ -42,6 +42,9 @@ import { moocService } from "@/services/moocService";
 import { courseService } from "@/services/courseService";
 import { trainingService } from "@/services/trainingService";
 import { userService } from "@/services/userService";
+import { MeetingsDashboard } from './MeetingsDashboard';
+import { CreateMeetingForm } from './CreateMeetingForm';
+import { MeetingMoMForm } from './MeetingMoMForm';
 
 
 // Mock data removed in favor of API calls
@@ -53,8 +56,10 @@ import EventAttendanceView from "@/pages/EventAttendanceView";
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
-  const userName = user?.fullName || "School Leader";
-  const role = user?.role || "LEADER";
+  if (!user) return null;
+
+  const userName = user.fullName;
+  const role = user.role;
 
   console.log("LeaderDashboard: Mounting...", { user, role, userName });
 
@@ -309,6 +314,10 @@ export default function LeaderDashboard() {
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
         <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeam} />} />
+        <Route path="meetings" element={<MeetingsDashboard />} />
+        <Route path="meetings/create" element={<CreateMeetingForm />} />
+        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />

@@ -41,7 +41,7 @@ const api: AxiosInstance = axios.create({
 // Request Interceptor
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = sessionStorage.getItem('auth_token');
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -59,9 +59,9 @@ api.interceptors.response.use(
         const status = error.response ? error.response.status : null;
 
         if (status === 401) {
-            // Unauthorized - clear storage and redirect to login
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('user_data');
+            // Unauthorized - clear this tab's session and redirect to login
+            sessionStorage.removeItem('auth_token');
+            sessionStorage.removeItem('user_data');
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
                 toast.error('Session expired. Please log in again.');

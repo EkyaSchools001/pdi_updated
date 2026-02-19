@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -23,6 +24,9 @@ import {
   AlertTriangle,
   ClipboardList,
   Shield,
+  Video,
+  Megaphone,
+  Bell,
 } from "lucide-react";
 import { Role, RoleBadge } from "../RoleBadge";
 import { Button } from "../ui/button";
@@ -37,8 +41,10 @@ interface DashboardSidebarProps {
 
 const teacherNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
+  { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "Observations", icon: Eye, path: "/teacher/observations" },
   { title: "Goals", icon: Target, path: "/teacher/goals" },
+  { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/teacher/calendar" },
   { title: "Attendance", icon: ClipboardList, path: "/teacher/attendance" },
   { title: "Courses", icon: Book, path: "/teacher/courses" },
@@ -50,9 +56,11 @@ const teacherNav = [
 
 const leaderNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/leader" },
+  { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "Observe Teacher", icon: Eye, path: "/leader/observe" },
   { title: "Team Overview", icon: Users, path: "/leader/team" },
   { title: "Set Goals", icon: Target, path: "/leader/goals" },
+  { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "PD Participation", icon: Clock, path: "/leader/participation" },
   { title: "Performance", icon: TrendingUp, path: "/leader/performance" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/leader/calendar" },
@@ -62,8 +70,10 @@ const leaderNav = [
 
 const adminNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "User Management", icon: Users, path: "/admin/users" },
   { title: "Form Templates", icon: FileText, path: "/admin/forms" },
+  { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "Course Catalogue", icon: Book, path: "/admin/courses" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/admin/calendar" },
   { title: "Attendance Register", icon: ClipboardList, path: "/admin/attendance" },
@@ -74,9 +84,11 @@ const adminNav = [
 
 const managementNav = [
   { title: "Overview", icon: LayoutDashboard, path: "/management/overview" },
+  { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "PDI Health", icon: HeartPulse, path: "/management/pdi-health" },
   { title: "Campus Performance", icon: Building2, path: "/management/campus-performance" },
   { title: "Pillars", icon: Target, path: "/management/pillars" },
+  { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "PD Impact", icon: TrendingUp, path: "/management/pd-impact" },
   { title: "Leadership", icon: Users, path: "/management/leadership" },
   { title: "Risk & Intervention", icon: AlertTriangle, path: "/management/risk" },
@@ -101,6 +113,21 @@ export function DashboardSidebar({ role, userName, collapsed, onToggle }: Dashbo
   const { isModuleEnabled } = useAccessControl();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const [unreadAnnouncements, setUnreadAnnouncements] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const { announcementService } = await import("@/services/announcementService");
+        const announcements = await announcementService.getAnnouncements();
+        setUnreadAnnouncements(announcements.filter(a => !a.isAcknowledged).length);
+      } catch (e) {
+        // Silently fail if not logged in or error
+      }
+    };
+    fetchUnread();
+  }, [location.pathname]); // Refresh on navigation/initial load
+
   const allNavItems = navByRole[role.toLowerCase() as keyof typeof navByRole];
 
   const navItems = allNavItems.filter(item => isModuleEnabled(item.path, role));
@@ -176,6 +203,11 @@ export function DashboardSidebar({ role, userName, collapsed, onToggle }: Dashbo
               >
                 <item.icon className={cn("w-5 h-5 shrink-0 transition-transform", !isActive && "group-hover:scale-110")} />
                 {!collapsed && <span className="text-sm font-medium animate-in fade-in duration-300">{item.title}</span>}
+                {item.title === "Announcements" && unreadAnnouncements > 0 && (
+                  <span className="absolute right-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white animate-in zoom-in duration-300 ring-2 ring-white">
+                    {unreadAnnouncements}
+                  </span>
+                )}
               </NavLink>
             );
           })}

@@ -15,6 +15,9 @@ import templateRoutes from './templateRoutes';
 import settingsRoutes from './settingsRoutes';
 import pdRoutes from './pdRoutes';
 import attendanceRoutes from './attendanceRoutes';
+import meetingRoutes from './meetingRoutes';
+import notificationRoutes from './notificationRoutes';
+import announcementRoutes from './announcementRoutes';
 
 const router = Router();
 
@@ -32,5 +35,8 @@ router.use('/templates', templateRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/pd', pdRoutes);
 router.use('/attendance', attendanceRoutes);
+router.use('/meetings', meetingRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/announcements', announcementRoutes);
 
 export default router;

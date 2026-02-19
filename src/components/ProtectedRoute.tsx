@@ -28,8 +28,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         // Redirect to their respective dashboard if they try to access an unauthorized route
         const defaultPath =
-            user.role === 'ADMIN' ? '/admin' :
-                (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') ? '/leader' : '/teacher';
+            (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? '/admin' :
+                (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') ? '/leader' :
+                    (user.role === 'MANAGEMENT') ? '/management' : '/teacher';
 
         return <Navigate to={defaultPath} replace />;
     }
@@ -38,8 +39,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
     if (user && !isModuleEnabled(location.pathname, user.role)) {
         console.warn(`Access denied by SuperAdmin Matrix: ${location.pathname} for role ${user.role}`);
         const defaultPath =
-            user.role === 'ADMIN' ? '/admin' :
-                (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') ? '/leader' : '/teacher';
+            (user.role === 'ADMIN' || user.role === 'SUPERADMIN') ? '/admin' :
+                (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') ? '/leader' :
+                    (user.role === 'MANAGEMENT') ? '/management' : '/teacher';
 
         return <Navigate to={defaultPath} replace />;
     }

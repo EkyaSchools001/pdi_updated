@@ -30,7 +30,7 @@ export default function AttendanceForm() {
     });
 
     useEffect(() => {
-        const userStr = localStorage.getItem("user_data");
+        const userStr = sessionStorage.getItem("user_data");
         if (userStr) {
             const u = JSON.parse(userStr);
             setUser(u);

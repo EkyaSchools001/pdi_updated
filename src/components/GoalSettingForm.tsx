@@ -4,6 +4,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { CalendarIcon, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
+import { useEffect } from "react";
+import { templateService } from "@/services/templateService";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,35 +38,18 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-const campuses = [
-    "CMR NPS",
-    "EJPN",
-    "EITPL",
-    "EBTM",
-    "EBYR",
-    "ENICE",
-    "ENAVA",
-    "PU BTM",
-    "PU BYR",
-    "PU HRBR",
-    "PU ITPL",
-] as const;
+const DEFAULT_CAMPUSES = [
+    "CMR NPS", "EJPN", "EITPL", "EBTM", "EBYR", "ENICE", "ENAVA", "PU BTM", "PU BYR", "PU HRBR", "PU ITPL",
+];
 
-const pillars = [
-    "Live the Lesson",
-    "Authentic Assessments",
-    "Instruct to Inspire",
-    "Care about Culture",
-    "Engaging Environment",
-    "Professional Practice",
-] as const;
+const DEFAULT_PILLARS = [
+    "Live the Lesson", "Authentic Assessments", "Instruct to Inspire", "Care about Culture", "Engaging Environment", "Professional Practice",
+];
 
 const formSchema = z.object({
     educatorName: z.string().min(1, "Educator name is required"),
     coachName: z.string().min(1, "Coach name is required"),
-    campus: z.enum(campuses, {
-        required_error: "Please select a campus",
-    }),
+    campus: z.string().min(1, "Please select a campus"),
     dateOfGoalSetting: z.date({
         required_error: "Date is required",
     }).max(new Date(), "Date cannot be in the future"),
@@ -92,9 +77,7 @@ const formSchema = z.object({
     goalEndDate: z.date({
         required_error: "Target end date is required",
     }).min(new Date(), "End date must be in the future"),
-    pillarTag: z.enum(pillars, {
-        required_error: "Please select a pillar",
-    }),
+    pillarTag: z.string().min(1, "Please select a pillar"),
     additionalNotes: z.string().optional(),
     teacherEmail: z.string().email("Invalid email address").optional(),
 });
@@ -107,7 +90,28 @@ interface GoalSettingFormProps {
 }
 
 export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, teachers }: GoalSettingFormProps) {
-    const form = useForm<z.infer<typeof formSchema>>({
+    const [campuses, setCampuses] = useState(DEFAULT_CAMPUSES);
+    const [pillars, setPillars] = useState(DEFAULT_PILLARS);
+
+    useEffect(() => {
+        const loadTemplate = async () => {
+            try {
+                const templates = await templateService.getAllTemplates('GOAL');
+                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                if (defaultTemplate && defaultTemplate.structure) {
+                    const campusField = defaultTemplate.structure.find((f: any) => f.id === 'campus');
+                    const pillarField = defaultTemplate.structure.find((f: any) => f.id === 'pillarTag');
+                    if (campusField?.options) setCampuses(campusField.options);
+                    if (pillarField?.options) setPillars(pillarField.options);
+                }
+            } catch (error) {
+                console.error("Failed to load GOAL template", error);
+            }
+        };
+        loadTemplate();
+    }, []);
+
+    const form = useForm<any>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             coachName: defaultCoachName,

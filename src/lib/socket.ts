@@ -13,7 +13,7 @@ export const connectSocket = (token?: string) => {
     if (!socket || !socket.connected) {
         socket = io(API_URL, {
             auth: {
-                token: token || localStorage.getItem('auth_token')
+                token: token || sessionStorage.getItem('auth_token')
             },
             reconnection: true,
             reconnectionAttempts: 5,

@@ -5,8 +5,8 @@ import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { loginSchema } from '../../core/models/schemas';
 
-const signToken = (id: string, role: string) => {
-    return jwt.sign({ id, role }, (process.env.JWT_SECRET || 'secret') as Secret, {
+const signToken = (id: string, role: string, fullName: string, campusId?: string | null, department?: string | null) => {
+    return jwt.sign({ id, role, fullName, campusId, department }, (process.env.JWT_SECRET || 'secret') as Secret, {
         expiresIn: (process.env.JWT_EXPIRES_IN || '1d') as any,
     });
 };
@@ -28,7 +28,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         }
 
         // 2) Sign token
-        const token = signToken(user.id, user.role);
+        const token = signToken(user.id, user.role, user.fullName, user.campusId, user.department);
 
         res.status(200).json({
             status: 'success',

@@ -120,8 +120,11 @@ import { ReflectionForm } from "@/components/ReflectionForm";
 import { MoocEvidenceForm } from "@/components/MoocEvidenceForm";
 
 import { TeacherProfileView } from "@/components/TeacherProfileView";
-import TeacherAttendance from "@/pages/TeacherAttendance";
 import AttendanceForm from "@/pages/AttendanceForm";
+import { MeetingsDashboard } from './MeetingsDashboard';
+import { CreateMeetingForm } from './CreateMeetingForm';
+import { MeetingMoMForm } from './MeetingMoMForm';
+import TeacherAttendance from "@/pages/TeacherAttendance";
 
 // Removed local Observation interface in favor of shared type
 
@@ -1300,9 +1303,11 @@ interface NewGoal {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
-  const userName = user?.fullName || "Teacher";
-  const userEmail = user?.email || "";
-  const role = user?.role || "TEACHER";
+  if (!user) return null;
+
+  const userName = user.fullName;
+  const userEmail = user.email || "";
+  const role = user.role;
 
   const navigate = useNavigate();
   const [goals, setGoals] = useState<any[]>([]);
@@ -1664,6 +1669,9 @@ export default function TeacherDashboard() {
         <Route path="calendar" element={<CalendarView events={events} onRegister={handleRegister} />} />
         <Route path="attendance" element={<TeacherAttendance />} />
         <Route path="attendance/:eventId" element={<AttendanceForm />} />
+        <Route path="meetings" element={<MeetingsDashboard />} />
+        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
         <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />

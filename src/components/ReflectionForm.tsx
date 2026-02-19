@@ -11,6 +11,8 @@ import { DetailedReflection, Observation, ReflectionSection } from "@/types/obse
 import { toast } from "sonner";
 import { CheckCircle2, ChevronRight, Lock, Save, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import { templateService } from "@/services/templateService";
 
 interface ReflectionFormProps {
     observation: Observation;
@@ -21,7 +23,7 @@ interface ReflectionFormProps {
     teacherEmail: string; // Auto-captured
 }
 
-const SECTIONS_CONFIG = [
+const DEFAULT_SECTIONS_CONFIG = [
     {
         id: "planning",
         title: "Section A: Planning & Preparation (Live the Lesson)",
@@ -83,7 +85,42 @@ const SECTIONS_CONFIG = [
 ];
 
 export function ReflectionForm({ observation, isOpen, onClose, onSubmit, teacherName, teacherEmail }: ReflectionFormProps) {
-    const [step, setStep] = useState(0); // 0 to SECTIONS_CONFIG.length + 1 (Final questions)
+    const [sectionsConfig, setSectionsConfig] = useState(DEFAULT_SECTIONS_CONFIG);
+    const [step, setStep] = useState(0);
+
+    useEffect(() => {
+        const loadTemplate = async () => {
+            try {
+                const templates = await templateService.getAllTemplates('REFLECTION');
+                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                if (defaultTemplate && defaultTemplate.structure) {
+                    const fields = defaultTemplate.structure;
+                    // Group fields by section
+                    const sections: any[] = [];
+                    fields.forEach((f: any) => {
+                        if (f.type === 'header' && f.section) {
+                            let section = sections.find(s => s.title === f.section);
+                            if (!section) {
+                                section = {
+                                    id: f.id.toLowerCase().replace(/\s+/g, ''),
+                                    title: f.section,
+                                    indicators: []
+                                };
+                                sections.push(section);
+                            }
+                        } else if (f.type === 'radio' && f.section) {
+                            const section = sections.find(s => s.title === f.section);
+                            if (section) section.indicators.push(f.label);
+                        }
+                    });
+                    if (sections.length > 0) setSectionsConfig(sections);
+                }
+            } catch (error) {
+                console.error("Failed to load reflection template", error);
+            }
+        };
+        loadTemplate();
+    }, []);
 
     // Initial empty state
     const [formData, setFormData] = useState<DetailedReflection>({
@@ -137,8 +174,8 @@ export function ReflectionForm({ observation, isOpen, onClose, onSubmit, teacher
     };
 
     const validateCurrentStep = () => {
-        if (step < SECTIONS_CONFIG.length) {
-            const config = SECTIONS_CONFIG[step];
+        if (step < sectionsConfig.length) {
+            const config = sectionsConfig[step];
             const sectionKey = config.id as keyof DetailedReflection["sections"];
             const sectionData = formData.sections[sectionKey];
 
@@ -182,8 +219,8 @@ export function ReflectionForm({ observation, isOpen, onClose, onSubmit, teacher
         }
     };
 
-    const currentSectionConfig = SECTIONS_CONFIG[step];
-    const isFinalStep = step === SECTIONS_CONFIG.length;
+    const currentSectionConfig = sectionsConfig[step];
+    const isFinalStep = step === sectionsConfig.length;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -202,14 +239,14 @@ export function ReflectionForm({ observation, isOpen, onClose, onSubmit, teacher
                             </DialogDescription>
                         </div>
                         <div className="text-sm font-medium text-muted-foreground">
-                            Step {step + 1} of {SECTIONS_CONFIG.length + 1}
+                            Step {step + 1} of {sectionsConfig.length + 1}
                         </div>
                     </div>
                     {/* Progress Bar */}
                     <div className="w-full h-1.5 bg-muted rounded-full mt-4 overflow-hidden">
                         <div
                             className="h-full bg-primary transition-all duration-300"
-                            style={{ width: `${((step + 1) / (SECTIONS_CONFIG.length + 1)) * 100}%` }}
+                            style={{ width: `${((step + 1) / (sectionsConfig.length + 1)) * 100}%` }}
                         />
                     </div>
                 </DialogHeader>
