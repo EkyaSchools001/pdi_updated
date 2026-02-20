@@ -120,15 +120,15 @@ async function main() {
         { id: 'pillarTag', type: 'select', label: 'Pillar Tag', required: true, options: ['Live the Lesson', 'Authentic Assessments', 'Instruct to Inspire', 'Care about Culture', 'Engaging Environment', 'Professional Practice'] },
     ];
 
-    await prisma.formTemplate.createMany({
-        data: [
-            { name: 'Walkthrough Observation', type: 'OBSERVATION', isDefault: true, structure: JSON.stringify(observationFields) },
-            { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
-            { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
-            { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
-        ],
-        skipDuplicates: true
-    });
+    for (const tmpl of [
+        { name: 'Walkthrough Observation', type: 'OBSERVATION', isDefault: true, structure: JSON.stringify(observationFields) },
+        { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
+        { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
+        { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
+    ]) {
+        const existingTmpl = await prisma.formTemplate.findFirst({ where: { name: tmpl.name, type: tmpl.type as any } });
+        if (!existingTmpl) await prisma.formTemplate.create({ data: tmpl as any });
+    }
     console.log('Seeded form templates');
 
     // ── TRAINING EVENTS ───────────────────────────────────────────────────────
@@ -286,16 +286,17 @@ async function main() {
         // Invite relevant teachers
         const staffMeetings = ['Weekly Staff Briefing', 'Term 1 Retrospective', 'Weekly Staff Meeting'];
         if (staffMeetings.includes(m.title)) {
-            await prisma.meetingAttendee.createMany({
-                data: [
-                    { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
-                    { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
-                    { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' }
-                ],
-                skipDuplicates: true
-            });
+            for (const attendeeData of [
+                { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
+                { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
+                { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' },
+            ]) {
+                const existingAt = await prisma.meetingAttendee.findFirst({ where: { meetingId: attendeeData.meetingId, userId: attendeeData.userId } });
+                if (!existingAt) await prisma.meetingAttendee.create({ data: attendeeData });
+            }
         } else if (m.title.includes('Science')) {
-            await prisma.meetingAttendee.createMany({ data: [{ meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' }], skipDuplicates: true });
+            const existingAt1 = await prisma.meetingAttendee.findFirst({ where: { meetingId: meeting.id, userId: t1 } });
+            if (!existingAt1) await prisma.meetingAttendee.create({ data: { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' } });
         }
     }
     console.log('Seeded meetings and invitations');
