@@ -143,7 +143,8 @@ const DashboardOverview = ({
   onReflect,
   userName,
   pdHours,
-  role
+  role,
+  surveyStatus
 }: {
   goals: any[],
   events: any[],
@@ -153,7 +154,9 @@ const DashboardOverview = ({
   onReflect: (obs: Observation) => void,
   userName: string,
   pdHours: any,
-  role: string
+  role: string,
+  surveyStatus: { active: boolean; completed: boolean; title?: string } | null
+
 }) => {
   const navigate = useNavigate();
   const { isModuleEnabled } = useAccessControl();
@@ -218,6 +221,17 @@ const DashboardOverview = ({
             icon={Calendar}
 
             onClick={() => navigate("/teacher/calendar")}
+          />
+        )}
+        {isModuleEnabled('/teacher/survey', role) && surveyStatus?.active && (
+          <StatCard
+            title="PD Survey"
+            value={surveyStatus.completed ? "Completed" : "Action Required"}
+            subtitle={surveyStatus.completed ? "View your response" : "Please complete now"}
+            icon={ClipboardList}
+            trend={surveyStatus.completed ? { value: 100, isPositive: true } : undefined}
+            onClick={() => navigate("/teacher/survey")}
+            className={surveyStatus.completed ? "bg-emerald-50/50 border-emerald-100" : "bg-blue-50/50 border-blue-100 animate-pulse"}
           />
         )}
       </div>
@@ -1327,6 +1341,7 @@ export default function TeacherDashboard() {
     history: []
   });
   const [selectedReflectObs, setSelectedReflectObs] = useState<Observation | null>(null);
+  const [surveyStatus, setSurveyStatus] = useState<{ active: boolean; completed: boolean; title?: string } | null>(null);
 
 
   // Fetch initial data via API
@@ -1450,6 +1465,24 @@ export default function TeacherDashboard() {
     fetchTraining();
     fetchCourses();
     fetchEnrollments();
+
+    const fetchSurveyStatus = async () => {
+      try {
+        const { surveyService } = await import("@/services/surveyService");
+        const data = await surveyService.getActiveSurvey();
+        if (data && data.survey) {
+          setSurveyStatus({
+            active: true,
+            completed: !!data.myResponse?.isCompleted,
+            title: data.survey.title
+          });
+        }
+      } catch (e) {
+        // Ignore 404 or other errors
+        setSurveyStatus(null);
+      }
+    };
+    fetchSurveyStatus();
 
     // Socket.io Real-time Sync
     const socket = getSocket();
@@ -1656,6 +1689,7 @@ export default function TeacherDashboard() {
             userName={userName}
             pdHours={pdHours}
             role={role}
+            surveyStatus={surveyStatus}
           />
         } />
         <Route path="observations" element={

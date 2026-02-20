@@ -64,6 +64,11 @@ export const surveyService = {
         return response.data.data;
     },
 
+    getMyHistory: async () => {
+        const response = await api.get<ApiResponse<{ responses: SurveyResponse[] }>>('/surveys/my-history');
+        return response.data.data.responses;
+    },
+
     // Submit survey (partial or full)
     submitSurvey: async (surveyId: string, answers: SurveyAnswer[], isCompleted: boolean) => {
         const response = await api.post<ApiResponse<{ response: SurveyResponse }>>('/surveys/submit', { surveyId, answers, isCompleted });

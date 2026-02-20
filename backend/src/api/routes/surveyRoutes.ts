@@ -10,6 +10,9 @@ router.use(protect);
 // Get active survey (Teachers/Leaders submit; Admin/Mgmt view)
 router.get('/active', surveyController.getActiveSurvey);
 
+// Get user's survey history
+router.get('/my-history', surveyController.getMySurveyHistory);
+
 // Submit survey (Teachers/Leaders)
 router.post('/submit', restrictTo('TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'MANAGEMENT'), surveyController.submitSurvey);
 

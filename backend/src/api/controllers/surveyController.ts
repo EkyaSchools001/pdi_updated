@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
+import { getIO } from '../../core/socket';
+import { createNotification } from './notificationController';
 
 const prisma = new PrismaClient();
 
@@ -56,6 +58,43 @@ export const getActiveSurvey = async (req: AuthRequest, res: Response, next: Nex
     }
 };
 
+// Get user's survey history
+export const getMySurveyHistory = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user!.id;
+
+        const responses = await prisma.surveyResponse.findMany({
+            where: {
+                userId: userId,
+                isCompleted: true
+            },
+            include: {
+                survey: {
+                    select: {
+                        id: true,
+                        title: true,
+                        term: true,
+                        academicYear: true,
+                        questions: {
+                            orderBy: { orderIndex: 'asc' }
+                        }
+                    }
+                },
+                answers: true // Include answers if we want to show details immediately or just metadata
+            },
+            orderBy: { submittedAt: 'desc' }
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: { responses }
+        });
+
+    } catch (err) {
+        next(err);
+    }
+};
+
 // Submit survey response
 export const submitSurvey = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -73,9 +112,10 @@ export const submitSurvey = async (req: AuthRequest, res: Response, next: NextFu
             where: { surveyId, userId }
         });
 
-        if (existingResponse && existingResponse.isCompleted) {
-            return next(new AppError('You have already submitted this survey.', 400));
-        }
+        // Allow re-submission (Overwrite)
+        // if (existingResponse && existingResponse.isCompleted) {
+        //     return next(new AppError('You have already submitted this survey.', 400));
+        // }
 
         // Upsert response
         const responseCallback = async (tx: any) => {
@@ -140,6 +180,30 @@ export const submitSurvey = async (req: AuthRequest, res: Response, next: NextFu
             }));
 
             await prisma.surveyAnswer.createMany({ data: answerData });
+        }
+
+        // Notify Admins/Management via Socket and In-App
+        const io = getIO();
+        io.to('admins').emit('survey:submitted', {
+            surveyId,
+            userId,
+            userName: req.user?.fullName,
+            campus: req.user?.campusId
+        });
+
+        // Find admins to notify
+        const admins = await prisma.user.findMany({
+            where: { role: { in: ['ADMIN', 'SUPERADMIN', 'MANAGEMENT'] } }
+        });
+
+        for (const admin of admins) {
+            await createNotification({
+                userId: admin.id,
+                title: 'New Survey Submission',
+                message: `${req.user?.fullName} has submitted their response for "${survey.title}".`,
+                type: 'INFO',
+                link: `/admin/surveys/${surveyId}/results`
+            });
         }
 
         res.status(200).json({

@@ -15,16 +15,26 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
+import { useAuth } from '@/hooks/useAuth';
+
 export const NotificationBell: React.FC = () => {
+    const { user } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
+        if (!user) return;
+
         fetchNotifications();
 
         // Socket listener for new notifications
         const socket = getSocket();
+
+        // Join user-specific room for targeted notifications
+        socket.emit('join_room', `user:${user.id}`);
+        console.log(`NotificationBell: Joining room user:${user.id}`);
+
         socket.on('notification:new', (newNotification: Notification) => {
             setNotifications(prev => [newNotification, ...prev]);
             setUnreadCount(prev => prev + 1);
@@ -40,8 +50,9 @@ export const NotificationBell: React.FC = () => {
 
         return () => {
             socket.off('notification:new');
+            socket.emit('leave_room', `user:${user.id}`);
         };
-    }, []);
+    }, [user?.id]);
 
     const fetchNotifications = async () => {
         try {

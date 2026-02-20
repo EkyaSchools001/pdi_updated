@@ -63,7 +63,7 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
         )}
       >
         {!isMobile && (
-          <header className="h-14 border-b bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/20 flex items-center justify-end px-8 sticky top-0 z-40 w-full shrink-0">
+          <header className="h-14 border-b border-white/10 bg-white/40 backdrop-blur-xl flex items-center justify-end px-8 sticky top-0 z-40 w-full shrink-0 shadow-sm transition-all duration-300">
             <NotificationBell />
           </header>
         )}

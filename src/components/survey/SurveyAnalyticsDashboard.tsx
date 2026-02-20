@@ -8,12 +8,14 @@ import { Loader2, Download, Filter } from 'lucide-react';
 import { surveyService, Survey, SurveyAnalytics } from '@/services/surveyService';
 import { toast } from 'sonner';
 import { SurveyManagementView } from './SurveyManagementView';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SurveyAnalyticsDashboardProps {
     survey: Survey;
 }
 
 export const SurveyAnalyticsDashboard = ({ survey }: SurveyAnalyticsDashboardProps) => {
+    const { user } = useAuth();
     const [analytics, setAnalytics] = useState<SurveyAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedCampus, setSelectedCampus] = useState<string>('All');
@@ -100,7 +102,9 @@ export const SurveyAnalyticsDashboard = ({ survey }: SurveyAnalyticsDashboardPro
             <Tabs defaultValue="analytics" className="w-full">
                 <TabsList className="mb-4">
                     <TabsTrigger value="analytics">Analytics Dashboard</TabsTrigger>
-                    <TabsTrigger value="questions">Manage Questions</TabsTrigger>
+                    {['ADMIN', 'SUPERADMIN'].includes(user?.role || '') && (
+                        <TabsTrigger value="questions">Manage Questions</TabsTrigger>
+                    )}
                 </TabsList>
 
                 <TabsContent value="analytics" className="space-y-6">
@@ -178,10 +182,12 @@ export const SurveyAnalyticsDashboard = ({ survey }: SurveyAnalyticsDashboardPro
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="questions">
-                    {/* Lazy load or just render */}
-                    <SurveyManagementView survey={survey} onUpdate={handleSurveyUpdate} />
-                </TabsContent>
+                {['ADMIN', 'SUPERADMIN'].includes(user?.role || '') && (
+                    <TabsContent value="questions">
+                        {/* Lazy load or just render */}
+                        <SurveyManagementView survey={survey} onUpdate={handleSurveyUpdate} />
+                    </TabsContent>
+                )}
             </Tabs>
         </div>
     );
