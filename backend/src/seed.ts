@@ -7,21 +7,7 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Clearing existing data...');
-
-    const tables = [
-        'courseEnrollment', 'moocSubmission', 'registration', 'pDHour',
-        'goal', 'documentAcknowledgement', 'observationDomain', 'observation',
-        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings',
-        'meetingActionItem', 'meetingMinutes', 'meetingAttendee', 'meetingShare', 'meetingReply', 'meeting',
-        'announcementAcknowledgement', 'announcement', 'surveyAnswer', 'surveyResponse', 'surveyQuestion', 'survey',
-        'eventAttendance', 'user'
-    ];
-
-    for (const table of tables) {
-        try { await (prisma as any)[table].deleteMany({}); console.log(`Cleared ${table}`); }
-        catch (e) { console.warn(`Could not clear ${table}`); }
-    }
+    console.log('Seeding database (preserving existing data)...');
 
     // ── USERS ─────────────────────────────────────────────────────────────────
     const userData = [
@@ -140,26 +126,40 @@ async function main() {
             { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
             { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
             { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
-        ]
+        ],
+        skipDuplicates: true
     });
     console.log('Seeded form templates');
 
     // ── TRAINING EVENTS ───────────────────────────────────────────────────────
-    const events = await Promise.all([
-        // Event 1: COMPLETED + attendance LIVE (teachers can mark now)
-        prisma.trainingEvent.create({ data: { title: 'Effective Questioning Techniques', topic: 'Pedagogy', type: 'Workshop', date: 'Jan 25, 2026', time: '9:00 AM – 12:00 PM', location: 'BTM Layout Campus', capacity: 30, status: 'COMPLETED', attendanceEnabled: true, attendanceClosed: false, attendanceTriggeredAt: new Date(), description: 'Deep dive into Socratic questioning and formative discussion strategies.', createdById: adminId } }),
-        // Event 2: COMPLETED + attendance CLOSED (submitted, visible but locked)
-        prisma.trainingEvent.create({ data: { title: 'Google Workspace for Education', topic: 'Technology', type: 'Training', date: 'Feb 5, 2026', time: '10:00 AM – 1:00 PM', location: 'JP Nagar Campus', capacity: 25, status: 'COMPLETED', attendanceEnabled: false, attendanceClosed: true, description: 'Hands-on training for Docs, Slides, Meet and Classroom integration.', createdById: adminId } }),
-        // Event 3: Upcoming – no attendance yet
-        prisma.trainingEvent.create({ data: { title: 'Building a Positive Class Culture', topic: 'Culture', type: 'Seminar', date: 'Feb 18, 2026', time: '2:00 PM – 5:00 PM', location: 'ITPL Campus', capacity: 40, status: 'APPROVED', description: 'Strategies for restorative practices and student wellbeing.', createdById: adminId } }),
-        // Event 4: Upcoming – no attendance yet
-        prisma.trainingEvent.create({ data: { title: 'Differentiated Instruction Masterclass', topic: 'Pedagogy', type: 'Workshop', date: 'Mar 10, 2026', time: '9:00 AM – 4:00 PM', location: 'Head Office', capacity: 20, status: 'APPROVED', description: 'Learn how to address diverse learning needs in one classroom.', createdById: adminId } }),
-    ]);
+    // Seed training events only if they don't already exist (match by title)
+    const seedEvents = [
+        { title: 'Effective Questioning Techniques', topic: 'Pedagogy', type: 'Workshop', date: 'Jan 25, 2026', time: '9:00 AM – 12:00 PM', location: 'BTM Layout Campus', capacity: 30, status: 'COMPLETED', attendanceEnabled: true, attendanceClosed: false, attendanceTriggeredAt: new Date(), description: 'Deep dive into Socratic questioning and formative discussion strategies.', createdById: leaderId },
+        { title: 'Google Workspace for Education', topic: 'Technology', type: 'Training', date: 'Feb 5, 2026', time: '10:00 AM – 1:00 PM', location: 'JP Nagar Campus', capacity: 25, status: 'COMPLETED', attendanceEnabled: false, attendanceClosed: true, description: 'Hands-on training for Docs, Slides, Meet and Classroom integration.', createdById: adminId },
+        { title: 'Building a Positive Class Culture', topic: 'Culture', type: 'Seminar', date: 'Feb 18, 2026', time: '2:00 PM – 5:00 PM', location: 'ITPL Campus', capacity: 40, status: 'APPROVED', description: 'Strategies for restorative practices and student wellbeing.', createdById: leaderId },
+        { title: 'Differentiated Instruction Masterclass', topic: 'Pedagogy', type: 'Workshop', date: 'Mar 10, 2026', time: '9:00 AM – 4:00 PM', location: 'Head Office', capacity: 20, status: 'APPROVED', description: 'Learn how to address diverse learning needs in one classroom.', createdById: adminId },
+    ];
 
-    // Register all three teachers for the first two events
+    const events: any[] = [];
+    for (const ev of seedEvents) {
+        const existing = await prisma.trainingEvent.findFirst({ where: { title: ev.title } });
+        if (existing) {
+            events.push(existing);
+            console.log(`Skipping existing event: ${ev.title}`);
+        } else {
+            const created = await prisma.trainingEvent.create({ data: ev });
+            events.push(created);
+            console.log(`Created event: ${ev.title}`);
+        }
+    }
+
+    // Register teachers for first two events (skip if already registered)
     for (const uid of [t1, t2, t3]) {
         for (const ev of events.slice(0, 2)) {
-            await prisma.registration.create({ data: { eventId: ev.id, userId: uid } });
+            const existingReg = await prisma.registration.findUnique({ where: { eventId_userId: { eventId: ev.id, userId: uid } } });
+            if (!existingReg) {
+                await prisma.registration.create({ data: { eventId: ev.id, userId: uid } });
+            }
         }
     }
     console.log('Seeded training events + registrations');
@@ -175,9 +175,12 @@ async function main() {
     ];
 
     for (const o of observations) {
-        await prisma.observation.create({
-            data: { teacherId: o.teacherId, observerId: leaderId, date: o.date, domain: o.domain, score: o.score, notes: o.notes, actionStep: o.actionStep, status: 'SUBMITTED', campus: o.campus, grade: o.grade, section: o.section, learningArea: o.learningArea, hasReflection: false },
-        });
+        const existingObs = await prisma.observation.findFirst({ where: { teacherId: o.teacherId, date: o.date, domain: o.domain } });
+        if (!existingObs) {
+            await prisma.observation.create({
+                data: { teacherId: o.teacherId, observerId: leaderId, date: o.date, domain: o.domain, score: o.score, notes: o.notes, actionStep: o.actionStep, status: 'SUBMITTED', campus: o.campus, grade: o.grade, section: o.section, learningArea: o.learningArea, hasReflection: false },
+            });
+        }
     }
     console.log('Seeded observations for all three teachers');
 
@@ -192,7 +195,10 @@ async function main() {
     ];
 
     for (const g of goals) {
-        await prisma.goal.create({ data: { ...g, assignedBy: 'Rohit', status: g.progress === 100 ? 'COMPLETED' : 'IN_PROGRESS' } });
+        const existingGoal = await prisma.goal.findFirst({ where: { teacherId: g.teacherId, title: g.title } });
+        if (!existingGoal) {
+            await prisma.goal.create({ data: { ...g, assignedBy: 'Rohit', status: g.progress === 100 ? 'COMPLETED' : 'IN_PROGRESS' } });
+        }
     }
     console.log('Seeded goals for all three teachers');
 
@@ -204,19 +210,25 @@ async function main() {
     ];
 
     for (const m of moocs) {
-        await prisma.moocSubmission.create({
-            data: { userId: m.userId, teacherName: m.teacherName, teacherEmail: m.teacherEmail, courseName: m.courseName, platform: m.platform, hours: m.hours, startDate: new Date('2025-10-01'), endDate: new Date('2025-12-15'), hasCertificate: 'yes', certificateType: 'link', proofLink: 'https://drive.google.com/certificate', effectivenessRating: m.rating, additionalFeedback: m.feedback, status: 'APPROVED' },
-        });
+        const existingMooc = await prisma.moocSubmission.findFirst({ where: { userId: m.userId, courseName: m.courseName } });
+        if (!existingMooc) {
+            await prisma.moocSubmission.create({
+                data: { userId: m.userId, teacherName: m.teacherName, teacherEmail: m.teacherEmail, courseName: m.courseName, platform: m.platform, hours: m.hours, startDate: new Date('2025-10-01'), endDate: new Date('2025-12-15'), hasCertificate: 'yes', certificateType: 'link', proofLink: 'https://drive.google.com/certificate', effectivenessRating: m.rating, additionalFeedback: m.feedback, status: 'APPROVED' },
+            });
+        }
     }
     console.log('Seeded MOOC submissions for all three teachers');
 
     // ── COURSES + ENROLLMENTS ─────────────────────────────────────────────────
-    const course1 = await prisma.course.create({ data: { title: 'Foundations of Pedagogy', description: 'Core pedagogical frameworks for effective teaching.', instructor: 'Dr. Priya Sharma', hours: 30, category: 'Pedagogy', status: 'PUBLISHED' } });
-    const course2 = await prisma.course.create({ data: { title: 'EdTech Essentials', description: 'Using technology tools effectively in the modern classroom.', instructor: 'Rajiv Menon', hours: 20, category: 'Technology', status: 'PUBLISHED' } });
-    const course3 = await prisma.course.create({ data: { title: 'Classroom Culture & Wellbeing', description: 'Build a positive, inclusive learning environment.', instructor: 'Ananya Das', hours: 25, category: 'Culture', status: 'PUBLISHED' } });
+    const course1 = await prisma.course.upsert({ where: { id: 'seed-course-1' }, update: {}, create: { id: 'seed-course-1', title: 'Foundations of Pedagogy', description: 'Core pedagogical frameworks for effective teaching.', instructor: 'Dr. Priya Sharma', hours: 30, category: 'Pedagogy', status: 'PUBLISHED' } });
+    const course2 = await prisma.course.upsert({ where: { id: 'seed-course-2' }, update: {}, create: { id: 'seed-course-2', title: 'EdTech Essentials', description: 'Using technology tools effectively in the modern classroom.', instructor: 'Rajiv Menon', hours: 20, category: 'Technology', status: 'PUBLISHED' } });
+    const course3 = await prisma.course.upsert({ where: { id: 'seed-course-3' }, update: {}, create: { id: 'seed-course-3', title: 'Classroom Culture & Wellbeing', description: 'Build a positive, inclusive learning environment.', instructor: 'Ananya Das', hours: 25, category: 'Culture', status: 'PUBLISHED' } });
 
     for (const uid of [t1, t2, t3]) {
-        await prisma.courseEnrollment.create({ data: { courseId: course1.id, userId: uid, progress: 60 } });
+        const existingEnrollment = await prisma.courseEnrollment.findFirst({ where: { courseId: course1.id, userId: uid } });
+        if (!existingEnrollment) {
+            await prisma.courseEnrollment.create({ data: { courseId: course1.id, userId: uid, progress: 60 } });
+        }
     }
     console.log('Seeded courses and enrollments');
 
@@ -230,7 +242,10 @@ async function main() {
     ];
 
     for (const a of announcements) {
-        await prisma.announcement.create({ data: { ...a } });
+        const existingAnn = await prisma.announcement.findFirst({ where: { title: a.title, createdById: a.createdById } });
+        if (!existingAnn) {
+            await prisma.announcement.create({ data: { ...a } });
+        }
     }
     console.log('Seeded announcements');
 
@@ -245,6 +260,11 @@ async function main() {
     ];
 
     for (const m of meetings) {
+        const existingMeeting = await prisma.meeting.findFirst({ where: { title: m.title, meetingDate: m.meetingDate } });
+        if (existingMeeting) {
+            console.log(`Skipping existing meeting: ${m.title}`);
+            continue;
+        }
         const meeting = await prisma.meeting.create({ data: m });
 
         // Create MoM if Published
@@ -271,10 +291,11 @@ async function main() {
                     { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
                     { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
                     { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' }
-                ]
+                ],
+                skipDuplicates: true
             });
         } else if (m.title.includes('Science')) {
-            await prisma.meetingAttendee.create({ data: { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' } });
+            await prisma.meetingAttendee.createMany({ data: [{ meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' }], skipDuplicates: true });
         }
     }
     console.log('Seeded meetings and invitations');
@@ -287,12 +308,16 @@ async function main() {
     ];
 
     for (const r of attendanceRecords) {
-        await prisma.eventAttendance.create({ data: r });
+        const existingAtt = await prisma.eventAttendance.findUnique({ where: { eventId_teacherEmail: { eventId: r.eventId, teacherEmail: r.teacherEmail } } });
+        if (!existingAtt) {
+            await prisma.eventAttendance.create({ data: r });
+        }
     }
     console.log('Seeded event attendance');
 
     // ── SURVEYS ───────────────────────────────────────────────────────────────
-    await (prisma as any).survey.create({
+    const existingSurvey = await (prisma as any).survey.findFirst({ where: { title: 'AY 25–26 PD Term 1 Survey' } });
+    if (!existingSurvey) await (prisma as any).survey.create({
         data: {
             title: 'AY 25–26 PD Term 1 Survey',
             academicYear: '2025-2026',

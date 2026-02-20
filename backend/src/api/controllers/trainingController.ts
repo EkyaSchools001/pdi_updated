@@ -184,15 +184,19 @@ export const registerForEvent = async (req: AuthRequest, res: Response) => {
             data: { registration }
         });
     } catch (error: any) {
+        console.error('Registration error details:', error);
+
         if (error.code === 'P2002') {
             return res.status(400).json({
                 status: 'error',
                 message: 'Already registered for this event'
             });
         }
+
         res.status(500).json({
             status: 'error',
-            message: 'Internal server error'
+            message: error.message || 'Internal server error',
+            code: error.code
         });
     }
 };
