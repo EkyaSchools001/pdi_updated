@@ -18,6 +18,11 @@ export const trainingService = {
         return response.data.data.events;
     },
 
+    async getEvent(id: string) {
+        const response = await api.get(`/training/${id}`);
+        return response.data.data.event;
+    },
+
     async createEvent(data: any) {
         const response = await api.post('/training', data);
         return response.data.data.event;

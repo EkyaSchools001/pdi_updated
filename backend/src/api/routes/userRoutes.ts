@@ -5,11 +5,12 @@ import { protect, restrictTo } from '../middlewares/auth';
 const router = Router();
 
 router.use(protect);
-// Allow Leaders and Management to view users (for dashboard stats etc)
+// Allow everyone (Authenticated) to view users for directory/search
+router.get('/', getAllUsers);
+
+// Restrict modification routes
 router.use(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'MANAGEMENT'));
 
-
-router.get('/', getAllUsers);
 router.post('/', createUser);
 router.patch('/:id', updateUser);
 router.delete('/:id', deleteUser);

@@ -14,6 +14,16 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
         const users = await prisma.user.findMany({
             where: whereClause,
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+                role: true,
+                department: true,
+                campusId: true,
+                status: true,
+                createdAt: true
+            },
             orderBy: { createdAt: 'desc' }
         });
 

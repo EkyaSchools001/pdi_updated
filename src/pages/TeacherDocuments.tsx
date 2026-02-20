@@ -61,7 +61,7 @@ export default function TeacherDocuments() {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-                const result = await response.json();
+                const result = await response.json() as any;
                 if (result.status === 'success') {
                     // Map API acknowledgements to Document format
                     const mappedDocs = result.data.acknowledgements.map((ack: any) => ({

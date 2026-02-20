@@ -209,8 +209,19 @@ export const shareMoM = async (req: Request, res: Response, next: NextFunction) 
             include: { minutes: true }
         });
 
+        console.log("DEBUG: shareMoM", {
+            meetingId,
+            momStatus: meeting?.momStatus,
+            minutesStatus: meeting?.minutes?.status,
+            body: req.body
+        });
+
         if (!meeting) return next(new AppError('Meeting not found', 404));
-        if (!meeting.minutes || meeting.minutes.status !== 'Published') {
+        if (!meeting.minutes || meeting.minutes.status !== 'Published') { // Line 198
+            console.error("DEBUG: Share failed - MoM not published", {
+                hasMinutes: !!meeting.minutes,
+                status: meeting.minutes?.status
+            });
             return next(new AppError('Only published MoMs can be shared', 400));
         }
 
@@ -266,6 +277,7 @@ export const shareMoM = async (req: Request, res: Response, next: NextFunction) 
             data: { share }
         });
     } catch (err) {
+        console.error("Error in shareMoM:", err);
         next(err);
     }
 };

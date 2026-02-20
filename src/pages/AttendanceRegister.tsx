@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -12,15 +13,11 @@ import { Loader2, ClipboardList, CheckCircle2, XCircle, Eye } from "lucide-react
 
 export default function AttendanceRegister() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
-        const userStr = localStorage.getItem("user_data");
-        if (userStr) {
-            setUserData(JSON.parse(userStr));
-        }
         fetchEvents();
     }, []);
 
@@ -64,7 +61,17 @@ export default function AttendanceRegister() {
     // Also consider showing all for ADMIN? Prompt says "Shows events created by the logged-in user."
     // But strictly, Admin might want to see all. Implementation plan says "Shows events created by the logged-in user."
     // I will stick to createdBy check for the main view to reduce clutter, or maybe filtered tabs.
-    const myEvents = events.filter(e => e.createdById === userData?.id || e.proposedById === userData?.id);
+    // Filter events: Admins see all, others see only what they created/proposed
+    const myEvents = events.filter(e => {
+        const isAdmin = ['ADMIN', 'SUPERADMIN', 'MANAGEMENT'].includes(user?.role?.toUpperCase() || '');
+        const isOwner = e.createdById === user?.id || e.proposedById === user?.id;
+
+        // Admins and Superadmins see all events
+        if (isAdmin) return true;
+
+        // Leaders and Others see only their own
+        return isOwner;
+    });
 
     // Sort by date (newest first)
     const sortedEvents = [...myEvents].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

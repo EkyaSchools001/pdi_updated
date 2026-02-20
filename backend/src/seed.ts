@@ -12,7 +12,9 @@ async function main() {
     const tables = [
         'courseEnrollment', 'moocSubmission', 'registration', 'pDHour',
         'goal', 'documentAcknowledgement', 'observationDomain', 'observation',
-        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings', 'user'
+        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings', 'user',
+        'meeting', 'meetingAttendee', 'meetingMinutes', 'meetingActionItem', 'announcement', 'announcementAcknowledgement',
+        'eventAttendance'
     ];
 
     for (const table of tables) {
@@ -215,7 +217,65 @@ async function main() {
     }
     console.log('Seeded courses and enrollments');
 
-    console.log('\n✅ Seed complete! All three teachers now have equal data:\n  • 2 observations each\n  • 2 goals each\n  • 1 approved MOOC submission each\n  • 2 training event registrations each\n  • 1 course enrollment each');
+    // ── MEETINGS ──────────────────────────────────────────────────────────────
+    const meetings = [
+        { title: 'Weekly Staff Meeting', description: 'Regular weekly sync for all staff.', meetingType: 'Staff', meetingDate: '2026-02-25', startTime: '15:00', endTime: '16:00', mode: 'Offline', locationLink: 'Conference Room A', createdById: leaderId, status: 'Scheduled', momStatus: 'Not Created' },
+        { title: 'Science Department Huddle', description: 'Curriculum planning for next term.', meetingType: 'Department', meetingDate: '2026-02-20', startTime: '10:00', endTime: '11:00', mode: 'Online', locationLink: 'https://meet.google.com/abc-defg-hij', createdById: leaderId, status: 'Completed', momStatus: 'Published' },
+    ];
+
+    for (const m of meetings) {
+        const meeting = await prisma.meeting.create({ data: m });
+
+        // Create MoM if Published
+        if (m.momStatus === 'Published') {
+            await prisma.meetingMinutes.create({
+                data: {
+                    meetingId: meeting.id,
+                    objective: 'Discuss curriculum planning',
+                    agendaPoints: JSON.stringify(['Review last term', 'Plan next term']),
+                    discussionSummary: 'Productive discussion on new modules.',
+                    decisions: JSON.stringify(['Adopt new textbook', 'Schedule follow-up']),
+                    attendanceCount: 3,
+                    status: 'Published',
+                    createdById: leaderId
+                }
+            });
+            console.log(`Created MoM for meeting: ${meeting.title}`);
+        }
+
+        // Invite all teachers
+        for (const uid of [t1, t2, t3]) {
+            await prisma.meetingAttendee.create({
+                data: { meetingId: meeting.id, userId: uid, attendanceStatus: 'Invited' }
+            });
+        }
+    }
+    console.log('Seeded meetings, attendees, and minutes');
+
+    // ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────
+    const announcements = [
+        { title: 'System Maintenance', description: 'The portal will be down for maintenance on Sunday from 2 AM to 4 AM.', createdById: adminId, role: 'ADMIN', priority: 'High', status: 'Published', isPinned: true, targetRoles: '["TEACHER", "LEADER"]', targetDepartments: '[]', targetCampuses: '[]' },
+        { title: 'New PD Policy', description: 'Please review the updated professional development policy in the documents section.', createdById: leaderId, role: 'LEADER', priority: 'Normal', status: 'Published', isPinned: false, targetRoles: '["TEACHER"]', targetDepartments: '[]', targetCampuses: '[]' },
+    ];
+
+    for (const a of announcements) {
+        await prisma.announcement.create({ data: a });
+    }
+    console.log('Seeded announcements');
+
+    // ── EVENT ATTENDANCE ──────────────────────────────────────────────────────
+    const event1 = events[0]; // Effective Questioning Techniques (COMPLETED)
+    const attendanceRecords = [
+        { eventId: event1.id, teacherId: t1, teacherName: 'Teacher One', teacherEmail: 'teacher1.btmlayout@pdi.com', status: true, schoolId: 'BTM Layout', department: 'Science' },
+        { eventId: event1.id, teacherId: t2, teacherName: 'Teacher Two', teacherEmail: 'teacher2.jpnagar@pdi.com', status: true, schoolId: 'JP Nagar', department: 'Mathematics' },
+    ];
+
+    for (const r of attendanceRecords) {
+        await prisma.eventAttendance.create({ data: r });
+    }
+    console.log('Seeded event attendance');
+
+    console.log('\n✅ Seed complete! All three teachers now have equal data:\n  • 2 observations each\n  • 2 goals each\n  • 1 approved MOOC submission each\n  • 2 training event registrations each\n  • 1 course enrollment each\n  • 2 meetings each\n  • 2 announcements visible\n  • 2 attendance records');
 }
 
 main()

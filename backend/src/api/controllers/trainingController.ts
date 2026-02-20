@@ -23,14 +23,15 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
             orderBy: { date: 'asc' }
         });
 
-        // Map registrations to registrants for frontend compatibility
+        // Map registrations to registrants for frontend compatibility with ultra-safety
         const mappedEvents = events.map(event => ({
             ...event,
-            registrants: event.registrations.map(reg => ({
-                id: reg.user.id,
-                name: reg.user.fullName,
-                email: reg.user.email,
-                dateRegistered: reg.registrationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            registrants: (event.registrations || []).map(reg => ({
+                id: reg.user?.id || 'N/A',
+                name: reg.user?.fullName || 'Unknown',
+                email: reg.user?.email || 'N/A',
+                role: reg.user?.role || 'TEACHER',
+                dateRegistered: reg.registrationDate ? new Date(reg.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'
             }))
         }));
 
@@ -43,6 +44,65 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
         res.status(500).json({
             status: 'error',
             message: 'Internal server error'
+        });
+    }
+};
+
+export const getTrainingEvent = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params as { id: string };
+        const event = await prisma.trainingEvent.findUnique({
+            where: { id },
+            include: {
+                registrations: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                fullName: true,
+                                email: true,
+                                role: true,
+                                campusId: true,
+                                department: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        console.log('--- DEBUG EVENT ---', JSON.stringify(event, null, 2));
+
+        if (!event) {
+            return res.status(404).json({
+                status: 'error',
+                message: 'Event not found'
+            });
+        }
+
+        // Map registrations to registrants for frontend compatibility with ultra-safety
+        const mappedEvent = {
+            ...event,
+            registrants: (event.registrations || []).map((reg: any) => ({
+                id: reg.user?.id || 'N/A',
+                name: reg.user?.fullName || 'Unknown',
+                email: reg.user?.email || 'N/A',
+                role: reg.user?.role || 'TEACHER',
+                campusId: reg.user?.campusId || 'N/A',
+                department: reg.user?.department || 'N/A',
+                dateRegistered: reg.registrationDate ? new Date(reg.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'
+            }))
+        };
+
+        res.status(200).json({
+            status: 'success',
+            data: { event: mappedEvent }
+        });
+    } catch (error: any) {
+        console.error('Error fetching training event:', error);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Internal server error'
         });
     }
 };
