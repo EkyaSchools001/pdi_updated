@@ -234,6 +234,13 @@ const DashboardOverview = ({
             className={surveyStatus.completed ? "bg-emerald-50/50 border-emerald-100" : "bg-blue-50/50 border-blue-100 animate-pulse"}
           />
         )}
+        <StatCard
+          title="My Attendance"
+          value="View"
+          subtitle="Mark & Track"
+          icon={ClipboardList}
+          onClick={() => navigate("/teacher/attendance")}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -1874,7 +1881,7 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
             <Button
               onClick={() => setIsAIModalOpen(true)}
               size="sm"
-              className="gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg shadow-indigo-500/20 font-bold border-none"
+              className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/20 font-bold border-none"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               AI Smart Analysis

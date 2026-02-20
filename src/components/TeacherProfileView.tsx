@@ -99,9 +99,9 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                     <Button
                         onClick={() => setIsAIModalOpen(true)}
                         variant="outline"
-                        className="rounded-xl font-bold border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 flex gap-2"
+                        className="rounded-xl font-bold border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 flex gap-2"
                     >
-                        <Sparkles className="w-4 h-4 text-indigo-600" />
+                        <Sparkles className="w-4 h-4 text-emerald-600" />
                         AI Insights
                     </Button>
                     {userRole !== "teacher" && (
@@ -315,7 +315,7 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                     </Card>
 
                     {/* Skill Radar / Strengths */}
-                    <Card className="border-none shadow-premium bg-gradient-to-br from-indigo-600 to-blue-700 text-white overflow-hidden relative">
+                    <Card className="border-none shadow-premium bg-gradient-to-br from-emerald-600 to-teal-700 text-white overflow-hidden relative">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-10 translate-x-10" />
                         <CardHeader className="pb-2 border-b border-white/10">
                             <CardTitle className="text-lg flex items-center gap-2">
@@ -343,7 +343,7 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                                 </div>
                             </div>
 
-                            <Button className="w-full bg-white text-indigo-700 hover:bg-indigo-50 font-bold rounded-xl mt-2 border-none">
+                            <Button className="w-full bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl mt-2 border-none">
                                 Download Full Performance Report
                             </Button>
                         </CardContent>

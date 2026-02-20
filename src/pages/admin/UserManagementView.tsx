@@ -48,7 +48,7 @@ export function UserManagementView() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false);
     const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
-    const [newUser, setNewUser] = useState({ fullName: "", email: "", role: "TEACHER", campusId: "" });
+    const [newUser, setNewUser] = useState({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "" });
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState("all");
@@ -118,7 +118,7 @@ export function UserManagementView() {
             if (response.data.status === "success") {
                 toast.success("User added successfully");
                 setIsAddDialogOpen(false);
-                setNewUser({ fullName: "", email: "", role: "TEACHER", campusId: "" });
+                setNewUser({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "" });
                 fetchUsers();
             }
         } catch (error) {
@@ -225,6 +225,10 @@ export function UserManagementView() {
                                     <div className="grid gap-2">
                                         <Label htmlFor="email">Email Address</Label>
                                         <Input id="email" type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="password">Password</Label>
+                                        <Input id="password" type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} placeholder="Enter initial password" />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">

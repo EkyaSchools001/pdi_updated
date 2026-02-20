@@ -1,6 +1,7 @@
 interface Env {
     DATABASE_URL: string;
     JWT_SECRET: string;
+    NODE_ENV?: string;
 }
 
 export const onRequest: PagesFunction<Env> = async ({ request, next, env }) => {

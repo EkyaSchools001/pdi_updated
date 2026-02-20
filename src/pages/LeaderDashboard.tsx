@@ -321,6 +321,8 @@ export default function LeaderDashboard() {
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
+        <Route path="participation" element={<PDParticipationView team={team} />} />
+        <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
       </Routes>
     </DashboardLayout>
   );
@@ -954,6 +956,7 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
   // Edit & Creation State
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isRegistrantsOpen, setIsRegistrantsOpen] = useState(false);
   const [selectedRegistrants, setSelectedRegistrants] = useState<any[]>([]);
@@ -1069,6 +1072,7 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
 
       const savedEvent = await trainingService.updateEvent(editingEvent.id, updatedData);
       setTraining(prev => prev.map(ev => ev.id === editingEvent.id ? savedEvent : ev));
+      setIsEditOpen(false);
       setEditingEvent(null);
       toast.success("Event details updated successfully");
     } catch (error) {
@@ -1083,6 +1087,7 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
       await trainingService.deleteEvent(editingEvent.id);
       setTraining(prev => prev.filter(t => t.id !== editingEvent.id));
       setIsDeleteOpen(false);
+      setIsEditOpen(false);
       setEditingEvent(null);
       toast.success("Event deleted successfully");
     } catch (error) {
@@ -1097,6 +1102,12 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
     setSelectedRegistrants(event.registrants || []);
     setEditingEvent(event);
     setIsRegistrantsOpen(true);
+    setIsEditOpen(false);
+  };
+
+  const handleEditEvent = (event: any) => {
+    setEditingEvent(event);
+    setIsEditOpen(true);
   };
 
   const handleRegister = async (eventId: string) => {
@@ -1153,13 +1164,13 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
         />
         <StatCard
           title="Total Registrations"
-          value={training.reduce((acc, e) => acc + e.registered, 0)}
+          value={training.reduce((acc, e) => acc + (e.registrants?.length || 0), 0)}
           subtitle="Staff enrolled"
           icon={Users2}
         />
         <StatCard
           title="Capacity Util."
-          value={`${training.reduce((acc, e) => acc + (e.capacity || 0), 0) > 0 ? Math.round((training.reduce((acc, e) => acc + (e.registered || 0), 0) / training.reduce((acc, e) => acc + (e.capacity || 0), 0)) * 100) : 0}%`}
+          value={`${training.reduce((acc, e) => acc + (e.capacity || 0), 0) > 0 ? Math.round((training.reduce((acc, e) => acc + (e.registrants?.length || 0), 0) / training.reduce((acc, e) => acc + (e.capacity || 0), 0)) * 100) : 0}%`}
           subtitle="Seat occupancy"
           icon={Rocket}
         />
@@ -1365,6 +1376,15 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                                   Registrants
                                 </Button>
                                 <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-9 px-4 rounded-xl border-primary/20 text-primary hover:bg-primary/5 font-bold flex items-center gap-2"
+                                  onClick={() => handleEditEvent(session)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                  Edit
+                                </Button>
+                                <Button
                                   className="h-10 px-6 rounded-xl bg-[#1e293b] hover:bg-[#0f172a] text-white shadow-lg shadow-slate-900/20 transition-all active:scale-[0.98] font-black uppercase tracking-tighter text-xs"
                                   onClick={() => handleRegister(session.id)}
                                 >
@@ -1393,7 +1413,7 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
       </div>
 
       {/* Edit Event Dialog */}
-      <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+      <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Event Details</DialogTitle>
@@ -1507,7 +1527,7 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                   Delete Event
                 </Button>
                 <div className="flex gap-3">
-                  <Button type="button" variant="ghost" onClick={() => setEditingEvent(null)}>Cancel</Button>
+                  <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)}>Cancel</Button>
                   <Button type="submit">Save Changes</Button>
                 </div>
               </div>
@@ -1963,9 +1983,9 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
               <Button
                 onClick={() => setIsAIModalOpen(true)}
                 variant="outline"
-                className="gap-2 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 border-indigo-200 text-indigo-700 font-bold"
+                className="gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border-emerald-200 text-emerald-700 font-bold"
               >
-                <Sparkles className="w-4 h-4 text-indigo-600" />
+                <Sparkles className="w-4 h-4 text-emerald-600" />
                 AI Smart Insights
               </Button>
               <div className="relative">

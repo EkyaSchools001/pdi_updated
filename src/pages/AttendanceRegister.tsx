@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,19 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { Loader2, ClipboardList, CheckCircle2, XCircle, Eye } from "lucide-react";
+import { Loader2, ClipboardList, XCircle, Eye } from "lucide-react";
 
 export default function AttendanceRegister() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
-        const userStr = localStorage.getItem("user_data");
-        if (userStr) {
-            setUserData(JSON.parse(userStr));
-        }
         fetchEvents();
     }, []);
 
@@ -50,6 +47,39 @@ export default function AttendanceRegister() {
         }
     };
 
+    const handleExport = (event: any) => {
+        const registrants = event.registrants || [];
+        if (!registrants.length) {
+            toast.info("No registrants to export");
+            return;
+        }
+
+        const headers = ["Name", "Email", "Role", "Campus", "Department", "Date Registered"];
+        const rows = registrants.map((r: any) => [
+            r.name,
+            r.email,
+            r.role || "N/A",
+            r.campusId || "N/A",
+            r.department || "N/A",
+            r.dateRegistered
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map(r => r.map(c => `"${c}"`).join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.body.appendChild(document.createElement("a"));
+        link.href = url;
+        link.download = `Registrants_${event.title}.csv`;
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success("CSV exported successfully");
+    };
+
     const getStatusBadge = (event: any) => {
         if (event.attendanceClosed) {
             return <Badge variant="destructive" className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">Closed</Badge>;
@@ -64,7 +94,17 @@ export default function AttendanceRegister() {
     // Also consider showing all for ADMIN? Prompt says "Shows events created by the logged-in user."
     // But strictly, Admin might want to see all. Implementation plan says "Shows events created by the logged-in user."
     // I will stick to createdBy check for the main view to reduce clutter, or maybe filtered tabs.
-    const myEvents = events.filter(e => e.createdById === userData?.id || e.proposedById === userData?.id);
+    // Filter events: Admins see all, others see only what they created/proposed
+    const myEvents = events.filter(e => {
+        const isAdmin = ['ADMIN', 'SUPERADMIN', 'MANAGEMENT'].includes(user?.role?.toUpperCase() || '');
+        const isOwner = e.createdById === user?.id || e.proposedById === user?.id;
+
+        // Admins and Superadmins see all events
+        if (isAdmin) return true;
+
+        // Leaders and Others see only their own
+        return isOwner;
+    });
 
     // Sort by date (newest first)
     const sortedEvents = [...myEvents].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -102,6 +142,7 @@ export default function AttendanceRegister() {
                                     <TableHead className="text-foreground">Date</TableHead>
                                     <TableHead className="text-foreground">Status</TableHead>
                                     <TableHead className="text-foreground">Attendance</TableHead>
+                                    <TableHead className="text-foreground">Registrants</TableHead>
                                     <TableHead className="text-right text-foreground">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -129,8 +170,12 @@ export default function AttendanceRegister() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>{getStatusBadge(event)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                                    {event.registrants?.length || 0} Registered
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell className="text-right space-x-2">
-                                                {/* View Button */}
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -140,19 +185,6 @@ export default function AttendanceRegister() {
                                                     <Eye className="w-4 h-4 mr-2" />
                                                     View
                                                 </Button>
-
-                                                {/* Enable Attendance (Only if Completed and Not Enabled) */}
-                                                {!event.attendanceEnabled && (event.status === 'Completed' || event.status === 'COMPLETED') && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleToggleAttendance(event.id, 'enable')}
-                                                        className="border-green-500/50 text-green-500 hover:bg-green-500/10 hover:text-green-400"
-                                                    >
-                                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                        Enable
-                                                    </Button>
-                                                )}
 
                                                 {/* Close Attendance (If Enabled and Not Closed) */}
                                                 {event.attendanceEnabled && !event.attendanceClosed && (
