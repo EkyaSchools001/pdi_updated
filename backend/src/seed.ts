@@ -12,9 +12,10 @@ async function main() {
     const tables = [
         'courseEnrollment', 'moocSubmission', 'registration', 'pDHour',
         'goal', 'documentAcknowledgement', 'observationDomain', 'observation',
-        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings', 'user',
-        'meeting', 'meetingAttendee', 'meetingMinutes', 'meetingActionItem', 'announcement', 'announcementAcknowledgement',
-        'eventAttendance'
+        'document', 'trainingEvent', 'course', 'formTemplate', 'systemSettings',
+        'meetingActionItem', 'meetingMinutes', 'meetingAttendee', 'meetingShare', 'meetingReply', 'meeting',
+        'announcementAcknowledgement', 'announcement', 'surveyAnswer', 'surveyResponse', 'surveyQuestion', 'survey',
+        'eventAttendance', 'user'
     ];
 
     for (const table of tables) {
@@ -66,6 +67,8 @@ async function main() {
         { moduleId: 'hours', moduleName: 'PD Hours Tracking', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'insights', moduleName: 'Data Insights', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'meetings', moduleName: 'Meetings', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'survey', moduleName: 'Surveys', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: true, TEACHER: true } },
     ];
     const formFlows = [
         { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
@@ -217,8 +220,26 @@ async function main() {
     }
     console.log('Seeded courses and enrollments');
 
+    // ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────
+    const announcements = [
+        { title: 'New PD Policy Update', description: 'Please review the updated professional development handbook available in Documents.', role: 'Admin', priority: 'High', status: 'Published', createdById: adminId, targetRoles: '["TEACHER","LEADER"]' },
+        { title: 'Term 2 Schedule', description: 'The academic calendar for Term 2 has been finalized.', role: 'Leader', priority: 'Normal', status: 'Published', createdById: leaderId, targetRoles: '["TEACHER"]' },
+        { title: 'Campus Maintenance', description: 'Network maintenance scheduled for this Saturday.', role: 'Admin', priority: 'Normal', status: 'Published', createdById: adminId, targetRoles: '["TEACHER","LEADER","MANAGEMENT"]' },
+        { title: 'System Maintenance', description: 'The portal will be down for maintenance on Sunday from 2 AM to 4 AM.', createdById: adminId, role: 'ADMIN', priority: 'High', status: 'Published', isPinned: true, targetRoles: '["TEACHER", "LEADER"]', targetDepartments: '[]', targetCampuses: '[]' },
+        { title: 'New PD Policy', description: 'Please review the updated professional development policy in the documents section.', createdById: leaderId, role: 'LEADER', priority: 'Normal', status: 'Published', isPinned: false, targetRoles: '["TEACHER"]', targetDepartments: '[]', targetCampuses: '[]' },
+    ];
+
+    for (const a of announcements) {
+        await prisma.announcement.create({ data: { ...a } });
+    }
+    console.log('Seeded announcements');
+
     // ── MEETINGS ──────────────────────────────────────────────────────────────
     const meetings = [
+        { title: 'Weekly Staff Briefing', description: 'Updates on upcoming events and student welfare.', meetingType: 'Staff', meetingDate: '2026-02-22', startTime: '08:30', endTime: '09:30', mode: 'Offline', createdById: leaderId, status: 'Scheduled', campusId: 'BTM Layout' },
+        { title: 'Science Dept Review', description: 'Reviewing Term 1 assessment data.', meetingType: 'Department', meetingDate: '2026-02-25', startTime: '14:00', endTime: '15:30', mode: 'Online', createdById: leaderId, status: 'Scheduled', departmentId: 'Science' },
+        { title: 'Academic Standards', description: 'Quarterly review of academic standards.', meetingType: 'Management', meetingDate: '2026-03-01', startTime: '10:00', endTime: '12:00', mode: 'Online', createdById: adminId, status: 'Scheduled' },
+        { title: 'Term 1 Retrospective', description: 'Discussing what went well and areas for improvement.', meetingType: 'Academic Review', meetingDate: '2026-01-15', startTime: '15:00', endTime: '16:30', mode: 'Offline', createdById: leaderId, status: 'Completed', momStatus: 'Published' },
         { title: 'Weekly Staff Meeting', description: 'Regular weekly sync for all staff.', meetingType: 'Staff', meetingDate: '2026-02-25', startTime: '15:00', endTime: '16:00', mode: 'Offline', locationLink: 'Conference Room A', createdById: leaderId, status: 'Scheduled', momStatus: 'Not Created' },
         { title: 'Science Department Huddle', description: 'Curriculum planning for next term.', meetingType: 'Department', meetingDate: '2026-02-20', startTime: '10:00', endTime: '11:00', mode: 'Online', locationLink: 'https://meet.google.com/abc-defg-hij', createdById: leaderId, status: 'Completed', momStatus: 'Published' },
     ];
@@ -231,7 +252,7 @@ async function main() {
             await prisma.meetingMinutes.create({
                 data: {
                     meetingId: meeting.id,
-                    objective: 'Discuss curriculum planning',
+                    objective: m.title.includes('Retrospective') ? 'Discussing what went well' : 'Discuss curriculum planning',
                     agendaPoints: JSON.stringify(['Review last term', 'Plan next term']),
                     discussionSummary: 'Productive discussion on new modules.',
                     decisions: JSON.stringify(['Adopt new textbook', 'Schedule follow-up']),
@@ -240,31 +261,26 @@ async function main() {
                     createdById: leaderId
                 }
             });
-            console.log(`Created MoM for meeting: ${meeting.title}`);
         }
 
-        // Invite all teachers
-        for (const uid of [t1, t2, t3]) {
-            await prisma.meetingAttendee.create({
-                data: { meetingId: meeting.id, userId: uid, attendanceStatus: 'Invited' }
+        // Invite relevant teachers
+        const staffMeetings = ['Weekly Staff Briefing', 'Term 1 Retrospective', 'Weekly Staff Meeting'];
+        if (staffMeetings.includes(m.title)) {
+            await prisma.meetingAttendee.createMany({
+                data: [
+                    { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
+                    { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
+                    { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' }
+                ]
             });
+        } else if (m.title.includes('Science')) {
+            await prisma.meetingAttendee.create({ data: { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' } });
         }
     }
-    console.log('Seeded meetings, attendees, and minutes');
-
-    // ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────
-    const announcements = [
-        { title: 'System Maintenance', description: 'The portal will be down for maintenance on Sunday from 2 AM to 4 AM.', createdById: adminId, role: 'ADMIN', priority: 'High', status: 'Published', isPinned: true, targetRoles: '["TEACHER", "LEADER"]', targetDepartments: '[]', targetCampuses: '[]' },
-        { title: 'New PD Policy', description: 'Please review the updated professional development policy in the documents section.', createdById: leaderId, role: 'LEADER', priority: 'Normal', status: 'Published', isPinned: false, targetRoles: '["TEACHER"]', targetDepartments: '[]', targetCampuses: '[]' },
-    ];
-
-    for (const a of announcements) {
-        await prisma.announcement.create({ data: a });
-    }
-    console.log('Seeded announcements');
+    console.log('Seeded meetings and invitations');
 
     // ── EVENT ATTENDANCE ──────────────────────────────────────────────────────
-    const event1 = events[0]; // Effective Questioning Techniques (COMPLETED)
+    const event1 = events[0];
     const attendanceRecords = [
         { eventId: event1.id, teacherId: t1, teacherName: 'Teacher One', teacherEmail: 'teacher1.btmlayout@pdi.com', status: true, schoolId: 'BTM Layout', department: 'Science' },
         { eventId: event1.id, teacherId: t2, teacherName: 'Teacher Two', teacherEmail: 'teacher2.jpnagar@pdi.com', status: true, schoolId: 'JP Nagar', department: 'Mathematics' },
@@ -275,7 +291,49 @@ async function main() {
     }
     console.log('Seeded event attendance');
 
-    console.log('\n✅ Seed complete! All three teachers now have equal data:\n  • 2 observations each\n  • 2 goals each\n  • 1 approved MOOC submission each\n  • 2 training event registrations each\n  • 1 course enrollment each\n  • 2 meetings each\n  • 2 announcements visible\n  • 2 attendance records');
+    // ── SURVEYS ───────────────────────────────────────────────────────────────
+    await prisma.survey.create({
+        data: {
+            title: 'AY 25–26 PD Term 1 Survey',
+            academicYear: '2025-2026',
+            term: '1',
+            description: 'Dear Educators, We are about to complete the first term of the academic year...',
+            isActive: true,
+            isAnonymous: true,
+            questions: {
+                create: [
+                    { pageNumber: 1, orderIndex: 1, questionText: 'Campus', questionType: 'multiple_choice', isRequired: true, options: JSON.stringify(['CMR NPS', 'EJPN', 'EITPL', 'EBTM', 'EBYR', 'ENICE', 'PU HRBR', 'PU ITPL', 'PU BTM', 'PU BYR']) },
+                    { pageNumber: 1, orderIndex: 2, questionText: 'How satisfied are you with the professional development opportunities provided by us?', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5, lowLabel: 'Not Satisfied at All', highLabel: 'Very Satisfied' }) },
+                    { pageNumber: 1, orderIndex: 3, questionText: 'What is the one reason for your rating?', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 2, orderIndex: 4, questionText: 'Which sessions did you find most useful?', questionType: 'multi_select', isRequired: true, options: JSON.stringify(['Differentiating Specific Lesson Components using AI (SS Block)', 'Differentiating Specific Lesson Components using AI (P/M Block)', 'Strategies for Maximising Student Engagement', 'AI Bootcamp Session', 'Arduino Workshop', 'Teacher Sensitization', 'Mastering Online Teaching', 'C&I Training']) },
+                    { pageNumber: 2, orderIndex: 5, questionText: 'Describe why you selected the above sessions', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 2, orderIndex: 6, questionText: 'Mention one way you implemented this learning in class', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 2, orderIndex: 7, questionText: 'How effective was post-session support?', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5 }) },
+                    { pageNumber: 2, orderIndex: 8, questionText: 'Sessions that could be improved', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 2, orderIndex: 9, questionText: 'Anything else to share', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 3, orderIndex: 10, questionText: 'Were you observed at least once in Term 1?', questionType: 'yes_no', isRequired: true },
+                    { pageNumber: 3, orderIndex: 11, questionText: 'Rate effectiveness of classroom observation feedback', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5 }) },
+                    { pageNumber: 3, orderIndex: 12, questionText: 'Reason for rating', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 3, orderIndex: 13, questionText: 'Additional comments', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 4, orderIndex: 14, questionText: 'Rate effectiveness of LA Touchpoints', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5 }) },
+                    { pageNumber: 4, orderIndex: 15, questionText: 'Reason for rating', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 4, orderIndex: 16, questionText: 'Additional comments', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 5, orderIndex: 17, questionText: 'Rate satisfaction with updated MOOCs', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5 }) },
+                    { pageNumber: 5, orderIndex: 18, questionText: 'Reason for rating', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 5, orderIndex: 19, questionText: 'Additional comments', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 6, orderIndex: 20, questionText: 'Rate effectiveness of Toolkit Levels', questionType: 'rating_scale', isRequired: true, options: JSON.stringify({ min: 1, max: 5 }) },
+                    { pageNumber: 6, orderIndex: 21, questionText: 'Reason for rating', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 6, orderIndex: 22, questionText: 'Additional comments', questionType: 'long_text', isRequired: false },
+                    { pageNumber: 7, orderIndex: 23, questionText: 'Preferred PD formats', questionType: 'multi_select', isRequired: true, options: JSON.stringify(['In-person Training', 'Online Training Session', 'Self-paced Online Courses', 'Peer Collaboration Groups', 'One-on-one Coaching', 'Other']) },
+                    { pageNumber: 7, orderIndex: 24, questionText: 'Preferred frequency', questionType: 'multiple_choice', isRequired: true, options: JSON.stringify(['Monthly', 'Quarterly', 'Annually', 'As needed']) },
+                    { pageNumber: 7, orderIndex: 25, questionText: 'Topics for future PD', questionType: 'long_text', isRequired: true },
+                    { pageNumber: 7, orderIndex: 26, questionText: 'Additional suggestions', questionType: 'long_text', isRequired: false },
+                ]
+            }
+        }
+    });
+
+    console.log('\n✅ Seed complete! All teachers now have equal data + Surveys, Meetings, and Attendance entries.');
 }
 
 main()

@@ -111,7 +111,9 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
             '/teacher/meetings': 'meetings',
             '/admin/meetings': 'meetings',
             '/management/meetings': 'meetings',
-            '/meetings': 'meetings'
+            '/teacher/survey': 'survey',
+            '/admin/survey': 'survey',
+            '/management/survey': 'survey'
         };
 
         // 4. Pattern Matching

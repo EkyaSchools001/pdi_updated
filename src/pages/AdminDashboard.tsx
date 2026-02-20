@@ -25,6 +25,7 @@ import { useAccessControl } from "@/hooks/useAccessControl";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
+import SurveyPage from "@/pages/SurveyPage";
 
 interface DashboardUser {
   id: string;
@@ -134,6 +135,7 @@ export default function AdminDashboard() {
         <Route path="documents" element={<AdminDocumentManagement />} />
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />
+        <Route path="survey" element={<SurveyPage />} />
         <Route path="superadmin" element={<SuperAdminView />} />
       </Routes>
     </DashboardLayout>

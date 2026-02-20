@@ -45,6 +45,7 @@ import { AnnouncementFormModal } from "@/components/announcements/AnnouncementFo
 import { announcementService, Announcement } from "@/services/announcementService";
 import { useEffect } from "react";
 import { format } from 'date-fns';
+import SurveyPage from "@/pages/SurveyPage";
 
 // --- Mock Data ---
 
@@ -954,6 +955,7 @@ export default function ManagementDashboard() {
                     <Route path="leadership" element={<Leadership />} />
                     <Route path="risk" element={<Risk />} />
                     <Route path="reports" element={<Reports />} />
+                    <Route path="survey" element={<SurveyPage />} />
                 </Routes>
             </div>
 
