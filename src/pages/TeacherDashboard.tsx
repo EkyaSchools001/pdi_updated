@@ -125,6 +125,7 @@ import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
 import TeacherAttendance from "@/pages/TeacherAttendance";
+import SurveyPage from "@/pages/SurveyPage";
 
 // Removed local Observation interface in favor of shared type
 
@@ -1676,6 +1677,7 @@ export default function TeacherDashboard() {
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />
+        <Route path="survey" element={<SurveyPage />} />
         <Route path="profile" element={
           <TeacherProfileView
             teacher={{

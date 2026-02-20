@@ -51,6 +51,7 @@ const teacherNav = [
   { title: "PD Hours", icon: Clock, path: "/teacher/hours" },
   { title: "Documents", icon: FileCheck, path: "/teacher/documents" },
   { title: "Insights", icon: Lightbulb, path: "/teacher/insights" },
+  { title: "Survey", icon: ClipboardList, path: "/teacher/survey" },
   { title: "My Profile", icon: Users, path: "/teacher/profile" },
 ];
 
@@ -79,6 +80,7 @@ const adminNav = [
   { title: "Attendance Register", icon: ClipboardList, path: "/admin/attendance" },
   { title: "Documents", icon: FileCheck, path: "/admin/documents" },
   { title: "Reports", icon: FileText, path: "/admin/reports" },
+  { title: "Survey", icon: ClipboardList, path: "/admin/survey" },
   { title: "Settings", icon: Settings, path: "/admin/settings" },
 ];
 
@@ -93,6 +95,7 @@ const managementNav = [
   { title: "Leadership", icon: Users, path: "/management/leadership" },
   { title: "Risk & Intervention", icon: AlertTriangle, path: "/management/risk" },
   { title: "Reports", icon: FileText, path: "/management/reports" },
+  { title: "Survey", icon: ClipboardList, path: "/management/survey" },
 ];
 
 const superAdminNav = [
