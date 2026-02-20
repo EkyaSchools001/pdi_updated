@@ -292,7 +292,7 @@ async function main() {
     console.log('Seeded event attendance');
 
     // ── SURVEYS ───────────────────────────────────────────────────────────────
-    await prisma.survey.create({
+    await (prisma as any).survey.create({
         data: {
             title: 'AY 25–26 PD Term 1 Survey',
             academicYear: '2025-2026',
