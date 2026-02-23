@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu, GraduationCap } from "lucide-react";
 import { Button } from "../ui/button";
+import { NotificationBell } from "../notifications/NotificationBell";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -27,14 +28,17 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
           </div>
           <span className="font-semibold text-sidebar-foreground">PD Platform</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="text-sidebar-foreground"
-        >
-          <Menu className="w-6 h-6" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="text-sidebar-foreground"
+          >
+            <Menu className="w-6 h-6" />
+          </Button>
+        </div>
       </div>
 
       <DashboardSidebar
@@ -54,11 +58,16 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
 
       <main
         className={cn(
-          "flex-1 transition-all duration-300 min-h-screen overflow-x-hidden print:ml-0",
+          "flex-1 transition-all duration-300 min-h-screen overflow-x-hidden print:ml-0 flex flex-col",
           !isMobile && (collapsed ? "ml-16" : "ml-64")
         )}
       >
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        {!isMobile && (
+          <header className="h-14 border-b border-white/10 bg-white/40 backdrop-blur-xl flex items-center justify-end px-8 sticky top-0 z-40 w-full shrink-0 shadow-sm transition-all duration-300">
+            <NotificationBell />
+          </header>
+        )}
+        <div className="p-4 md:p-8 max-w-7xl mx-auto flex-1 w-full">
           {children}
         </div>
       </main>

@@ -6,6 +6,9 @@ export interface AuthRequest extends Request {
     user?: {
         id: string;
         role: string;
+        fullName?: string;
+        campusId?: string;
+        department?: string;
     };
 }
 

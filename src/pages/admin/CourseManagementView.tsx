@@ -78,7 +78,7 @@ export function CourseManagementView() {
     const [isDownloadableOpen, setIsDownloadableOpen] = useState(false);
     const [currentCourse, setCurrentCourse] = useState<any>(null);
     const [detailCourse, setDetailCourse] = useState<any>(null);
-    const [newCourse, setNewCourse] = useState({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active" });
+    const [newCourse, setNewCourse] = useState({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active", url: "" });
     const [downloadableResource, setDownloadableResource] = useState({ title: "", type: "link", url: "", description: "" });
 
     const handleAddCourse = async () => {
@@ -93,11 +93,12 @@ export function CourseManagementView() {
                 hours: parseInt(newCourse.hours),
                 instructor: newCourse.instructor || "TBD",
                 status: (newCourse.status || "Draft") as any,
+                url: newCourse.url
             };
             const createdCourse = await courseService.createCourse(courseData);
             setCourses([createdCourse, ...courses]);
             setIsAddOpen(false);
-            setNewCourse({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active" });
+            setNewCourse({ title: "", category: "Pedagogy", hours: "2", instructor: "TBD", status: "Active", url: "" });
             toast.success("Course added successfully");
         } catch (error) {
             toast.error("Failed to add course");
@@ -221,6 +222,15 @@ export function CourseManagementView() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="course-url">Course Link / Video URL (Optional)</Label>
+                                        <Input
+                                            id="course-url"
+                                            placeholder="https://..."
+                                            value={newCourse.url}
+                                            onChange={e => setNewCourse({ ...newCourse, url: e.target.value })}
+                                        />
                                     </div>
                                 </div>
                                 <DialogFooter>
@@ -527,6 +537,14 @@ export function CourseManagementView() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="edit-url">Course Link / Video URL</Label>
+                                <Input
+                                    id="edit-url"
+                                    value={currentCourse.url || ''}
+                                    onChange={e => setCurrentCourse({ ...currentCourse, url: e.target.value })}
+                                />
+                            </div>
                         </div>
                     )}
                     <DialogFooter>
@@ -655,6 +673,23 @@ export function CourseManagementView() {
                                                 <ChevronRight className={`w-4 h-4 transition-transform ${showEnrolledTable ? 'rotate-90' : ''}`} />
                                             </Button>
                                         </div>
+
+                                        {detailCourse.url && (
+                                            <div className="space-y-2 col-span-2">
+                                                <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Course Link</Label>
+                                                <div className="flex items-center gap-2">
+                                                    <a
+                                                        href={detailCourse.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-primary hover:underline flex items-center gap-1"
+                                                    >
+                                                        {detailCourse.url}
+                                                        <Share2 className="w-3 h-3" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

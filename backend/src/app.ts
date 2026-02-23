@@ -40,6 +40,12 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'Bypass-Tunnel-Reminder']
 }));
 
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

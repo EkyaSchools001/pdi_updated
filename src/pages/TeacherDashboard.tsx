@@ -120,8 +120,12 @@ import { ReflectionForm } from "@/components/ReflectionForm";
 import { MoocEvidenceForm } from "@/components/MoocEvidenceForm";
 
 import { TeacherProfileView } from "@/components/TeacherProfileView";
-import TeacherAttendance from "@/pages/TeacherAttendance";
 import AttendanceForm from "@/pages/AttendanceForm";
+import { MeetingsDashboard } from './MeetingsDashboard';
+import { CreateMeetingForm } from './CreateMeetingForm';
+import { MeetingMoMForm } from './MeetingMoMForm';
+import TeacherAttendance from "@/pages/TeacherAttendance";
+import SurveyPage from "@/pages/SurveyPage";
 
 // Removed local Observation interface in favor of shared type
 
@@ -139,7 +143,8 @@ const DashboardOverview = ({
   onReflect,
   userName,
   pdHours,
-  role
+  role,
+  surveyStatus
 }: {
   goals: any[],
   events: any[],
@@ -149,7 +154,9 @@ const DashboardOverview = ({
   onReflect: (obs: Observation) => void,
   userName: string,
   pdHours: any,
-  role: string
+  role: string,
+  surveyStatus: { active: boolean; completed: boolean; title?: string } | null
+
 }) => {
   const navigate = useNavigate();
   const { isModuleEnabled } = useAccessControl();
@@ -216,6 +223,24 @@ const DashboardOverview = ({
             onClick={() => navigate("/teacher/calendar")}
           />
         )}
+        {isModuleEnabled('/teacher/survey', role) && surveyStatus?.active && (
+          <StatCard
+            title="PD Survey"
+            value={surveyStatus.completed ? "Completed" : "Action Required"}
+            subtitle={surveyStatus.completed ? "View your response" : "Please complete now"}
+            icon={ClipboardList}
+            trend={surveyStatus.completed ? { value: 100, isPositive: true } : undefined}
+            onClick={() => navigate("/teacher/survey")}
+            className={surveyStatus.completed ? "bg-emerald-50/50 border-emerald-100" : "bg-blue-50/50 border-blue-100 animate-pulse"}
+          />
+        )}
+        <StatCard
+          title="My Attendance"
+          value="View"
+          subtitle="Mark & Track"
+          icon={ClipboardList}
+          onClick={() => navigate("/teacher/attendance")}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -1300,9 +1325,11 @@ interface NewGoal {
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
-  const userName = user?.fullName || "Teacher";
-  const userEmail = user?.email || "";
-  const role = user?.role || "TEACHER";
+  if (!user) return null;
+
+  const userName = user.fullName;
+  const userEmail = user.email || "";
+  const role = user.role;
 
   const navigate = useNavigate();
   const [goals, setGoals] = useState<any[]>([]);
@@ -1321,6 +1348,7 @@ export default function TeacherDashboard() {
     history: []
   });
   const [selectedReflectObs, setSelectedReflectObs] = useState<Observation | null>(null);
+  const [surveyStatus, setSurveyStatus] = useState<{ active: boolean; completed: boolean; title?: string } | null>(null);
 
 
   // Fetch initial data via API
@@ -1444,6 +1472,24 @@ export default function TeacherDashboard() {
     fetchTraining();
     fetchCourses();
     fetchEnrollments();
+
+    const fetchSurveyStatus = async () => {
+      try {
+        const { surveyService } = await import("@/services/surveyService");
+        const data = await surveyService.getActiveSurvey();
+        if (data && data.survey) {
+          setSurveyStatus({
+            active: true,
+            completed: !!data.myResponse?.isCompleted,
+            title: data.survey.title
+          });
+        }
+      } catch (e) {
+        // Ignore 404 or other errors
+        setSurveyStatus(null);
+      }
+    };
+    fetchSurveyStatus();
 
     // Socket.io Real-time Sync
     const socket = getSocket();
@@ -1650,6 +1696,7 @@ export default function TeacherDashboard() {
             userName={userName}
             pdHours={pdHours}
             role={role}
+            surveyStatus={surveyStatus}
           />
         } />
         <Route path="observations" element={
@@ -1664,10 +1711,14 @@ export default function TeacherDashboard() {
         <Route path="calendar" element={<CalendarView events={events} onRegister={handleRegister} />} />
         <Route path="attendance" element={<TeacherAttendance />} />
         <Route path="attendance/:eventId" element={<AttendanceForm />} />
+        <Route path="meetings" element={<MeetingsDashboard />} />
+        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
         <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />
+        <Route path="survey" element={<SurveyPage />} />
         <Route path="profile" element={
           <TeacherProfileView
             teacher={{
@@ -1830,7 +1881,7 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
             <Button
               onClick={() => setIsAIModalOpen(true)}
               size="sm"
-              className="gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg shadow-indigo-500/20 font-bold border-none"
+              className="gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-lg shadow-emerald-500/20 font-bold border-none"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
               AI Smart Analysis

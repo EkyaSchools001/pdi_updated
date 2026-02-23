@@ -55,7 +55,7 @@ Format the output in clear Markdown with appropriate headers. Keep it profession
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json() as any;
             throw new Error(errorData.error?.message || "Failed to fetch from Groq API");
         }
 

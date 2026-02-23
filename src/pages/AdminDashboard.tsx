@@ -22,6 +22,10 @@ import { getSocket } from "@/lib/socket";
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
 import { useAccessControl } from "@/hooks/useAccessControl";
+import { MeetingsDashboard } from './MeetingsDashboard';
+import { CreateMeetingForm } from './CreateMeetingForm';
+import { MeetingMoMForm } from './MeetingMoMForm';
+import SurveyPage from "@/pages/SurveyPage";
 
 interface DashboardUser {
   id: string;
@@ -32,8 +36,10 @@ interface DashboardUser {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const userName = user?.fullName || "Admin User";
-  const role = user?.role || "ADMIN";
+  if (!user) return null; // Let ProtectedRoute handle it
+
+  const userName = user.fullName;
+  const role = user.role;
 
 
 
@@ -118,6 +124,10 @@ export default function AdminDashboard() {
         <Route path="users" element={<UserManagementView />} />
         <Route path="profile/:userId" element={<AdminTeacherProfileView observations={observations} />} />
         <Route path="forms" element={<FormTemplatesView />} />
+        <Route path="meetings" element={<MeetingsDashboard />} />
+        <Route path="meetings/create" element={<CreateMeetingForm />} />
+        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
         <Route path="courses" element={<CourseManagementView />} />
         <Route path="calendar" element={<AdminCalendarView />} />
         <Route path="attendance" element={<AttendanceRegister />} />
@@ -125,6 +135,7 @@ export default function AdminDashboard() {
         <Route path="documents" element={<AdminDocumentManagement />} />
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />
+        <Route path="survey" element={<SurveyPage />} />
         <Route path="superadmin" element={<SuperAdminView />} />
       </Routes>
     </DashboardLayout>

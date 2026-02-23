@@ -8,6 +8,7 @@ interface Env {
     VITE_SUPABASE_URL: string;
     VITE_SUPABASE_PUBLISHABLE_KEY: string;
     SUPABASE_SERVICE_ROLE_KEY?: string;
+    JWT_EXPIRES_IN?: string;
 }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {

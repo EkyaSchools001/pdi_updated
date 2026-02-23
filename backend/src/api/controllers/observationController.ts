@@ -4,6 +4,7 @@ import { AppError } from '../../infrastructure/utils/AppError';
 import prisma from '../../infrastructure/database/prisma';
 import bcrypt from 'bcryptjs';
 import { getIO } from '../../core/socket';
+import { createNotification } from './notificationController';
 
 export const getAllObservations = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -189,6 +190,15 @@ export const createObservation = async (req: Request, res: Response, next: NextF
 
         // Real-time update
         getIO().emit('observation:created', mappedObservation);
+
+        // Send in-app notification to teacher
+        await createNotification({
+            userId: mappedObservation.teacherId,
+            title: 'New Observation',
+            message: `A new ${mappedObservation.domain} observation has been submitted by ${authReq.user?.fullName}.`,
+            type: 'SUCCESS',
+            link: '/teacher/dashboard'
+        });
 
         res.status(201).json({
             status: 'success',

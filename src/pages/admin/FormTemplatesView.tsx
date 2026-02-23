@@ -56,6 +56,11 @@ export function FormTemplatesView() {
                     }
                     return {
                         ...t,
+                        title: t.name || "Untitled Template",
+                        status: t.status || "Active",
+                        version: t.version || "1.0",
+                        targetRole: t.targetRole || "All",
+                        targetBlock: t.targetBlock || "All",
                         fields: structure || [], // Ensure fields is always an array
                         questions: (structure || []).length,
                         lastUpdated: new Date(t.updatedAt).toLocaleDateString()

@@ -120,7 +120,14 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
             '/leader/performance': 'reports',
             '/leader/calendar': 'calendar',
             '/leader/attendance': 'attendance',
-            '/leader/reports': 'reports'
+            '/leader/reports': 'reports',
+            '/leader/meetings': 'meetings',
+            '/teacher/meetings': 'meetings',
+            '/admin/meetings': 'meetings',
+            '/management/meetings': 'meetings',
+            '/teacher/survey': 'survey',
+            '/admin/survey': 'survey',
+            '/management/survey': 'survey'
         };
 
         // 4. Pattern Matching
@@ -140,7 +147,10 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         const module = matrix.find(m => m.moduleId === moduleId);
 
         // Block modules if matrix loaded but entry missing
-        if (!module) return matrix.length === 0;
+        if (!module) {
+            if (moduleId === 'meetings') return true; // Newly added module fallback
+            return matrix.length === 0;
+        }
 
         return module.roles[roleKey] === true;
     };

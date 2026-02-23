@@ -5,6 +5,8 @@ import * as z from "zod";
 import { CalendarIcon, Upload, CheckCircle2, User, BookOpen, Link as LinkIcon, Star, MessageSquare, Brain, FileText, Paperclip } from "lucide-react";
 import { format } from "date-fns";
 import { moocService } from "@/services/moocService";
+import { templateService } from "@/services/templateService";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -38,31 +40,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 
-const campuses = [
+const DEFAULT_CAMPUSES = [
     "CMR NPS", "EITPL", "EBYR", "EJPN", "EBTM", "ENICE", "ENAVA",
     "PU BTM", "PU BYR", "PU HRBR", "PU ITPL", "PU NICE", "HO"
-] as const;
+];
 
-const platforms = [
+const DEFAULT_PLATFORMS = [
     "Coursera", "FutureLearn", "Khan Academy", "edX", "Alison", "Class Central", "Schoology", "Other"
-] as const;
+];
 
 const formSchema = z.object({
     // Section 1: User Details
     email: z.string().email("Invalid email address"),
     name: z.string().min(2, "Name is required"),
-    campus: z.enum(campuses, {
-        required_error: "Please select a campus",
-    }),
+    campus: z.string().min(1, "Please select a campus"),
 
     // Section 2: Course Details
     courseName: z.string().min(3, "Course name is required"),
     hours: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
         message: "Please enter a valid number of hours",
     }),
-    platform: z.enum(platforms, {
-        required_error: "Please select a platform",
-    }),
+    platform: z.string().min(1, "Please select a platform"),
     otherPlatform: z.string().optional(),
     startDate: z.date({
         required_error: "Date of start is required",
@@ -178,7 +176,28 @@ interface MoocEvidenceFormProps {
 }
 
 export function MoocEvidenceForm({ onCancel, onSubmitSuccess, userEmail = "", userName = "" }: MoocEvidenceFormProps) {
-    const form = useForm<z.infer<typeof formSchema>>({
+    const [campuses, setCampuses] = useState(DEFAULT_CAMPUSES);
+    const [platforms, setPlatforms] = useState(DEFAULT_PLATFORMS);
+
+    useEffect(() => {
+        const loadTemplate = async () => {
+            try {
+                const templates = await templateService.getAllTemplates('MOOC');
+                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                if (defaultTemplate && defaultTemplate.structure) {
+                    const campusField = defaultTemplate.structure.find((f: any) => f.id === 'campus');
+                    const platformField = defaultTemplate.structure.find((f: any) => f.id === 'platform');
+                    if (campusField?.options) setCampuses(campusField.options);
+                    if (platformField?.options) setPlatforms(platformField.options);
+                }
+            } catch (error) {
+                console.error("Failed to load MOOC template", error);
+            }
+        };
+        loadTemplate();
+    }, []);
+
+    const form = useForm<any>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: userEmail,
@@ -605,7 +624,7 @@ export function MoocEvidenceForm({ onCancel, onSubmitSuccess, userEmail = "", us
                                                 </p>
                                             )}
                                             <FormMessage>
-                                                {form.formState.errors.certificateFile?.message}
+                                                {form.formState.errors.certificateFile?.message && String(form.formState.errors.certificateFile.message)}
                                             </FormMessage>
                                         </div>
                                     )}
@@ -687,7 +706,7 @@ export function MoocEvidenceForm({ onCancel, onSubmitSuccess, userEmail = "", us
                                         </p>
                                     )}
                                     <FormMessage>
-                                        {form.formState.errors.supportingDocFile?.message}
+                                        {form.formState.errors.supportingDocFile?.message && String(form.formState.errors.supportingDocFile.message)}
                                     </FormMessage>
                                 </div>
                             )}

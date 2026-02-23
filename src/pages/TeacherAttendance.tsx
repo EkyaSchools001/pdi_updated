@@ -16,7 +16,7 @@ export default function TeacherAttendance() {
     const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
-        const userStr = localStorage.getItem("user_data");
+        const userStr = sessionStorage.getItem("user_data");
         if (userStr) {
             setUserData(JSON.parse(userStr));
         }

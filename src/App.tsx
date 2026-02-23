@@ -9,6 +9,11 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import LeaderDashboard from "./pages/LeaderDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ManagementDashboard from "./pages/ManagementDashboard";
+import { MeetingsDashboard } from "./pages/MeetingsDashboard";
+import { CreateMeetingForm } from "./pages/CreateMeetingForm";
+import { MeetingDetailsView } from "./pages/MeetingDetailsView";
+import { MeetingMoMForm } from "./pages/MeetingMoMForm";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 import NotFound from "./pages/NotFound";
 
 import { AuthProvider } from "./hooks/useAuth";
@@ -66,6 +71,55 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['MANAGEMENT', 'SUPERADMIN']}>
                       <ManagementDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/meetings"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <MeetingsDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/meetings/create"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <CreateMeetingForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/meetings/edit/:id"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <CreateMeetingForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/meetings/:id"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <MeetingDetailsView />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/meetings/:meetingId/mom"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <MeetingMoMForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/announcements"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <AnnouncementsPage />
                     </ProtectedRoute>
                   }
                 />

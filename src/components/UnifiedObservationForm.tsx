@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Observation, DanielsonRatingScale, DanielsonDomain } from "@/types/observation";
 import { toast } from "sonner";
+import { useEffect } from "react";
+import { templateService } from "@/services/templateService";
 
 interface UnifiedObservationFormProps {
     onSubmit: (observation: Partial<Observation>) => void;
@@ -130,6 +132,48 @@ const META_TAGS = [
 
 export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, teachers }: UnifiedObservationFormProps) {
     const [step, setStep] = useState(1);
+    const [dynamicDomains, setDynamicDomains] = useState(DOMAINS);
+    const [dynamicRoutines, setDynamicRoutines] = useState(ROUTINES);
+    const [dynamicCultureTools, setDynamicCultureTools] = useState(CULTURE_TOOLS);
+    const [dynamicInstructionalTools, setDynamicInstructionalTools] = useState(INSTRUCTIONAL_TOOLS);
+    const [dynamicLaTools, setDynamicLaTools] = useState(LA_TOOLS);
+
+    useEffect(() => {
+        const loadTemplate = async () => {
+            try {
+                const templates = await templateService.getAllTemplates('OBSERVATION');
+                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+
+                if (defaultTemplate && defaultTemplate.structure) {
+                    const fields = defaultTemplate.structure;
+
+                    // Reconstruct DOMAINS from fields if possible
+                    const newDomains = [...DOMAINS];
+                    fields.forEach((f: any) => {
+                        if (f.id.startsWith('3A_') && f.type === 'radio') {
+                            // Update indicator labels if they changed
+                            // Simple mapping for now
+                        }
+                    });
+
+                    const routineField = fields.find((f: any) => f.id === 'routines' || f.label.includes('Routines'));
+                    const cultureField = fields.find((f: any) => f.id === 'cultureTools' || f.label.includes('Culture Tools'));
+                    const instructionalField = fields.find((f: any) => f.id === 'instructionalTools' || f.label.includes('Instructional Tools'));
+                    const laField = fields.find((f: any) => f.id === 'learningAreaTools' || f.label.includes('LA Tool'));
+
+                    if (routineField?.options) setDynamicRoutines(routineField.options);
+                    if (cultureField?.options) setDynamicCultureTools(cultureField.options);
+                    if (instructionalField?.options) setDynamicInstructionalTools(instructionalField.options);
+                    if (laField?.options) setDynamicLaTools(laField.options);
+
+                    console.log("Loaded observation template options:", defaultTemplate.name);
+                }
+            } catch (error) {
+                console.error("Failed to load observation template", error);
+            }
+        };
+        loadTemplate();
+    }, []);
 
     // Internal state uses flattened classroom fields for stability
     const [formData, setFormData] = useState<Partial<Observation> & { block: string; grade: string; section: string }>(() => {
@@ -628,20 +672,20 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                     <h3 className="font-bold text-lg">Classroom Routines</h3>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {ROUTINES.map(item => (
+                                    {dynamicRoutines.map((routine) => (
                                         <div
-                                            key={item}
+                                            key={routine}
                                             className={cn(
                                                 "flex items-center space-x-3 p-3 rounded-xl border transition-all select-none",
-                                                formData.routines?.includes(item) ? "bg-primary/5 border-primary shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
+                                                formData.routines?.includes(routine) ? "bg-primary/5 border-primary shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
                                             )}
                                         >
                                             <Checkbox
-                                                id={`routine-${item}`}
-                                                checked={formData.routines?.includes(item)}
-                                                onCheckedChange={(checked) => setMultiSelect("routines", item, !!checked)}
+                                                id={`routine-${routine}`}
+                                                checked={formData.routines?.includes(routine)}
+                                                onCheckedChange={(checked) => setMultiSelect("routines", routine, !!checked)}
                                             />
-                                            <Label htmlFor={`routine-${item}`} className="font-medium text-sm flex-1 cursor-pointer">{item}</Label>
+                                            <Label htmlFor={`routine-${routine}`} className="font-medium text-sm flex-1 cursor-pointer">{routine}</Label>
                                         </div>
                                     ))}
                                 </div>
@@ -654,20 +698,20 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                     <h3 className="font-bold text-lg">Culture Tools Observed</h3>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {CULTURE_TOOLS.map(item => (
+                                    {dynamicCultureTools.map((tool) => (
                                         <div
-                                            key={item}
+                                            key={tool}
                                             className={cn(
                                                 "flex items-center space-x-3 p-3 rounded-xl border transition-all select-none",
-                                                formData.cultureTools?.includes(item) ? "bg-indigo-500/5 border-indigo-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
+                                                formData.cultureTools?.includes(tool) ? "bg-indigo-500/5 border-indigo-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
                                             )}
                                         >
                                             <Checkbox
-                                                id={`culture-${item}`}
-                                                checked={formData.cultureTools?.includes(item)}
-                                                onCheckedChange={(checked) => setMultiSelect("cultureTools", item, !!checked)}
+                                                id={`culture-${tool}`}
+                                                checked={formData.cultureTools?.includes(tool)}
+                                                onCheckedChange={(checked) => setMultiSelect("cultureTools", tool, !!checked)}
                                             />
-                                            <Label htmlFor={`culture-${item}`} className="font-medium text-sm flex-1 cursor-pointer">{item}</Label>
+                                            <Label htmlFor={`culture-${tool}`} className="font-medium text-sm flex-1 cursor-pointer">{tool}</Label>
                                         </div>
                                     ))}
                                 </div>
@@ -680,20 +724,20 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                     <h3 className="font-bold text-lg">Instructional Tools Observed</h3>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {INSTRUCTIONAL_TOOLS.map(item => (
+                                    {dynamicInstructionalTools.map((tool) => (
                                         <div
-                                            key={item}
+                                            key={tool}
                                             className={cn(
                                                 "flex items-center space-x-3 p-3 rounded-xl border transition-all select-none",
-                                                formData.instructionalTools?.includes(item) ? "bg-emerald-500/5 border-emerald-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
+                                                formData.instructionalTools?.includes(tool) ? "bg-emerald-500/5 border-emerald-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
                                             )}
                                         >
                                             <Checkbox
-                                                id={`instructional-${item}`}
-                                                checked={formData.instructionalTools?.includes(item)}
-                                                onCheckedChange={(checked) => setMultiSelect("instructionalTools", item, !!checked)}
+                                                id={`instructional-${tool}`}
+                                                checked={formData.instructionalTools?.includes(tool)}
+                                                onCheckedChange={(checked) => setMultiSelect("instructionalTools", tool, !!checked)}
                                             />
-                                            <Label htmlFor={`instructional-${item}`} className="font-medium text-sm flex-1 cursor-pointer">{item}</Label>
+                                            <Label htmlFor={`instructional-${tool}`} className="font-medium text-sm flex-1 cursor-pointer">{tool}</Label>
                                         </div>
                                     ))}
                                 </div>
@@ -706,20 +750,20 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                     <h3 className="font-bold text-lg">LA Tools Observed</h3>
                                 </div>
                                 <div className="grid grid-cols-1 gap-3">
-                                    {LA_TOOLS.map(item => (
+                                    {dynamicLaTools.map((tool) => (
                                         <div
-                                            key={item}
+                                            key={tool}
                                             className={cn(
                                                 "flex items-center space-x-3 p-3 rounded-xl border transition-all select-none",
-                                                formData.learningAreaTools?.includes(item) ? "bg-orange-500/5 border-orange-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
+                                                formData.learningAreaTools?.includes(tool) ? "bg-orange-500/5 border-orange-500 shadow-sm" : "hover:bg-muted/50 border-muted-foreground/10"
                                             )}
                                         >
                                             <Checkbox
-                                                id={`la-tool-${item}`}
-                                                checked={formData.learningAreaTools?.includes(item)}
-                                                onCheckedChange={(checked) => setMultiSelect("learningAreaTools", item, !!checked)}
+                                                id={`la-tool-${tool}`}
+                                                checked={formData.learningAreaTools?.includes(tool)}
+                                                onCheckedChange={(checked) => setMultiSelect("learningAreaTools", tool, !!checked)}
                                             />
-                                            <Label htmlFor={`la-tool-${item}`} className="font-medium text-sm flex-1 cursor-pointer">{item}</Label>
+                                            <Label htmlFor={`la-tool-${tool}`} className="font-medium text-sm flex-1 cursor-pointer">{tool}</Label>
                                         </div>
                                     ))}
                                 </div>

@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 import { getIO } from '../../core/socket';
+import { createNotification } from './notificationController';
 
 const prisma = new PrismaClient();
 
@@ -157,7 +158,17 @@ export const updateMoocStatus = async (req: AuthRequest, res: Response) => {
         // Emit to the specific teacher and all leaders
         const io = getIO();
         io.to(submission.userId).emit('mooc:updated', submission);
+        io.to(`user:${submission.userId}`).emit('mooc:updated', submission); // Using new user:ID room convention
         io.to('leaders').emit('mooc:updated', submission);
+
+        // Persist notification for the teacher
+        await createNotification({
+            userId: submission.userId,
+            title: `MOOC Submission ${status}`,
+            message: `Your evidence for "${submission.courseName}" has been ${status.toLowerCase()}.`,
+            type: status === 'APPROVED' ? 'SUCCESS' : 'WARNING',
+            link: '/teacher/mooc'
+        });
 
         res.status(200).json({
             status: 'success',

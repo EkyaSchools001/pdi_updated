@@ -36,9 +36,122 @@ model User {
   attendanceRecords    EventAttendance[]
   pdHours              PDHour[]
   createdDocuments     Document[]
-  acknowledgements     DocumentAcknowledgement[]
-  moocSubmissions      MoocSubmission[]
-  enrollments          CourseEnrollment[]
+  acknowledgements DocumentAcknowledgement[]
+  moocSubmissions  MoocSubmission[]
+  enrollments      CourseEnrollment[]
+
+  // New Relations for Meetings
+  createdMeetings  Meeting[]         @relation("MeetingCreator")
+  meetingAttendees MeetingAttendee[]
+  meetingReplies   MeetingReply[]
+  momCreated       MeetingMinutes[]  @relation("MoMCreator")
+
+  // Notifications
+  notifications Notification[]
+
+  // Announcements
+  createdAnnouncements   Announcement[]              @relation("AnnouncementCreator")
+  announcementAcknowledgements AnnouncementAcknowledgement[]
+  
+  // Survey Relations
+  surveyResponses SurveyResponse[]
+  postOrientationAssessments PostOrientationAssessment[]
+}
+
+model Meeting {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  meetingType  String // Staff, Department, Management, Academic Review, Custom
+  campusId     String?
+  departmentId String?
+  meetingDate  String
+  startTime    String
+  endTime      String
+  mode         String // Online, Offline
+  locationLink String?
+  createdById  String
+  status       String   @default("Draft") // Draft, Scheduled, Ongoing, Completed, Archived
+  momStatus    String   @default("Not Created") // Not Created, Draft, Published
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  createdBy     User                @relation("MeetingCreator", fields: [createdById], references: [id])
+  attendees     MeetingAttendee[]
+  minutes       MeetingMinutes?
+  replies       MeetingReply[]
+  shares        MeetingShare[]
+  actionItems   MeetingActionItem[]
+}
+
+model MeetingAttendee {
+  id               String  @id @default(uuid())
+  meetingId        String
+  userId           String
+  attendanceStatus String @default("Invited") // Invited, Attended, Absent
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+}
+
+model MeetingMinutes {
+  id                String   @id @default(uuid())
+  meetingId         String   @unique
+  objective         String
+  agendaPoints      String // JSON string or text
+  discussionSummary String
+  decisions         String // JSON string or text
+  attendanceCount   Int      @default(0)
+  attendanceSummary String?  // Added field
+  departments       String? // JSON string
+  attachments       String? // JSON string
+  status            String   @default("Draft") // Draft, Published, Archived
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("MoMCreator", fields: [createdById], references: [id])
+}
+
+model MeetingActionItem {
+  id              String   @id @default(uuid())
+  meetingId       String
+  taskDescription String
+  assignedTo      String
+  deadline        String
+  priority        String   @default("Medium") // High, Medium, Low
+  status          String   @default("Pending") // Pending, In Progress, Completed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model MeetingReply {
+  id        String   @id @default(uuid())
+  meetingId String
+  userId    String
+  replyText String
+  createdAt DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MeetingShare {
+  id             String   @id @default(uuid())
+  meetingId      String
+  sharedBy       String
+  targetRole     String
+  targetCampusId String?
+  sharedAt       DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model Observation {
@@ -324,3 +437,126 @@ model FormTemplate {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  createdById       String
+  role              String   // Role of the creator
+  priority          String   @default("Normal") // Normal, High
+  status            String   @default("Published") // Draft, Published, Archived
+  isPinned          Boolean  @default(false)
+  targetRoles       String   @default("[]") // JSON string of roles
+  targetDepartments String?  @default("[]") // JSON string of departments
+  targetCampuses    String?  @default("[]") // JSON string of campus IDs
+  expiryDate        DateTime?
+  attachments       String?  // JSON string of file info
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  createdBy        User                        @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  acknowledgements AnnouncementAcknowledgement[]
+}
+
+model AnnouncementAcknowledgement {
+  id              String   @id @default(uuid())
+  announcementId  String
+  userId          String
+  acknowledgedAt  DateTime @default(now())
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([announcementId, userId])
+}
+
+model Survey {
+  id             String    @id @default(uuid())
+  title          String
+  academicYear   String    @map("academic_year")
+  term           String
+  description    String?
+  isActive       Boolean   @default(true) @map("is_active")
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  isAnonymous    Boolean   @default(true) @map("is_anonymous")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id           String  @id @default(uuid())
+  surveyId     String  @map("survey_id")
+  pageNumber   Int     @map("page_number")
+  questionText String  @map("question_text")
+  questionType String  @map("question_type") // short_text, long_text, rating_scale, multiple_choice, multi_select, yes_no
+  options      String? // JSON string
+  isRequired   Boolean @default(true) @map("is_required")
+  orderIndex   Int     @map("order_index")
+
+  survey  Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id          String   @id @default(uuid())
+  surveyId    String   @map("survey_id")
+  userId      String   @map("user_id")
+  campus      String?
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  isCompleted Boolean  @default(false) @map("is_completed")
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id])
+  answers SurveyAnswer[]
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id            String  @id @default(uuid())
+  responseId    String  @map("response_id")
+  questionId    String  @map("question_id")
+  answerText    String? @map("answer_text")
+  answerNumeric Float?  @map("answer_numeric") // For analytics
+  answerJson    String? @map("answer_json") // For multi-select
+
+  response SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@map("survey_answers")
+}
+
+model PostOrientationAssessment {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  campus       String?
+  score        Float
+  completed    Boolean  @default(false)
+  term         String
+  academicYear String   @map("academic_year")
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  @@map("post_orientation_assessments")
+}
+

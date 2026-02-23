@@ -2,7 +2,9 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { MeetingsDashboard } from './MeetingsDashboard';
+import { MeetingMoMForm } from './MeetingMoMForm';
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
     LayoutDashboard,
@@ -25,6 +27,8 @@ import {
     ShieldCheck,
     Filter,
     Clock,
+    Megaphone,
+    Plus
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +41,11 @@ import {
     LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, AreaChart, Area
 } from 'recharts';
 import { cn } from "@/lib/utils";
+import { AnnouncementFormModal } from "@/components/announcements/AnnouncementFormModal";
+import { announcementService, Announcement } from "@/services/announcementService";
+import { useEffect } from "react";
+import { format } from 'date-fns';
+import SurveyPage from "@/pages/SurveyPage";
 
 // --- Mock Data ---
 
@@ -100,7 +109,68 @@ function InfoTooltip({ content }: { content: string }) {
 
 // --- Main Pages ---
 
-function Overview() {
+function RecentAnnouncements() {
+    const navigate = useNavigate();
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecent = async () => {
+            try {
+                const data = await announcementService.getAnnouncements();
+                setAnnouncements(data.slice(0, 3)); // Show top 3
+            } catch (error) {
+                console.error('Failed to fetch recent announcements', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRecent();
+    }, []);
+
+    if (loading) return <div className="h-[200px] animate-pulse bg-muted rounded-xl" />;
+    if (announcements.length === 0) return null;
+
+    return (
+        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-md">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Megaphone className="w-5 h-5 text-primary" />
+                        Recent Announcements
+                    </CardTitle>
+                    <CardDescription>Latest updates from the organization</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5 font-bold" onClick={() => navigate('/announcements')}>
+                    View All
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {announcements.map((ann) => (
+                    <div key={ann.id} className="flex gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-muted cursor-default">
+                        <div className={cn(
+                            "w-1 h-auto rounded-full",
+                            ann.priority === 'High' ? "bg-destructive" : "bg-primary/40"
+                        )} />
+                        <div className="flex-1 space-y-1">
+                            <div className="flex justify-between items-start">
+                                <h4 className="font-bold text-sm line-clamp-1">{ann.title}</h4>
+                                <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                                    {format(new Date(ann.createdAt), 'MMM d')}
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                {ann.description}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
+
+function Overview(props: { onPostAnnouncement: () => void }) {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-end">
@@ -108,7 +178,14 @@ function Overview() {
                     title="Executive Overview"
                     subtitle="Strategic organization-level PDI health and growth trends"
                 />
-                <div className="pb-8">
+                <div className="pb-8 flex items-center gap-3">
+                    <Button
+                        onClick={() => props.onPostAnnouncement()}
+                        className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2"
+                    >
+                        <Megaphone className="w-4 h-4" />
+                        Post Announcement
+                    </Button>
                     <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 px-3 py-1">
                         AY 2025-26 • Quarter 3
                     </Badge>
@@ -178,46 +255,8 @@ function Overview() {
                     </CardContent>
                 </Card>
 
-                {/* Goal Status Pie */}
-                <Card className="border-none shadow-xl bg-background/50 backdrop-blur-md">
-                    <CardHeader>
-                        <CardTitle className="text-lg">Goal Status Distribution</CardTitle>
-                        <CardDescription>Current snapshot of goal health</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px] flex flex-col items-center justify-center">
-                        <ResponsiveContainer width="100%" height="80%">
-                            <PieChart>
-                                <Pie
-                                    data={[
-                                        { name: 'Completed', value: 30, color: '#10b981' },
-                                        { name: 'On Track', value: 45, color: '#6366f1' },
-                                        { name: 'At Risk', value: 15, color: '#f59e0b' },
-                                        { name: 'Critical', value: 10, color: '#ef4444' }
-                                    ]}
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {[0, 1, 2, 3].map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#10b981', '#6366f1', '#f59e0b', '#ef4444'][index]} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="grid grid-cols-2 gap-4 w-full mt-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-success" />
-                                <span className="text-xs text-muted-foreground font-medium">Completed</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                                <span className="text-xs text-muted-foreground font-medium">On Track</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Recent Announcements */}
+                <RecentAnnouncements />
             </div>
 
             {/* CEO Insight Callouts */}
@@ -889,22 +928,43 @@ function Reports() {
 
 export default function ManagementDashboard() {
     const { user } = useAuth();
-    const userName = user?.fullName || "Management";
-    const role = user?.role || "MANAGEMENT";
+    const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+
+    const handleAnnouncementSuccess = (announcement: Announcement) => {
+        toast.success(`Announcement "${announcement.title}" posted successfully!`);
+    };
+
+    if (!user) return null;
+
+    const userName = user.fullName;
+    const role = user.role;
 
     return (
         <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
-            <Routes>
-                <Route index element={<Navigate to="overview" replace />} />
-                <Route path="overview" element={<Overview />} />
-                <Route path="pdi-health" element={<PDIHealth />} />
-                <Route path="campus-performance" element={<CampusPerformance />} />
-                <Route path="pillars" element={<Pillars />} />
-                <Route path="pd-impact" element={<PDImpact />} />
-                <Route path="leadership" element={<Leadership />} />
-                <Route path="risk" element={<Risk />} />
-                <Route path="reports" element={<Reports />} />
-            </Routes>
+            <div className="container mx-auto py-8 px-4">
+                <Routes>
+                    <Route index element={<Navigate to="overview" replace />} />
+                    <Route path="overview" element={<Overview onPostAnnouncement={() => setIsAnnouncementModalOpen(true)} />} />
+                    <Route path="pdi-health" element={<PDIHealth />} />
+                    <Route path="campus-performance" element={<CampusPerformance />} />
+                    <Route path="pillars" element={<Pillars />} />
+                    <Route path="pd-impact" element={<PDImpact />} />
+                    <Route path="meetings" element={<MeetingsDashboard />} />
+                    <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+                    <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
+                    <Route path="leadership" element={<Leadership />} />
+                    <Route path="risk" element={<Risk />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="survey" element={<SurveyPage />} />
+                </Routes>
+            </div>
+
+            <AnnouncementFormModal
+                isOpen={isAnnouncementModalOpen}
+                onOpenChange={setIsAnnouncementModalOpen}
+                onSuccess={handleAnnouncementSuccess}
+                userRole="MANAGEMENT"
+            />
         </DashboardLayout>
     );
 }
