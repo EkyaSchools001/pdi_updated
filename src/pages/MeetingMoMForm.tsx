@@ -280,9 +280,6 @@ export function MeetingMoMForm() {
                     </Button>
 
                     <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="px-3 py-1 border-primary/20 bg-primary/5 text-primary">
-                            ID: {meeting.id.slice(0, 8)}
-                        </Badge>
                         {isPublished ? (
                             <Badge className="px-3 py-1 bg-green-600 hover:bg-green-700 animate-in zoom-in duration-300">
                                 <CheckCircle2 className="w-3 h-3 mr-1" />

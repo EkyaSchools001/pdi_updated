@@ -126,6 +126,8 @@ import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
 import TeacherAttendance from "@/pages/TeacherAttendance";
 import SurveyPage from "@/pages/SurveyPage";
+import { LearningFestivalPage } from './LearningFestival/LearningFestivalPage';
+import { FestivalApplicationForm } from './LearningFestival/FestivalApplicationForm';
 
 // Removed local Observation interface in favor of shared type
 
@@ -748,6 +750,7 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
   const [isMoocFormOpen, setIsMoocFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | "all">("all");
+  const navigate = useNavigate();
 
   // Merge courses with enrollment status
   const allCourses = courses.map(course => {
@@ -780,6 +783,10 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
           subtitle="Expand your knowledge with certified professional development courses"
         />
         <div className="flex items-center gap-2">
+          <Button onClick={() => navigate("/teacher/festival")} variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary mr-2">
+            <Calendar className="w-4 h-4" />
+            Learning Festival
+          </Button>
           <Button onClick={() => setIsMoocFormOpen(true)} className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/20 mr-2">
             <PlusCircle className="w-4 h-4" />
             Submit MOOC Evidence
@@ -1715,6 +1722,9 @@ export default function TeacherDashboard() {
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
         <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
+        <Route path="festival" element={<LearningFestivalPage />} />
+        <Route path="festival/:id/apply" element={<FestivalApplicationForm />} />
+        <Route path="festival/:id/application" element={<FestivalApplicationForm />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />

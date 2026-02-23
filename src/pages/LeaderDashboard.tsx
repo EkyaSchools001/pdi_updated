@@ -53,6 +53,8 @@ import { MeetingMoMForm } from './MeetingMoMForm';
 
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
+import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
+import { LearningInsightsView } from './leader/LearningInsightsView';
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
@@ -322,6 +324,8 @@ export default function LeaderDashboard() {
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
         <Route path="participation" element={<PDParticipationView team={team} />} />
+        <Route path="festival" element={<FestivalManagementDashboard />} />
+        <Route path="insights" element={<LearningInsightsView />} />
         <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
       </Routes>
     </DashboardLayout>
@@ -640,7 +644,6 @@ function TeamManagementView({ team, observations, goals, systemAvgScore }: { tea
                         </div>
                         <div>
                           <p className="font-bold text-foreground group-hover:text-primary transition-colors">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">Staff ID: #EDU-{member.id.substring(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>

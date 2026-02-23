@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { getSocket } from '@/lib/socket';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface PermissionSetting {
     moduleId: string;
@@ -26,8 +27,14 @@ const PermissionContext = createContext<PermissionContextType | undefined>(undef
 export function PermissionProvider({ children }: { children: React.ReactNode }) {
     const [matrix, setMatrix] = useState<PermissionSetting[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { isAuthenticated } = useAuth();
 
     const fetchConfig = useCallback(async () => {
+        if (!isAuthenticated) {
+            setIsLoading(false);
+            return;
+        }
+
         try {
             console.log('[PERMISSIONS] Fetching latest access matrix...');
             const response = await api.get('/settings/access_matrix_config');
@@ -43,7 +50,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         fetchConfig();

@@ -1,0 +1,1 @@
+src/api/routes/learningFestivalRoutes.ts(2,10): error TS2305: Module '"../middlewares/auth"' has no exported member 'authenticate'.

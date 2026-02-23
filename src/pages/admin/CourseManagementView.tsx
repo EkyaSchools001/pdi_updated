@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -28,6 +29,7 @@ const initialCourses: any[] = [];
 const mockEnrolledMembers: Record<string, any[]> = {};
 
 export function CourseManagementView() {
+    const navigate = useNavigate();
     const [courses, setCourses] = useState<any[]>([]);
     const [pendingCourses, setPendingCourses] = useState<any[]>([]);
 
@@ -162,6 +164,10 @@ export function CourseManagementView() {
                 subtitle="Manage professional development courses and workshops"
                 actions={
                     <div className="flex gap-2">
+                        <Button onClick={() => navigate("../festival")} variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+                            <Calendar className="w-4 h-4" />
+                            Learning Festival
+                        </Button>
                         <Button variant="outline" className="gap-2" onClick={() => setIsDownloadableOpen(true)}>
                             <Download className="w-4 h-4" />
                             Downloadable Course
