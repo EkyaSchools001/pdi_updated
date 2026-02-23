@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { useAccessControl } from "@/contexts/PermissionContext";
 
 interface PermissionSetting {
     moduleId: string;
@@ -58,6 +59,7 @@ export function SuperAdminView() {
     const [isLoading, setIsLoading] = useState(true);
     const [accessMatrix, setAccessMatrix] = useState<PermissionSetting[]>(defaultAccessMatrix);
     const [formFlows, setFormFlows] = useState<FormFlowConfig[]>(defaultFormFlows);
+    const { refreshConfig } = useAccessControl();
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -87,6 +89,7 @@ export function SuperAdminView() {
             const response = await api.post('/settings/upsert', payload);
             console.log('[SUPERADMIN] Save successful:', response.data);
             toast.success("SuperAdmin configurations saved successfully");
+            await refreshConfig();
         } catch (e) {
             console.error('[SUPERADMIN] Save failed:', e);
             toast.error("Failed to save configurations");

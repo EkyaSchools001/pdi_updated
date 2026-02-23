@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
+import { connectSocket, disconnectSocket } from '@/lib/socket';
 
 interface User {
     id: string;
@@ -38,6 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedToken && storedUser) {
             setToken(storedToken);
             setUser(JSON.parse(storedUser));
+            // Reconnect socket with stored token
+            connectSocket(storedToken);
         } else {
             setToken(null);
             setUser(null);
@@ -52,6 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Store in sessionStorage — tab-scoped, not shared across tabs
         sessionStorage.setItem('auth_token', newToken);
         sessionStorage.setItem('user_data', JSON.stringify(userData));
+
+        // Connect socket with auth token
+        connectSocket(newToken);
 
         // Auto-redirect based on role
         switch (userData.role) {
@@ -79,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         sessionStorage.removeItem('auth_token');
         sessionStorage.removeItem('user_data');
+        disconnectSocket();
         navigate('/login');
     };
 

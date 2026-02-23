@@ -49,6 +49,8 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
     try {
         const { key, value } = req.body;
 
+        console.log(`[SETTINGS] Upserting key: ${key}`);
+
         const setting = await prisma.systemSettings.upsert({
             where: { key },
             update: {
@@ -63,8 +65,10 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
         // Broadcast the update via Socket.io
         try {
             const io = getIO();
-            io.emit('SETTINGS_UPDATED', { key, value });
-            console.log(`[SOCKET] Broadcasted update for setting: ${key}`);
+            const broadcastData = { key, value };
+            console.log(`[SOCKET] Broadcasting SETTINGS_UPDATED:`, broadcastData);
+            io.emit('SETTINGS_UPDATED', broadcastData);
+            console.log(`[SOCKET] Broadcast complete to all clients`);
         } catch (socketErr) {
             console.error('[SOCKET] Failed to broadcast setting update:', socketErr);
         }

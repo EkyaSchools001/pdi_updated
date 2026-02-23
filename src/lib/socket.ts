@@ -1,38 +1,50 @@
 import { io, Socket } from 'socket.io-client';
 
-// In production, use the same origin (relative) or valid VITE_API_URL
-// In development, default to localhost:4000
 const API_URL = import.meta.env.PROD
     ? (import.meta.env.VITE_API_URL?.replace('/api/v1', '') || window.location.origin)
     : 'http://localhost:4000';
 
+let socket: Socket | null = null;
 
-let socket: Socket;
+console.log('[SOCKET] Initializing socket client, URL:', API_URL);
 
 export const connectSocket = (token?: string) => {
-    if (!socket || !socket.connected) {
+    const authToken = token || sessionStorage.getItem('auth_token');
+    
+    if (!socket) {
+        console.log('[SOCKET] Creating new socket connection');
+        
         socket = io(API_URL, {
-            auth: {
-                token: token || sessionStorage.getItem('auth_token')
-            },
+            auth: { token: authToken },
             reconnection: true,
-            reconnectionAttempts: 5,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            transports: ['websocket', 'polling'],
         });
 
         socket.on('connect', () => {
-            console.log('Connected to socket server:', socket.id);
+            console.log('[SOCKET] ✅ Connected with ID:', socket?.id);
         });
 
-        socket.on('disconnect', () => {
-            console.log('Disconnected from socket server');
+        socket.on('disconnect', (reason) => {
+            console.log('[SOCKET] ❌ Disconnected:', reason);
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('[SOCKET] ⚠️ Connection error:', error.message);
+        });
+        
+        socket.on('SETTINGS_UPDATED', (data: any) => {
+            console.log('[SOCKET] 📡 Event received:', data);
         });
     }
+    
     return socket;
 };
 
 export const getSocket = () => {
     if (!socket) {
-        return connectSocket();
+        socket = connectSocket();
     }
     return socket;
 };
@@ -40,5 +52,6 @@ export const getSocket = () => {
 export const disconnectSocket = () => {
     if (socket) {
         socket.disconnect();
+        socket = null;
     }
 };

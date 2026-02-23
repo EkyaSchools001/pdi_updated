@@ -4,20 +4,12 @@ import { protect, restrictTo } from '../middlewares/auth';
 
 const router = Router();
 
-// All routes require authentication
-router.use(protect);
+// Public routes - anyone can read settings (needed for access matrix)
+router.get('/', settingsController.getAllSettings);
+router.get('/:key', settingsController.getSetting);
 
-// Settings routes - All authenticated users can read for access control
-router.route('/')
-    .get(settingsController.getAllSettings);
-
-router.route('/:key')
-    .get(settingsController.getSetting);
-
-router.route('/upsert')
-    .post(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.upsertSetting);
-
-router.route('/:key')
-    .delete(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.deleteSetting);
+// Protected routes - only ADMIN/SUPERADMIN can modify
+router.post('/upsert', protect, restrictTo('ADMIN', 'SUPERADMIN'), settingsController.upsertSetting);
+router.delete('/:key', protect, restrictTo('ADMIN', 'SUPERADMIN'), settingsController.deleteSetting);
 
 export default router;
