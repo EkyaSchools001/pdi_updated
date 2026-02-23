@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import { useAccessControl } from '@/contexts/PermissionContext';
 
 export interface FormFlowConfig {
     id: string;
@@ -11,27 +10,7 @@ export interface FormFlowConfig {
 }
 
 export function useFormFlow() {
-    const [flows, setFlows] = useState<FormFlowConfig[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchFlows = async () => {
-            try {
-                const response = await api.get('/settings/access_matrix_config');
-                if (response.data.status === 'success' && response.data.data.setting) {
-                    const value = JSON.parse(response.data.data.setting.value);
-                    if (value.formFlows) {
-                        setFlows(value.formFlows);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch form flows", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchFlows();
-    }, []);
+    const { formFlows: flows, isLoading } = useAccessControl();
 
     const getRedirectionPath = (formName: string, role: string) => {
         const flow = flows.find(f =>

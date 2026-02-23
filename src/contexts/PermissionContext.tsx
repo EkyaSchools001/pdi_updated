@@ -14,8 +14,17 @@ export interface PermissionSetting {
     };
 }
 
+export interface FormFlowConfig {
+    id: string;
+    formName: string;
+    senderRole: string;
+    targetDashboard: string;
+    targetLocation: string;
+}
+
 interface PermissionContextType {
     matrix: PermissionSetting[];
+    formFlows: FormFlowConfig[];
     isLoading: boolean;
     isModuleEnabled: (modulePath: string, role: string) => boolean;
     refreshConfig: () => Promise<void>;
@@ -25,6 +34,7 @@ const PermissionContext = createContext<PermissionContextType | undefined>(undef
 
 export function PermissionProvider({ children }: { children: React.ReactNode }) {
     const [matrix, setMatrix] = useState<PermissionSetting[]>([]);
+    const [formFlows, setFormFlows] = useState<FormFlowConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchConfig = useCallback(async () => {
@@ -36,6 +46,10 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
                 if (value.accessMatrix) {
                     console.log('[PERMISSIONS] Matrix synced successfully:', value.accessMatrix);
                     setMatrix(value.accessMatrix);
+                }
+                if (value.formFlows) {
+                    console.log('[PERMISSIONS] Form Flows synced:', value.formFlows);
+                    setFormFlows(value.formFlows);
                 }
             }
         } catch (error) {
@@ -132,7 +146,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
     };
 
     return (
-        <PermissionContext.Provider value={{ matrix, isLoading, isModuleEnabled, refreshConfig: fetchConfig }}>
+        <PermissionContext.Provider value={{ matrix, formFlows, isLoading, isModuleEnabled, refreshConfig: fetchConfig }}>
             {children}
         </PermissionContext.Provider>
     );

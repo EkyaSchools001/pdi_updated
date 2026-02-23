@@ -163,52 +163,88 @@ export default function LeaderDashboard() {
     }
   };
 
-  const fetchTeam = async () => {
-    try {
-      const [apiTeachers, allMoocs] = await Promise.all([
-        userService.getTeachers(),
-        moocService.getAllSubmissions()
-      ]);
+  // Raw Data States
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [moocSubmissions, setMoocSubmissions] = useState<any[]>([]);
 
-      if (apiTeachers && apiTeachers.length > 0) {
-        const mappedTeam = apiTeachers.map(teacher => {
-          return {
-            id: teacher.id,
-            name: teacher.fullName,
-            email: teacher.email,
-            role: teacher.role || 'Teacher',
-            observations: 0,
-            lastObserved: 'N/A',
-            avgScore: 0,
-            pdHours: (() => {
-              const teacherSubmissions = allMoocs.filter((s: any) =>
-                (s.userId === teacher.id || s.email === teacher.email || s.teacherEmail === teacher.email) && s.status === 'APPROVED'
-              );
-              return teacherSubmissions.reduce((acc: number, s: any) => acc + Number(s.hours || 0), 0);
-            })(),
-            completionRate: (() => {
-              const teacherSubmissions = allMoocs.filter((s: any) =>
-                (s.userId === teacher.id || s.email === teacher.email || s.teacherEmail === teacher.email) && s.status === 'APPROVED'
-              );
-              const hours = teacherSubmissions.reduce((acc: number, s: any) => acc + Number(s.hours || 0), 0);
-              return Math.min(100, Math.round((hours / 20) * 100));
-            })(),
-          };
-        });
-        console.log("Fetched Team Data:", mappedTeam); // DEBUG LOG
-        setTeam(mappedTeam);
+  // Fetch Raw Teachers
+  const fetchTeachers = async () => {
+    try {
+      const apiTeachers = await userService.getTeachers();
+      if (apiTeachers) {
+        setTeachers(apiTeachers);
       }
     } catch (error) {
-      console.error("Failed to fetch team data:", error);
+      console.error("Failed to fetch teachers:", error);
     }
   };
+
+  // Fetch Raw MOOC Submissions
+  const fetchMoocSubmissions = async () => {
+    try {
+      const allMoocs = await moocService.getAllSubmissions();
+      if (allMoocs) {
+        setMoocSubmissions(allMoocs);
+      }
+    } catch (error) {
+      console.error("Failed to fetch MOOC submissions:", error);
+    }
+  };
+
+  // Derive Team Stats Dynamically
+  useEffect(() => {
+    if (teachers.length === 0) return;
+
+    const mappedTeam = teachers.map(teacher => {
+      // 1. Calculate Observation Stats from Real-time State
+      const teacherObs = observations.filter(o =>
+        o.teacherId === teacher.id ||
+        (o.teacher && o.teacher.email === teacher.email)
+      );
+
+      const obsCount = teacherObs.length;
+
+      const lastObsDate = teacherObs.length > 0
+        ? new Date(Math.max(...teacherObs.map(o => new Date(o.date).getTime()))).toLocaleDateString()
+        : 'N/A';
+
+      const avgScore = teacherObs.length > 0
+        ? (teacherObs.reduce((acc, o) => acc + (o.score || 0), 0) / teacherObs.length).toFixed(1)
+        : "0";
+
+      // 2. Calculate PD Stats
+      const teacherSubmissions = moocSubmissions.filter((s: any) =>
+        (s.userId === teacher.id || s.email === teacher.email || s.teacherEmail === teacher.email) && s.status === 'APPROVED'
+      );
+
+      const pdHours = teacherSubmissions.reduce((acc: number, s: any) => acc + Number(s.hours || 0), 0);
+      const completionRate = Math.min(100, Math.round((pdHours / 20) * 100));
+
+      return {
+        id: teacher.id,
+        name: teacher.fullName,
+        email: teacher.email,
+        role: teacher.role || 'Teacher',
+        observations: obsCount,
+        lastObserved: lastObsDate,
+        avgScore: Number(avgScore),
+        pdHours: pdHours,
+        completionRate: completionRate
+      };
+    });
+
+    console.log("LeaderDashboard: Recalculated Team Stats", mappedTeam);
+    setTeam(mappedTeam);
+
+  }, [teachers, observations, moocSubmissions]);
 
   // Fetch initial data via API
   useEffect(() => {
     fetchObservations();
     fetchGoals();
     fetchTraining();
-    fetchTeam();
+    fetchTeachers();
+    fetchMoocSubmissions();
 
     // Socket.io Real-time Sync
     const socket = getSocket();
@@ -270,7 +306,7 @@ export default function LeaderDashboard() {
 
     socket.on('mooc:updated', (updatedSub: any) => {
       // If a MOOC is approved/rejected, we definitely need to refresh team data to update PD hours
-      fetchTeam();
+      fetchMoocSubmissions();
       if (updatedSub.status === 'APPROVED') {
         toast.success(`MOOC for ${updatedSub.user?.fullName} has been approved.`);
       }
@@ -308,7 +344,7 @@ export default function LeaderDashboard() {
         <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
-        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeam} />} />
+        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchMoocSubmissions} />} />
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
