@@ -85,6 +85,7 @@ export function AdminCalendarView() {
     }, []);
 
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedType, setSelectedType] = useState<string>("all");
     const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 15)); // Default to Feb 15, 2026
     const [isScheduleOpen, setIsScheduleOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -211,12 +212,14 @@ export function AdminCalendarView() {
         const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (e.topic || e.type || "").toLowerCase().includes(searchQuery.toLowerCase());
 
+        const matchesType = selectedType === "all" || (e.topic || e.type || "").toLowerCase() === selectedType.toLowerCase();
+
         let matchesDate = true;
         if (date) {
             matchesDate = e.date === formatDateStr(date);
         }
 
-        return matchesSearch && matchesDate;
+        return matchesSearch && matchesType && matchesDate;
     });
 
     return (
@@ -438,6 +441,21 @@ export function AdminCalendarView() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-4">
+                                <Select value={selectedType} onValueChange={setSelectedType}>
+                                    <SelectTrigger className="w-[180px] h-12 bg-muted/40 border-transparent focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all font-medium">
+                                        <div className="flex items-center gap-2">
+                                            <Filter className="w-4 h-4" />
+                                            <SelectValue placeholder="All Types" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Types</SelectItem>
+                                        <SelectItem value="Pedagogy">Pedagogy</SelectItem>
+                                        <SelectItem value="Technology">Technology</SelectItem>
+                                        <SelectItem value="Assessment">Assessment</SelectItem>
+                                        <SelectItem value="Culture">Culture</SelectItem>
+                                    </SelectContent>
+                                </Select>
                                 <div className="relative group">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <Input
