@@ -17,9 +17,9 @@ const getApiUrl = () => {
         return 'https://tough-hands-refuse.loca.lt/api/v1';
     }
 
-    // 3. Cloudflare Pages default (same domain functions)
+    // 3. Cloudflare Pages/Netlify/Production backend routing
     if (import.meta.env.PROD) {
-        return '/api/v1';
+        return 'https://bountiful-endurance-production-d25a.up.railway.app/api/v1';
     }
 
     // 4. Localhost fallback
