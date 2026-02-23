@@ -41,20 +41,12 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
     const { isAuthenticated } = useAuth();
 
     const fetchConfig = useCallback(async () => {
-<<<<<<< HEAD
-        if (!isAuthenticated) {
-            setIsLoading(false);
-            return;
-        }
-
-=======
         // Only fetch if we have a token (user is authenticated)
         const storedToken = sessionStorage.getItem('auth_token');
-        if (!storedToken) {
+        if (!isAuthenticated && !storedToken) {
             setIsLoading(false);
             return;
         }
->>>>>>> 671618a132606d35e0ed995e1340f06599d53759
         try {
             console.log('[PERMISSIONS] Fetching latest access matrix...');
             const response = await api.get('/settings/access_matrix_config');
