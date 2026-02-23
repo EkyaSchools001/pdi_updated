@@ -72,10 +72,6 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                             </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-4 pt-1">
-                            <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
-                                <Shield className="w-4 h-4" />
-                                ID: #EDU-{teacher.id.padStart(4, '0')}
-                            </span>
                             <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground border-l border-muted-foreground/20 pl-4">
                                 <Mail className="w-4 h-4" />
                                 {teacher.email || `${teacher.name.toLowerCase().replace(" ", ".")}@ekyaschools.com`}

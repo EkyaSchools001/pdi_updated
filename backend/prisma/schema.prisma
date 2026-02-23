@@ -56,6 +56,10 @@ model User {
   // Survey Relations
   surveyResponses SurveyResponse[]
   postOrientationAssessments PostOrientationAssessment[]
+
+  // Learning Festival
+  festivalApplications LearningFestivalApplication[] @relation("Applicant")
+  reviewedApplications LearningFestivalApplication[] @relation("ApplicationReviewer")
 }
 
 model Meeting {
@@ -558,5 +562,41 @@ model PostOrientationAssessment {
 
   user User @relation(fields: [userId], references: [id])
   @@map("post_orientation_assessments")
+}
+
+model LearningFestival {
+  id               String   @id @default(uuid())
+  name             String
+  theme            String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime
+  applyDeadline    DateTime
+  status           String   @default("Draft") // Draft, Upcoming, Active, Completed
+  eligibilityRules String?  // JSON string
+  campusLimits     String?  // JSON string for limits per campus
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  applications LearningFestivalApplication[]
+}
+
+model LearningFestivalApplication {
+  id                 String   @id @default(uuid())
+  festivalId         String
+  userId             String
+  statementOfPurpose String
+  relevantExperience String?
+  preferredStrand    String?
+  status             String   @default("Draft") // Draft, Submitted, Under Review, Shortlisted, Rejected, Confirmed
+  documents          String?  // JSON string of uploaded proofs
+  feedback           String?
+  appliedAt          DateTime?
+  reviewedAt         DateTime?
+  reviewedById       String?
+
+  festival LearningFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+  user     User             @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
 }
 

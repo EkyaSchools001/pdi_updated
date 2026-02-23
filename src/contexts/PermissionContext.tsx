@@ -38,11 +38,12 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
     const [matrix, setMatrix] = useState<PermissionSetting[]>([]);
     const [formFlows, setFormFlows] = useState<FormFlowConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const { isAuthenticated } = useAuth();
 
     const fetchConfig = useCallback(async () => {
         // Only fetch if we have a token (user is authenticated)
         const storedToken = sessionStorage.getItem('auth_token');
-        if (!storedToken) {
+        if (!isAuthenticated && !storedToken) {
             setIsLoading(false);
             return;
         }
@@ -68,7 +69,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         // Only fetch once auth is resolved and we have a token
