@@ -67,6 +67,12 @@ const leaderNav = [
   { title: "Training & PD Calendar", icon: Calendar, path: "/leader/calendar" },
   { title: "Attendance Register", icon: ClipboardList, path: "/leader/attendance" },
   { title: "Reports", icon: FileText, path: "/leader/reports" },
+  { title: "User Management", icon: Users, path: "/leader/users" },
+  { title: "Form Templates", icon: FileText, path: "/leader/forms" },
+  { title: "Course Catalogue", icon: Book, path: "/leader/courses" },
+  { title: "Documents", icon: FileCheck, path: "/leader/documents" },
+  { title: "Settings", icon: Settings, path: "/leader/settings" },
+  { title: "Survey", icon: ClipboardList, path: "/leader/survey" },
 ];
 
 const adminNav = [

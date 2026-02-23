@@ -106,80 +106,87 @@ export function UserManagementView() {
         return matchesSearch && matchesTab && matchesCampus;
     });
 
+    const [actionLoading, setActionLoading] = useState(false);
+
     const handleAddUser = async () => {
         if (!newUser.fullName || !newUser.email || !newUser.campusId) {
             toast.error("Please fill in all fields");
             return;
         }
-
+        setActionLoading(true);
         try {
             const response = await api.post('/users', newUser);
-
-            if (response.data.status === "success") {
+            if (response.data?.status === "success") {
                 toast.success("User added successfully");
                 setIsAddDialogOpen(false);
                 setNewUser({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "" });
-                fetchUsers();
+                await fetchUsers();
+            } else {
+                toast.error("Failed to add user");
             }
-        } catch (error) {
-            toast.error("Failed to add user");
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to add user");
+        } finally {
+            setActionLoading(false);
         }
     };
 
     const handleEditUser = async () => {
         if (!editingUser) return;
+        setActionLoading(true);
         try {
             const response = await api.patch(`/users/${editingUser.id}`, {
                 fullName: editingUser.fullName,
                 role: editingUser.role,
                 campusId: editingUser.campusId,
             });
-
-            if (response.data.status === "success") {
+            if (response.data?.status === "success") {
                 toast.success("User updated successfully");
                 setIsEditDialogOpen(false);
                 setEditingUser(null);
-                fetchUsers();
+                await fetchUsers();
             }
-        } catch (error) {
-            toast.error("Failed to update user");
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update user");
+        } finally {
+            setActionLoading(false);
         }
     };
 
     const handleChangeRole = async () => {
         if (!selectedUser) return;
+        setActionLoading(true);
         try {
-            const response = await api.patch(`/users/${selectedUser.id}`, {
-                role: selectedUser.role
-            });
-
-            if (response.data.status === "success") {
+            const response = await api.patch(`/users/${selectedUser.id}`, { role: selectedUser.role });
+            if (response.data?.status === "success") {
                 toast.success(`Role updated to ${selectedUser.role} for ${selectedUser.fullName}`);
                 setIsChangeRoleDialogOpen(false);
                 setSelectedUser(null);
-                fetchUsers();
+                await fetchUsers();
             }
-        } catch (error) {
-            toast.error("Failed to update role");
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update role");
+        } finally {
+            setActionLoading(false);
         }
     };
 
     const handleDeactivate = async () => {
         if (!selectedUser) return;
+        setActionLoading(true);
         const newStatus = selectedUser.status === "Active" ? "Inactive" : "Active";
         try {
-            const response = await api.patch(`/users/${selectedUser.id}`, {
-                status: newStatus
-            });
-
-            if (response.data.status === "success") {
+            const response = await api.patch(`/users/${selectedUser.id}`, { status: newStatus });
+            if (response.data?.status === "success") {
                 toast.success(`User ${newStatus === "Active" ? "activated" : "deactivated"} successfully`);
                 setIsDeactivateDialogOpen(false);
                 setSelectedUser(null);
-                fetchUsers();
+                await fetchUsers();
             }
-        } catch (error) {
-            toast.error("Failed to update status");
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update status");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -260,8 +267,8 @@ export function UserManagementView() {
                                     </div>
                                 </div>
                                 <DialogFooter>
-                                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleAddUser}>Create User</Button>
+                                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={actionLoading}>Cancel</Button>
+                                    <Button onClick={handleAddUser} disabled={actionLoading}>{actionLoading ? "Creating..." : "Create User"}</Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
@@ -312,8 +319,8 @@ export function UserManagementView() {
                                     </div>
                                 )}
                                 <DialogFooter>
-                                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleEditUser}>Save Changes</Button>
+                                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={actionLoading}>Cancel</Button>
+                                    <Button onClick={handleEditUser} disabled={actionLoading}>{actionLoading ? "Saving..." : "Save Changes"}</Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>

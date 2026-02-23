@@ -50,9 +50,22 @@ const SurveyPage = () => {
     }
 
     if (['ADMIN', 'MANAGEMENT', 'SUPERADMIN'].includes(user?.role || '')) {
+        if (!survey) {
+            return (
+                <div className="p-8">
+                    <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>No Active Surveys</AlertTitle>
+                        <AlertDescription>
+                            There are currently no active professional development surveys. Create one from the System Settings or Survey Management panel.
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            );
+        }
         return (
             <div className="p-6">
-                <SurveyAnalyticsDashboard survey={survey!} />
+                <SurveyAnalyticsDashboard survey={survey} />
             </div>
         );
     }

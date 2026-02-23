@@ -741,7 +741,7 @@ function CalendarView({
   );
 }
 
-function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], enrolledCourses?: any[] }) {
+function CoursesView({ courses = [], enrolledCourses = [], onEnrollSuccess }: { courses?: any[], enrolledCourses?: any[], onEnrollSuccess?: () => void }) {
   const { user } = useAuth();
   const userName = user?.fullName || "Teacher";
   const userEmail = user?.email || "";
@@ -837,7 +837,7 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.filter(c => c.status === 'in-progress').map(course => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} onEnrollSuccess={onEnrollSuccess} />
             ))}
           </div>
         </section>
@@ -850,7 +850,7 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.filter(c => c.status === 'recommended').map(course => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} onEnrollSuccess={onEnrollSuccess} />
             ))}
           </div>
         </section>
@@ -863,7 +863,7 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.filter(c => c.status === 'completed').map(course => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} onEnrollSuccess={onEnrollSuccess} />
             ))}
           </div>
         </section>
@@ -872,7 +872,8 @@ function CoursesView({ courses = [], enrolledCourses = [] }: { courses?: any[], 
   );
 }
 
-function CourseCard({ course }: { course: any }) {
+function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?: () => void }) {
+  const [enrolling, setEnrolling] = useState(false);
   return (
     <Card className="group hover:shadow-2xl transition-all duration-300 border-none bg-background/50 backdrop-blur-sm overflow-hidden flex flex-col">
       <div className={cn("h-32 w-full relative", course.thumbnail)}>
@@ -924,24 +925,27 @@ function CourseCard({ course }: { course: any }) {
         <Button
           className="w-full gap-2 group/btn"
           variant={course.status === 'in-progress' ? 'default' : 'outline'}
+          disabled={enrolling}
           onClick={async () => {
             if (course.isDownloadable && course.url) {
               window.open(course.url, '_blank');
             } else if (course.status === 'recommended') {
+              setEnrolling(true);
               try {
                 await api.post(`/courses/${course.id}/enroll`);
                 toast.success("Enrolled in course!");
-                // Trigger refresh via window event or refetch
-                window.location.reload(); // Simple refresh for now
-              } catch (e) {
-                toast.error("Failed to enroll");
+                onEnrollSuccess?.();
+              } catch (e: any) {
+                toast.error(e.response?.data?.message || "Failed to enroll");
+              } finally {
+                setEnrolling(false);
               }
             } else {
               toast.info("Course access coming soon!");
             }
           }}
         >
-          {course.status === 'in-progress' ? 'Continue Lesson' : course.status === 'completed' ? 'Review Course' : 'Start Learning'}
+          {enrolling ? 'Enrolling...' : course.status === 'in-progress' ? 'Continue Lesson' : course.status === 'completed' ? 'Review Course' : 'Start Learning'}
           {course.isDownloadable ? <ExternalLink className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" /> : <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />}
         </Button>
       </div>
@@ -1473,6 +1477,12 @@ export default function TeacherDashboard() {
     fetchCourses();
     fetchEnrollments();
 
+    const onCoursesRefresh = () => {
+      fetchCourses();
+      fetchEnrollments();
+    };
+    window.addEventListener('courses-refresh', onCoursesRefresh);
+
     const fetchSurveyStatus = async () => {
       try {
         const { surveyService } = await import("@/services/surveyService");
@@ -1556,6 +1566,7 @@ export default function TeacherDashboard() {
     });
 
     return () => {
+      window.removeEventListener('courses-refresh', onCoursesRefresh);
       socket.off('observation:created');
       socket.off('observation:updated');
       socket.off('goal:created');
@@ -1714,7 +1725,7 @@ export default function TeacherDashboard() {
         <Route path="meetings" element={<MeetingsDashboard />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
-        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
+        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} onEnrollSuccess={() => window.dispatchEvent(new Event('courses-refresh'))} />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />
