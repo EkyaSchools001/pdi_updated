@@ -1732,14 +1732,10 @@ export default function TeacherDashboard() {
         <Route path="meetings" element={<MeetingsDashboard />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
-<<<<<<< HEAD
-        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} />} />
+        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} onEnrollSuccess={() => window.dispatchEvent(new Event('courses-refresh'))} />} />
         <Route path="festival" element={<LearningFestivalPage />} />
         <Route path="festival/:id/apply" element={<FestivalApplicationForm />} />
         <Route path="festival/:id/application" element={<FestivalApplicationForm />} />
-=======
-        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} onEnrollSuccess={() => window.dispatchEvent(new Event('courses-refresh'))} />} />
->>>>>>> 671618a132606d35e0ed995e1340f06599d53759
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="insights" element={<InsightsView />} />
