@@ -41,6 +41,7 @@ async function main() {
     // ── SYSTEM SETTINGS / ACCESS MATRIX ──────────────────────────────────────
     const accessMatrix = [
         { moduleId: 'users', moduleName: 'User Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'team', moduleName: 'Team Overview', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
         { moduleId: 'forms', moduleName: 'Form Templates', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
         { moduleId: 'courses', moduleName: 'Course Catalogue', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'calendar', moduleName: 'Training Calendar', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
@@ -55,12 +56,14 @@ async function main() {
         { moduleId: 'meetings', moduleName: 'Meetings', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'survey', moduleName: 'Surveys', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     ];
     const formFlows = [
         { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
-        { id: '2', formName: 'Annual Goal Setting', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
-        { id: '3', formName: 'MOOC Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
-        { id: '4', formName: 'Self-Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+        { id: '2', formName: 'Professional Goal', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
+        { id: '3', formName: 'MOOC Evidence', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
+        { id: '4', formName: 'Teacher Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+        { id: '5', formName: 'Attendance Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Attendance Register' },
     ];
     await prisma.systemSettings.upsert({
         where: { key: 'access_matrix_config' },
@@ -125,6 +128,7 @@ async function main() {
         { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
         { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
         { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
+        { name: 'Attendance Submission', type: 'ATTENDANCE', isDefault: true, structure: JSON.stringify([]) }, // Added placeholder for the new flow if needed
     ];
 
     for (const t of templates) {
@@ -290,15 +294,17 @@ async function main() {
         // Invite relevant teachers
         const staffMeetings = ['Weekly Staff Briefing', 'Term 1 Retrospective', 'Weekly Staff Meeting'];
         if (staffMeetings.includes(m.title)) {
-            await prisma.meetingAttendee.createMany({
-                data: [
-                    { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
-                    { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
-                    { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' }
-                ]
-            });
+            for (const attendeeData of [
+                { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' },
+                { meetingId: meeting.id, userId: t2, attendanceStatus: 'Invited' },
+                { meetingId: meeting.id, userId: t3, attendanceStatus: 'Invited' },
+            ]) {
+                const existingAt = await prisma.meetingAttendee.findFirst({ where: { meetingId: attendeeData.meetingId, userId: attendeeData.userId } });
+                if (!existingAt) await prisma.meetingAttendee.create({ data: attendeeData });
+            }
         } else if (m.title.includes('Science')) {
-            await prisma.meetingAttendee.createMany({ data: [{ meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' }] });
+            const existingAt1 = await prisma.meetingAttendee.findFirst({ where: { meetingId: meeting.id, userId: t1 } });
+            if (!existingAt1) await prisma.meetingAttendee.create({ data: { meetingId: meeting.id, userId: t1, attendanceStatus: 'Invited' } });
         }
     }
     console.log('Seeded meetings and invitations');

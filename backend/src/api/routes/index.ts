@@ -19,6 +19,8 @@ import meetingRoutes from './meetingRoutes';
 import notificationRoutes from './notificationRoutes';
 import announcementRoutes from './announcementRoutes';
 import surveyRoutes from './surveyRoutes';
+import learningFestivalRoutes from './learningFestivalRoutes';
+import analyticsRoutes from './analyticsRoutes';
 
 const router = Router();
 
@@ -40,5 +42,7 @@ router.use('/meetings', meetingRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/announcements', announcementRoutes);
 router.use('/surveys', surveyRoutes);
+router.use('/festivals', learningFestivalRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;

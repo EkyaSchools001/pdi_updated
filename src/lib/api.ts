@@ -62,7 +62,7 @@ api.interceptors.response.use(
             // Unauthorized - clear this tab's session and redirect to login
             sessionStorage.removeItem('auth_token');
             sessionStorage.removeItem('user_data');
-            if (window.location.pathname !== '/login') {
+            if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
                 window.location.href = '/login';
                 toast.error('Session expired. Please log in again.');
             }

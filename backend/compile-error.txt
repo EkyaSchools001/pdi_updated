@@ -1,0 +1,9 @@
+﻿src/api/controllers/learningFestivalController.ts(46,22): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/api/controllers/learningFestivalController.ts(73,22): error TS2322: Type 'string | string[]' is not assignable to type 'string | StringFilter<"LearningFestivalApplication"> | undefined'.
+  Type 'string[]' is not assignable to type 'string | StringFilter<"LearningFestivalApplication"> | undefined'.
+src/api/controllers/learningFestivalController.ts(82,17): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/api/controllers/learningFestivalController.ts(145,22): error TS2322: Type 'string | string[]' is not assignable to type 'string | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/api/routes/learningFestivalRoutes.ts(2,30): error TS2307: Cannot find module '../middleware/auth' or its corresponding type declarations.

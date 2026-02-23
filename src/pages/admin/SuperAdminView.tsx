@@ -32,32 +32,45 @@ interface FormFlowConfig {
     targetLocation: string;
 }
 
+// Matches PermissionContext pathMatch and seed - all platform modules
 const defaultAccessMatrix: PermissionSetting[] = [
     { moduleId: 'users', moduleName: 'User Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+    { moduleId: 'team', moduleName: 'Team Overview', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
     { moduleId: 'forms', moduleName: 'Form Templates', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
     { moduleId: 'courses', moduleName: 'Course Catalogue', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'calendar', moduleName: 'Training Calendar', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'documents', moduleName: 'Documents', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'reports', moduleName: 'Reports & Analytics', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: false } },
     { moduleId: 'settings', moduleName: 'System Settings', roles: { SUPERADMIN: true, ADMIN: false, LEADER: false, MANAGEMENT: false, TEACHER: false } },
-    { moduleId: 'attendance', moduleName: 'Attendance', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
+    { moduleId: 'attendance', moduleName: 'Attendance', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: true } },
     { moduleId: 'observations', moduleName: 'Observations', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'goals', moduleName: 'Goal Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'hours', moduleName: 'PD Hours Tracking', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     { moduleId: 'insights', moduleName: 'Data Insights', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+    { moduleId: 'meetings', moduleName: 'Meetings', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+    { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
+    { moduleId: 'survey', moduleName: 'Surveys', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: true, TEACHER: true } },
 ];
 
+// Aligned with FormTemplate names + Attendance Submission (used by AttendanceForm)
 const defaultFormFlows: FormFlowConfig[] = [
     { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
-    { id: '2', formName: 'Annual Goal Setting', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
-    { id: '3', formName: 'MOOC Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
-    { id: '4', formName: 'Self-Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+    { id: '2', formName: 'Professional Goal', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
+    { id: '3', formName: 'MOOC Evidence', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
+    { id: '4', formName: 'Teacher Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+    { id: '5', formName: 'Attendance Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Attendance Register' },
+];
+
+const FORM_NAME_OPTIONS = [
+    'Walkthrough Observation', 'Teacher Reflection', 'MOOC Evidence', 'Professional Goal',
+    'Attendance Submission', 'Annual Goal Setting', 'MOOC Submission', 'Self-Reflection'
 ];
 
 export function SuperAdminView() {
     const [isLoading, setIsLoading] = useState(true);
     const [accessMatrix, setAccessMatrix] = useState<PermissionSetting[]>(defaultAccessMatrix);
     const [formFlows, setFormFlows] = useState<FormFlowConfig[]>(defaultFormFlows);
+    const [formTemplates, setFormTemplates] = useState<{ name: string; type: string }[]>([]);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -75,6 +88,21 @@ export function SuperAdminView() {
             }
         };
         loadSettings();
+    }, []);
+
+    useEffect(() => {
+        const loadTemplates = async () => {
+            try {
+                const response = await api.get('/templates');
+                if (response.data?.status === 'success' && response.data?.data?.templates) {
+                    const names = response.data.data.templates.map((t: any) => ({ name: t.name, type: t.type || '' }));
+                    setFormTemplates(names);
+                }
+            } catch (e) {
+                console.error("Failed to load form templates", e);
+            }
+        };
+        loadTemplates();
     }, []);
 
     const handleSave = async () => {
@@ -109,9 +137,10 @@ export function SuperAdminView() {
     };
 
     const addFormFlow = () => {
+        const firstTemplate = formTemplates[0]?.name || FORM_NAME_OPTIONS[0] || 'New Form';
         const newFlow: FormFlowConfig = {
             id: Date.now().toString(),
-            formName: 'New Form',
+            formName: firstTemplate,
             senderRole: 'TEACHER',
             targetDashboard: 'Leader Dashboard',
             targetLocation: 'Reports'
@@ -265,9 +294,27 @@ export function SuperAdminView() {
                             {formFlows.map((flow) => (
                                 <div key={flow.id} className="p-4 border rounded-xl bg-card hover:shadow-md transition-all group">
                                     <div className="flex items-center justify-between mb-4">
-                                        <h3 className="font-semibold text-primary flex items-center gap-2">
-                                            <FileText className="w-4 h-4" /> {flow.formName}
-                                        </h3>
+                                        <div className="flex items-center gap-2 flex-1 max-w-md">
+                                            <FileText className="w-4 h-4 shrink-0 text-primary" />
+                                            <Select
+                                                value={flow.formName}
+                                                onValueChange={(v) => updateFormFlow(flow.id, 'formName', v)}
+                                            >
+                                                <SelectTrigger className="h-9 font-semibold text-primary border-primary/20">
+                                                    <SelectValue placeholder="Select form" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Array.from(new Set([
+                                                        ...formTemplates.map(t => t.name),
+                                                        ...FORM_NAME_OPTIONS,
+                                                        flow.formName
+                                                    ]))
+                                                        .filter(Boolean).sort().map((name) => (
+                                                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Flow ID: {flow.id}</Badge>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeFormFlow(flow.id)}>

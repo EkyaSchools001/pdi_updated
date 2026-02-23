@@ -26,6 +26,7 @@ import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
 import SurveyPage from "@/pages/SurveyPage";
+import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
 
 interface DashboardUser {
   id: string;
@@ -58,26 +59,42 @@ export default function AdminDashboard() {
       try {
         // 1. Fetch Backend Stats
         const [obsResponse, usersResponse, statsResponse, templatesResponse] = await Promise.all([
-          api.get('/observations'),
-          api.get('/users'),
-          api.get('/stats/admin'),
-          api.get('/templates')
+          api.get('/observations').catch(e => ({ data: { status: 'error', data: { observations: [] } } })),
+          api.get('/users').catch(e => ({ data: { status: 'error', data: { users: [] } } })),
+          api.get('/stats/admin').catch(e => ({ data: { status: 'error', data: {} } })),
+          api.get('/templates').catch(e => ({ data: { status: 'error', data: { templates: [] } } }))
         ]);
 
-        setObservations(obsResponse.data?.data?.observations || []);
+        console.log('AdminDashboard: API responses', {
+          observations: obsResponse.data?.status,
+          users: usersResponse.data?.status,
+          stats: statsResponse.data?.status,
+          templates: templatesResponse.data?.status
+        });
 
-        const allUsers = usersResponse.data?.data?.users || [];
+        const observationsData = obsResponse.data?.status === 'success' 
+          ? (obsResponse.data?.data?.observations || [])
+          : [];
+        setObservations(observationsData);
+
+        const allUsers = usersResponse.data?.status === 'success'
+          ? (usersResponse.data?.data?.users || [])
+          : [];
         setRecentUsers(allUsers.slice(0, 5));
 
-        const backendStats = statsResponse.data?.data;
+        const backendStats = statsResponse.data?.status === 'success'
+          ? (statsResponse.data?.data || {})
+          : {};
 
         // 2. Form Stats (from API)
-        const forms = templatesResponse.data?.data?.templates || [];
-        const activeForms = forms.filter((f: any) => f.status === 'Active').length;
+        const forms = templatesResponse.data?.status === 'success'
+          ? (templatesResponse.data?.data?.templates || [])
+          : [];
+        const activeForms = forms.filter((f: any) => f.status === 'Active' || f.isDefault).length;
 
         setStats({
           users: {
-            total: backendStats?.users?.total || 0,
+            total: backendStats?.users?.total || allUsers.length || 0,
             new: backendStats?.users?.newThisMonth || 0
           },
           training: {
@@ -94,8 +111,9 @@ export default function AdminDashboard() {
           }
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch dashboard data:", error);
+        console.error("Error details:", error.response?.data || error.message);
       }
     };
 
@@ -136,6 +154,7 @@ export default function AdminDashboard() {
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />
         <Route path="survey" element={<SurveyPage />} />
+        <Route path="festival" element={<FestivalManagementDashboard />} />
         <Route path="superadmin" element={<SuperAdminView />} />
       </Routes>
     </DashboardLayout>
@@ -400,81 +419,31 @@ function DashboardOverview({ recentUsers, stats, role }: {
       </div >
 
       {/* Recent Activity & Audit Log Preview */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Recent Activity */}
-        < div >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">Recent Activity</h2>
-            </div>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/reports">View Audit Log</Link>
-            </Button>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-foreground">Recent Activity</h2>
           </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/admin/reports">View Audit Log</Link>
+          </Button>
+        </div>
 
-          <div className="dashboard-card divide-y">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="p-4 hover:bg-muted/30 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-foreground">{activity.action}</p>
-                    <p className="text-sm text-muted-foreground">{activity.target}</p>
-                    <p className="text-xs text-muted-foreground mt-1">by {activity.user}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+        <div className="dashboard-card divide-y">
+          {recentActivity.map((activity) => (
+            <div key={activity.id} className="p-4 hover:bg-muted/30 transition-colors">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-foreground">{activity.action}</p>
+                  <p className="text-sm text-muted-foreground">{activity.target}</p>
+                  <p className="text-xs text-muted-foreground mt-1">by {activity.user}</p>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div >
-
-        {/* System Status */}
-        < div >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">System Status</h2>
-            </div>
-          </div>
-
-          <div className="dashboard-card p-6 space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
-              <div className="flex-1">
-                <p className="font-medium text-foreground">All Systems Operational</p>
-                <p className="text-sm text-muted-foreground">Last checked: 2 minutes ago</p>
+                <span className="text-xs text-muted-foreground">{activity.time}</span>
               </div>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Database</span>
-                <span className="text-sm font-medium text-success">Healthy</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Authentication</span>
-                <span className="text-sm font-medium text-success">Healthy</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">File Storage</span>
-                <span className="text-sm font-medium text-success">Healthy</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Email Service</span>
-                <span className="text-sm font-medium text-success">Healthy</span>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t">
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/admin/settings">
-                  <Settings className="mr-2 w-4 h-4" />
-                  Configure Settings
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div >
-      </div >
+          ))}
+        </div>
+      </div>
     </>
   );
 }
