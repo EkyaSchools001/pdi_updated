@@ -10,11 +10,11 @@ router.use(protect);
 // Template routes
 router.route('/')
     .get(templateController.getAllTemplates)
-    .post(restrictTo('ADMIN', 'SUPERADMIN'), templateController.createTemplate);
+    .post(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'MANAGEMENT'), templateController.createTemplate);
 
 router.route('/:id')
     .get(templateController.getTemplate)
-    .put(restrictTo('ADMIN', 'SUPERADMIN'), templateController.updateTemplate)
-    .delete(restrictTo('ADMIN', 'SUPERADMIN'), templateController.deleteTemplate);
+    .put(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'MANAGEMENT'), templateController.updateTemplate)
+    .delete(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'MANAGEMENT'), templateController.deleteTemplate);
 
 export default router;

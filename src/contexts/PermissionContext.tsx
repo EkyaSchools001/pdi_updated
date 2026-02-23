@@ -15,8 +15,17 @@ export interface PermissionSetting {
     };
 }
 
+export interface FormFlowConfig {
+    id: string;
+    formName: string;
+    senderRole: string;
+    targetDashboard: string;
+    targetLocation: string;
+}
+
 interface PermissionContextType {
     matrix: PermissionSetting[];
+    formFlows: FormFlowConfig[];
     isLoading: boolean;
     isModuleEnabled: (modulePath: string, role: string) => boolean;
     refreshConfig: () => Promise<void>;
@@ -25,16 +34,27 @@ interface PermissionContextType {
 const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
 
 export function PermissionProvider({ children }: { children: React.ReactNode }) {
+    const { token, isLoading: authLoading } = useAuth();
     const [matrix, setMatrix] = useState<PermissionSetting[]>([]);
+    const [formFlows, setFormFlows] = useState<FormFlowConfig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { isAuthenticated } = useAuth();
 
     const fetchConfig = useCallback(async () => {
+<<<<<<< HEAD
         if (!isAuthenticated) {
             setIsLoading(false);
             return;
         }
 
+=======
+        // Only fetch if we have a token (user is authenticated)
+        const storedToken = sessionStorage.getItem('auth_token');
+        if (!storedToken) {
+            setIsLoading(false);
+            return;
+        }
+>>>>>>> 671618a132606d35e0ed995e1340f06599d53759
         try {
             console.log('[PERMISSIONS] Fetching latest access matrix...');
             const response = await api.get('/settings/access_matrix_config');
@@ -44,16 +64,28 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
                     console.log('[PERMISSIONS] Matrix synced successfully:', value.accessMatrix);
                     setMatrix(value.accessMatrix);
                 }
+                if (value.formFlows) {
+                    console.log('[PERMISSIONS] Form Flows synced:', value.formFlows);
+                    setFormFlows(value.formFlows);
+                }
             }
-        } catch (error) {
-            console.error("[PERMISSIONS] Sync failed:", error);
+        } catch (error: any) {
+            // Silently ignore 401/404 — matrix will be empty and defaults apply
+            if (error?.response?.status !== 401 && error?.response?.status !== 404) {
+                console.error("[PERMISSIONS] Sync failed:", error);
+            }
         } finally {
             setIsLoading(false);
         }
     }, [isAuthenticated]);
 
     useEffect(() => {
-        fetchConfig();
+        // Only fetch once auth is resolved and we have a token
+        if (!authLoading && token) {
+            fetchConfig();
+        } else if (!authLoading && !token) {
+            setIsLoading(false);
+        }
 
         const socket = getSocket();
 
@@ -70,7 +102,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         return () => {
             socket.off('SETTINGS_UPDATED', handleSettingsUpdate);
         };
-    }, [fetchConfig]);
+    }, [fetchConfig, authLoading, token]);
 
     const isModuleEnabled = (modulePath: string, role: string) => {
         if (!role) return false;
@@ -84,52 +116,38 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
         // 2. SuperAdmin Master Bypass
         if (roleKey === 'SUPERADMIN') return true;
 
-        // 3. Path to Module ID Registry
-        const pathMatch: Record<string, string> = {
-            '/admin/users': 'users',
-            '/admin/forms': 'forms',
-            '/admin/courses': 'courses',
-            '/admin/calendar': 'calendar',
-            '/admin/documents': 'documents',
-            '/admin/reports': 'reports',
-            '/admin/settings': 'settings',
-            '/admin/attendance': 'attendance',
-            '/admin/superadmin': 'settings',
-
-            '/teacher/observations': 'observations',
-            '/teacher/goals': 'goals',
-            '/teacher/calendar': 'calendar',
-            '/teacher/attendance': 'attendance',
-            '/teacher/courses': 'courses',
-            '/teacher/hours': 'hours',
-            '/teacher/documents': 'documents',
-            '/teacher/insights': 'insights',
-
-            '/leader/observe': 'observations',
-            '/leader/observations': 'observations',
-            '/leader/team': 'users',
-            '/leader/goals': 'goals',
-            '/leader/participation': 'courses',
-            '/leader/performance': 'reports',
-            '/leader/calendar': 'calendar',
-            '/leader/attendance': 'attendance',
-            '/leader/reports': 'reports',
-            '/leader/meetings': 'meetings',
-            '/teacher/meetings': 'meetings',
-            '/admin/meetings': 'meetings',
-            '/management/meetings': 'meetings',
-            '/teacher/survey': 'survey',
-            '/admin/survey': 'survey',
-            '/management/survey': 'survey'
+        // 3. Path to Module ID Registry (Dynamic across roles)
+        const moduleMap: Record<string, string> = {
+            'users': 'users',
+            'forms': 'forms',
+            'courses': 'courses',
+            'calendar': 'calendar',
+            'documents': 'documents',
+            'reports': 'reports',
+            'settings': 'settings',
+            'superadmin': 'settings',
+            'attendance': 'attendance',
+            'observations': 'observations',
+            'observe': 'observations',
+            'goals': 'goals',
+            'hours': 'hours',
+            'participation': 'courses', // Legacy mappings
+            'performance': 'reports',
+            'insights': 'insights',
+            'team': 'team',
+            'meetings': 'meetings',
+            'survey': 'survey',
+            'announcements': 'announcements'
         };
 
         // 4. Pattern Matching
-        const sortedKeys = Object.keys(pathMatch).sort((a, b) => b.length - a.length);
         let moduleId: string | undefined = undefined;
 
-        for (const key of sortedKeys) {
-            if (modulePath.startsWith(key)) {
-                moduleId = pathMatch[key];
+        // Search through path segments to find the module
+        const segments = modulePath.split('/').filter(Boolean).reverse(); // Check deepest segment first
+        for (const segment of segments) {
+            if (moduleMap[segment]) {
+                moduleId = moduleMap[segment];
                 break;
             }
         }
@@ -141,7 +159,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
 
         // Block modules if matrix loaded but entry missing
         if (!module) {
-            if (moduleId === 'meetings') return true; // Newly added module fallback
+            if (['meetings', 'team', 'announcements'].includes(moduleId)) return true; // Newly added module fallback
             return matrix.length === 0;
         }
 
@@ -149,7 +167,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
     };
 
     return (
-        <PermissionContext.Provider value={{ matrix, isLoading, isModuleEnabled, refreshConfig: fetchConfig }}>
+        <PermissionContext.Provider value={{ matrix, formFlows, isLoading, isModuleEnabled, refreshConfig: fetchConfig }}>
             {children}
         </PermissionContext.Provider>
     );

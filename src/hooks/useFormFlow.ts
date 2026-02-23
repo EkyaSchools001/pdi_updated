@@ -1,6 +1,4 @@
-
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
+import { useAccessControl } from '@/contexts/PermissionContext';
 
 export interface FormFlowConfig {
     id: string;
@@ -10,28 +8,32 @@ export interface FormFlowConfig {
     targetLocation: string;
 }
 
-export function useFormFlow() {
-    const [flows, setFlows] = useState<FormFlowConfig[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+// Maps targetLocation (from SuperAdmin form flows) to specific paths for accurate redirects
+const LOCATION_TO_PATH: Record<string, Record<string, string>> = {
+    'Admin Dashboard': {
+        'Attendance Register': '/admin/attendance',
+        'Course Reviews': '/admin/courses',
+        'User Management': '/admin/users',
+        'Reports': '/admin/reports',
+    },
+    'Leader Dashboard': {
+        'Pending Approvals': '/leader/goals',
+        'Growth Reports': '/leader/observations',
+        'Reports': '/leader/reports',
+    },
+    'Teacher Dashboard': {
+        'Growth Reports': '/teacher/observations',
+        'My Portfolio': '/teacher',
+        'Observations': '/teacher/observations',
+    },
+    'Management Dashboard': {
+        'Reports': '/management/reports',
+        'Overview': '/management/overview',
+    },
+};
 
-    useEffect(() => {
-        const fetchFlows = async () => {
-            try {
-                const response = await api.get('/settings/access_matrix_config');
-                if (response.data.status === 'success' && response.data.data.setting) {
-                    const value = JSON.parse(response.data.data.setting.value);
-                    if (value.formFlows) {
-                        setFlows(value.formFlows);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch form flows", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchFlows();
-    }, []);
+export function useFormFlow() {
+    const { formFlows: flows, isLoading } = useAccessControl();
 
     const getRedirectionPath = (formName: string, role: string) => {
         const flow = flows.find(f =>
@@ -41,13 +43,19 @@ export function useFormFlow() {
 
         if (!flow) return null;
 
-        // Map dashboard name to path
         const dashboardPaths: Record<string, string> = {
             'Admin Dashboard': '/admin',
             'Leader Dashboard': '/leader',
             'Teacher Dashboard': '/teacher',
             'Management Dashboard': '/management'
         };
+
+        // Try to resolve specific location path first
+        const locationMap = LOCATION_TO_PATH[flow.targetDashboard];
+        if (locationMap && flow.targetLocation) {
+            const specificPath = locationMap[flow.targetLocation];
+            if (specificPath) return specificPath;
+        }
 
         return dashboardPaths[flow.targetDashboard] || null;
     };

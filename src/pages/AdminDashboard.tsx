@@ -59,26 +59,42 @@ export default function AdminDashboard() {
       try {
         // 1. Fetch Backend Stats
         const [obsResponse, usersResponse, statsResponse, templatesResponse] = await Promise.all([
-          api.get('/observations'),
-          api.get('/users'),
-          api.get('/stats/admin'),
-          api.get('/templates')
+          api.get('/observations').catch(e => ({ data: { status: 'error', data: { observations: [] } } })),
+          api.get('/users').catch(e => ({ data: { status: 'error', data: { users: [] } } })),
+          api.get('/stats/admin').catch(e => ({ data: { status: 'error', data: {} } })),
+          api.get('/templates').catch(e => ({ data: { status: 'error', data: { templates: [] } } }))
         ]);
 
-        setObservations(obsResponse.data?.data?.observations || []);
+        console.log('AdminDashboard: API responses', {
+          observations: obsResponse.data?.status,
+          users: usersResponse.data?.status,
+          stats: statsResponse.data?.status,
+          templates: templatesResponse.data?.status
+        });
 
-        const allUsers = usersResponse.data?.data?.users || [];
+        const observationsData = obsResponse.data?.status === 'success' 
+          ? (obsResponse.data?.data?.observations || [])
+          : [];
+        setObservations(observationsData);
+
+        const allUsers = usersResponse.data?.status === 'success'
+          ? (usersResponse.data?.data?.users || [])
+          : [];
         setRecentUsers(allUsers.slice(0, 5));
 
-        const backendStats = statsResponse.data?.data;
+        const backendStats = statsResponse.data?.status === 'success'
+          ? (statsResponse.data?.data || {})
+          : {};
 
         // 2. Form Stats (from API)
-        const forms = templatesResponse.data?.data?.templates || [];
-        const activeForms = forms.filter((f: any) => f.status === 'Active').length;
+        const forms = templatesResponse.data?.status === 'success'
+          ? (templatesResponse.data?.data?.templates || [])
+          : [];
+        const activeForms = forms.filter((f: any) => f.status === 'Active' || f.isDefault).length;
 
         setStats({
           users: {
-            total: backendStats?.users?.total || 0,
+            total: backendStats?.users?.total || allUsers.length || 0,
             new: backendStats?.users?.newThisMonth || 0
           },
           training: {
@@ -95,8 +111,9 @@ export default function AdminDashboard() {
           }
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to fetch dashboard data:", error);
+        console.error("Error details:", error.response?.data || error.message);
       }
     };
 
