@@ -56,19 +56,10 @@ import { CourseManagementView } from "./admin/CourseManagementView";
 import AdminDocumentManagement from "./AdminDocumentManagement";
 import SurveyPage from "./SurveyPage";
 
-// Mock data removed in favor of API calls
-
-
-
-
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
-import { UserManagementView } from "./admin/UserManagementView";
-import { FormTemplatesView } from "./admin/FormTemplatesView";
-import AdminDocumentManagement from "@/pages/AdminDocumentManagement";
-import SurveyPage from "@/pages/SurveyPage";
-import { SystemSettingsView } from "./admin/SystemSettingsView";
-import { CourseManagementView } from "./admin/CourseManagementView";
+
+
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
