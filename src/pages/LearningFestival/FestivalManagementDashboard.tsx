@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Search, Filter, CheckCircle2, XCircle, Award, Target, FileText, Download, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { CreateFestivalModal } from './CreateFestivalModal';
 
 export function FestivalManagementDashboard() {
     const { user } = useAuth();
@@ -22,6 +23,7 @@ export function FestivalManagementDashboard() {
     const [festivals, setFestivals] = useState<LearningFestival[]>([]);
     const [applications, setApplications] = useState<LearningFestivalApplication[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     const [selectedFestival, setSelectedFestival] = useState<string>('all');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -121,7 +123,10 @@ export function FestivalManagementDashboard() {
                         Export CSV
                     </Button>
                     {isAdminOrMgmt && (
-                        <Button className="bg-primary hover:bg-primary/90 gap-2">
+                        <Button
+                            className="bg-primary hover:bg-primary/90 gap-2"
+                            onClick={() => setIsCreateModalOpen(true)}
+                        >
                             <Award className="w-4 h-4" />
                             Create Festival
                         </Button>
@@ -349,6 +354,12 @@ export function FestivalManagementDashboard() {
                     </DialogContent>
                 </Dialog>
             )}
+
+            <CreateFestivalModal
+                isOpen={isCreateModalOpen}
+                onOpenChange={setIsCreateModalOpen}
+                onSuccess={fetchData}
+            />
         </div>
     );
 }

@@ -21,12 +21,18 @@ const storage = multer.diskStorage({
     }
 });
 
-// File filter (only allow PDFs for now as per requirements)
+// File filter (allow PDFs and Word documents)
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    if (file.mimetype === 'application/pdf') {
+    const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword', // .doc
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+    ];
+
+    if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new AppError('Not a PDF! Please upload only PDF files.', 400) as any, false);
+        cb(new AppError('Invalid file type! Please upload only PDF, DOC, or DOCX files.', 400) as any, false);
     }
 };
 

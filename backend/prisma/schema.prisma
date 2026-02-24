@@ -571,18 +571,23 @@ model PostOrientationAssessment {
 }
 
 model LearningFestival {
-  id               String   @id @default(uuid())
-  name             String
-  theme            String
-  description      String?
-  startDate        DateTime
-  endDate          DateTime
-  applyDeadline    DateTime
-  status           String   @default("Draft") // Draft, Upcoming, Active, Completed
-  eligibilityRules String?  // JSON string
-  campusLimits     String?  // JSON string for limits per campus
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  theme             String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime
+  registrationStart DateTime?
+  registrationEnd   DateTime? @map("applyDeadline") // Replacing the conceptual applyDeadline
+  location          String?
+  duration          String?
+  documents         String?  // JSON string
+  sharedWithRoles   String?  // JSON string array e.g. ["TEACHER", "ADMIN"]
+  status            String   @default("Draft") // Draft, Upcoming, Active, Completed
+  eligibilityRules  String?  // JSON string
+  campusLimits      String?  // JSON string for limits per campus
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   applications LearningFestivalApplication[]
 }
