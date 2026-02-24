@@ -5,10 +5,32 @@ const prisma = new PrismaClient();
 
 export const getFestivals = async (req: Request, res: Response) => {
     try {
-        const festivals = await prisma.learningFestival.findMany({
+        const user = (req as any).user;
+        const role = user?.role;
+
+        const allFestivals = await prisma.learningFestival.findMany({
             orderBy: { startDate: 'desc' }
         });
-        res.json(festivals);
+
+        // Filter based on sharedWithRoles. Superadmin and Management always see everything.
+        const visibleFestivals = allFestivals.filter(f => {
+            if (role === 'SUPERADMIN' || role === 'MANAGEMENT') return true;
+            if (role === 'ADMIN') return true; // Admins typically see everything to manage it, but can be restricted if needed. Assuming true for now based on existing access.
+
+            if (!f.sharedWithRoles) return true; // If null/empty, assume public/visible to all for backwards compatibility
+
+            try {
+                const sharedRoles = JSON.parse(f.sharedWithRoles);
+                if (Array.isArray(sharedRoles) && sharedRoles.length > 0) {
+                    return sharedRoles.includes(role);
+                }
+                return true;
+            } catch (e) {
+                return true; // If parsing fails, default to visible
+            }
+        });
+
+        res.json(visibleFestivals);
     } catch (error) {
         console.error('Error fetching learning festivals:', error);
         res.status(500).json({ error: 'Failed to fetch learning festivals' });
@@ -17,18 +39,28 @@ export const getFestivals = async (req: Request, res: Response) => {
 
 export const createFestival = async (req: Request, res: Response) => {
     try {
-        const { name, theme, description, startDate, endDate, applyDeadline, eligibilityRules, campusLimits } = req.body;
+        const {
+            name, theme, description, startDate, endDate, applyDeadline,
+            eligibilityRules, campusLimits, location, duration, documents,
+            sharedWithRoles, registrationStart, registrationEnd
+        } = req.body;
+
         const newFestival = await prisma.learningFestival.create({
             data: {
                 name,
                 theme,
                 description,
+                location,
+                duration,
+                documents: documents ? JSON.stringify(documents) : null,
+                sharedWithRoles: sharedWithRoles ? JSON.stringify(sharedWithRoles) : null,
+                registrationStart: registrationStart ? new Date(registrationStart) : null,
+                registrationEnd: registrationEnd ? new Date(registrationEnd) : null,
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
-                applyDeadline: new Date(applyDeadline),
+                status: 'Upcoming',
                 eligibilityRules: JSON.stringify(eligibilityRules || {}),
                 campusLimits: JSON.stringify(campusLimits || {}),
-                status: 'Upcoming'
             },
         });
         res.status(201).json(newFestival);
@@ -41,16 +73,26 @@ export const createFestival = async (req: Request, res: Response) => {
 export const updateFestival = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { name, theme, description, startDate, endDate, applyDeadline, status, eligibilityRules, campusLimits } = req.body;
+        const {
+            name, theme, description, startDate, endDate, applyDeadline,
+            status, eligibilityRules, campusLimits, location, duration,
+            documents, sharedWithRoles, registrationStart, registrationEnd
+        } = req.body;
+
         const updated = await prisma.learningFestival.update({
             where: { id: id as string },
             data: {
                 name,
                 theme,
                 description,
+                location,
+                duration,
+                documents: documents !== undefined ? JSON.stringify(documents) : undefined,
+                sharedWithRoles: sharedWithRoles !== undefined ? JSON.stringify(sharedWithRoles) : undefined,
+                registrationStart: registrationStart ? new Date(registrationStart) : undefined,
+                registrationEnd: registrationEnd ? new Date(registrationEnd) : undefined,
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : undefined,
-                applyDeadline: applyDeadline ? new Date(applyDeadline) : undefined,
                 status,
                 eligibilityRules: eligibilityRules !== undefined ? JSON.stringify(eligibilityRules) : undefined,
                 campusLimits: campusLimits !== undefined ? JSON.stringify(campusLimits) : undefined,

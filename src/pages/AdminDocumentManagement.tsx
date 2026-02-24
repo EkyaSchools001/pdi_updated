@@ -55,7 +55,9 @@ export default function AdminDocumentManagement() {
         description: "",
         version: "1.0",
         requiresSignature: false,
+        type: "file" as "file" | "link",
         file: null as File | null,
+        linkUrl: "",
         assignedTeachers: [] as string[],
     });
 
@@ -121,8 +123,18 @@ export default function AdminDocumentManagement() {
     };
 
     const handleUploadDocument = async () => {
-        if (!newDocument.title || !newDocument.file) {
-            toast.error("Please provide title and file");
+        if (!newDocument.title) {
+            toast.error("Please provide a title");
+            return;
+        }
+
+        if (newDocument.type === "file" && !newDocument.file) {
+            toast.error("Please select a file to upload");
+            return;
+        }
+
+        if (newDocument.type === "link" && !newDocument.linkUrl) {
+            toast.error("Please provide a link URL");
             return;
         }
 
@@ -133,7 +145,8 @@ export default function AdminDocumentManagement() {
                 description: newDocument.description,
                 version: newDocument.version,
                 requiresSignature: newDocument.requiresSignature,
-                file: newDocument.file
+                file: newDocument.type === "file" ? newDocument.file : null,
+                linkUrl: newDocument.type === "link" ? newDocument.linkUrl : undefined
             });
 
             console.log("[DOC-UPLOAD] Metadata created successfully:", uploadedDoc.id);
@@ -144,14 +157,16 @@ export default function AdminDocumentManagement() {
                 await documentService.assignDocument(uploadedDoc.id, newDocument.assignedTeachers);
             }
 
-            toast.success("Document uploaded successfully!");
+            toast.success(newDocument.type === "file" ? "Document uploaded successfully!" : "Link shared successfully!");
             setShowUploadDialog(false);
             setNewDocument({
                 title: "",
                 description: "",
                 version: "1.0",
                 requiresSignature: false,
+                type: "file",
                 file: null,
+                linkUrl: "",
                 assignedTeachers: [],
             });
             setUploadTeacherSearchQuery(""); // Clear search
@@ -621,15 +636,37 @@ export default function AdminDocumentManagement() {
                                 </div>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="file">Upload File *</Label>
-                            <Input
-                                id="file"
-                                type="file"
-                                accept=".pdf"
-                                onChange={(e) => setNewDocument({ ...newDocument, file: e.target.files?.[0] || null })}
-                            />
-                            <p className="text-xs text-muted-foreground">PDF files only, max 10MB</p>
+                        <div className="space-y-4">
+                            <Label>Document Content *</Label>
+                            <Tabs value={newDocument.type} onValueChange={(val: any) => setNewDocument({ ...newDocument, type: val })}>
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="file">Upload File</TabsTrigger>
+                                    <TabsTrigger value="link">Share Link</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="file" className="pt-2">
+                                    <div className="space-y-2">
+                                        <Input
+                                            id="file"
+                                            type="file"
+                                            accept=".pdf,.doc,.docx"
+                                            onChange={(e) => setNewDocument({ ...newDocument, file: e.target.files?.[0] || null })}
+                                        />
+                                        <p className="text-xs text-muted-foreground">PDF or Word files, max 10MB</p>
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="link" className="pt-2">
+                                    <div className="space-y-2">
+                                        <Input
+                                            id="linkUrl"
+                                            type="url"
+                                            placeholder="https://..."
+                                            value={newDocument.linkUrl}
+                                            onChange={(e) => setNewDocument({ ...newDocument, linkUrl: e.target.value })}
+                                        />
+                                        <p className="text-xs text-muted-foreground">Provide a secure link (e.g., Google Drive, Video)</p>
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
                         </div>
 
                         {/* School Selection and Teacher Assignment */}

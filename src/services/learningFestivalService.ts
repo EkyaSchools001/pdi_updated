@@ -7,8 +7,13 @@ export interface LearningFestival {
     description?: string;
     startDate: string;
     endDate: string;
-    applyDeadline: string;
-    status: string;
+    registrationStart?: string;
+    registrationEnd?: string;
+    location?: string;
+    duration?: string;
+    documents?: string;
+    sharedWithRoles?: string;
+    status: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
     eligibilityRules?: string;
     campusLimits?: string;
     createdAt?: string;
