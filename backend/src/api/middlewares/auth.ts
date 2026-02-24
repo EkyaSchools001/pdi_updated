@@ -44,11 +44,20 @@ export const restrictTo = (...roles: string[]) => {
         // Final normalization to base roles
         if (userRole.includes('SCHOOL LEADER') || userRole === 'LEADER') {
             userRole = 'LEADER';
+        } else if (userRole.includes('MANAGEMENT') || userRole === 'MANAGEMENT') {
+            userRole = 'MANAGEMENT';
+        } else if (userRole.includes('TEACHER') || userRole === 'TEACHER') {
+            userRole = 'TEACHER';
+        } else if (userRole.includes('ADMIN') && userRole !== 'SUPERADMIN') {
+            userRole = 'ADMIN';
         }
 
         const allowedRoles = roles.map(r => {
-            const role = r.toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+            let role = r.toUpperCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
             if (role.includes('SCHOOL LEADER') || role === 'LEADER') return 'LEADER';
+            if (role.includes('MANAGEMENT') || role === 'MANAGEMENT') return 'MANAGEMENT';
+            if (role.includes('TEACHER') || role === 'TEACHER') return 'TEACHER';
+            if (role.includes('ADMIN') && role !== 'SUPERADMIN') return 'ADMIN';
             return role;
         });
 

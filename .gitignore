@@ -24,3 +24,12 @@ dist-ssr
 *.sln
 *.sw?
 node_modules.bak
+
+# SQLite local database (binary file, causes merge conflicts when server is running)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/dev.db-shm
+backend/prisma/dev.db-wal
+
+# Temp diff files
+diff_output.txt

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import api from "@/lib/api";
+import { defaultAccessMatrix } from "@/contexts/PermissionContext";
 
 interface PermissionSetting {
     moduleId: string;
@@ -32,25 +33,6 @@ interface FormFlowConfig {
     targetLocation: string;
 }
 
-// Matches PermissionContext pathMatch and seed - all platform modules
-const defaultAccessMatrix: PermissionSetting[] = [
-    { moduleId: 'users', moduleName: 'User Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
-    { moduleId: 'team', moduleName: 'Team Overview', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
-    { moduleId: 'forms', moduleName: 'Form Templates', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
-    { moduleId: 'courses', moduleName: 'Course Catalogue', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'calendar', moduleName: 'Training Calendar', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'documents', moduleName: 'Documents', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'reports', moduleName: 'Reports & Analytics', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: false } },
-    { moduleId: 'settings', moduleName: 'System Settings', roles: { SUPERADMIN: true, ADMIN: false, LEADER: false, MANAGEMENT: false, TEACHER: false } },
-    { moduleId: 'attendance', moduleName: 'Attendance', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: true } },
-    { moduleId: 'observations', moduleName: 'Observations', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'goals', moduleName: 'Goal Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'hours', moduleName: 'PD Hours Tracking', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'insights', moduleName: 'Data Insights', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'meetings', moduleName: 'Meetings', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
-    { moduleId: 'survey', moduleName: 'Surveys', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: true, TEACHER: true } },
-];
 
 // Aligned with FormTemplate names + Attendance Submission (used by AttendanceForm)
 const defaultFormFlows: FormFlowConfig[] = [
@@ -78,7 +60,26 @@ export function SuperAdminView() {
                 const response = await api.get('/settings/access_matrix_config');
                 if (response.data.status === 'success' && response.data.data.setting) {
                     const value = JSON.parse(response.data.data.setting.value);
-                    if (value.accessMatrix) setAccessMatrix(value.accessMatrix);
+                    if (value.accessMatrix) {
+                        const mergedMatrix = defaultAccessMatrix.map(defaultItem => {
+                            const loadedItem = value.accessMatrix.find((item: any) => item.moduleId === defaultItem.moduleId);
+                            if (loadedItem) {
+                                return {
+                                    ...defaultItem,
+                                    ...loadedItem,
+                                    roles: {
+                                        SUPERADMIN: loadedItem.roles?.SUPERADMIN ?? defaultItem.roles.SUPERADMIN,
+                                        ADMIN: loadedItem.roles?.ADMIN ?? defaultItem.roles.ADMIN,
+                                        LEADER: loadedItem.roles?.LEADER ?? defaultItem.roles.LEADER,
+                                        MANAGEMENT: loadedItem.roles?.MANAGEMENT ?? defaultItem.roles.MANAGEMENT,
+                                        TEACHER: loadedItem.roles?.TEACHER ?? defaultItem.roles.TEACHER,
+                                    }
+                                };
+                            }
+                            return defaultItem;
+                        });
+                        setAccessMatrix(mergedMatrix);
+                    }
                     if (value.formFlows) setFormFlows(value.formFlows);
                 }
             } catch (e) {
@@ -310,8 +311,8 @@ export function SuperAdminView() {
                                                         flow.formName
                                                     ]))
                                                         .filter(Boolean).sort().map((name) => (
-                                                        <SelectItem key={name} value={name}>{name}</SelectItem>
-                                                    ))}
+                                                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                                                        ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
