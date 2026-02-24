@@ -191,11 +191,13 @@ export const markAsViewed = async (req: Request, res: Response, next: NextFuncti
             return next(new AppError('Acknowledgement ID is required', 400));
         }
         const { hash, ipAddress, userAgent } = req.body;
+        console.log("MARK AS VIEWED CALLED WITH ackId:", ackId);
         const ack = await prisma.documentAcknowledgement.findUnique({
             where: { id: ackId }
         });
 
         if (!ack) {
+            console.error("ACK NOT FOUND FOR ID:", ackId);
             return next(new AppError('Acknowledgement record not found', 404));
         }
 

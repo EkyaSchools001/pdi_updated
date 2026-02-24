@@ -20,6 +20,8 @@ import {
     Filter,
     Calendar,
     User,
+    ExternalLink,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,6 +54,8 @@ export default function TeacherDocuments() {
     const [signature, setSignature] = useState<string>("");
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("all");
+    const [previewUrl, setPreviewUrl] = useState<string>("");
+    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
     useEffect(() => {
         const fetchDocuments = async () => {
@@ -133,9 +137,27 @@ export default function TeacherDocuments() {
         });
     };
 
-    const handleViewDocument = (doc: Document) => {
+    const handleViewDocument = async (doc: Document) => {
         setSelectedDoc(doc);
         setShowViewDialog(true);
+        setIsLoadingPreview(true);
+
+        if (doc.fileUrl) {
+            const publicUrl = await documentService.getDocumentPublicUrl(doc.fileUrl);
+
+            // Determine if we need an Office viewer based on extension
+            const isWordDoc = doc.fileName.toLowerCase().endsWith('.doc') ||
+                doc.fileName.toLowerCase().endsWith('.docx');
+
+            if (isWordDoc) {
+                // Use Microsoft Office Online Viewer for better .doc/.docx support
+                setPreviewUrl(`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`);
+            } else {
+                setPreviewUrl(publicUrl);
+            }
+        } else {
+            setPreviewUrl("");
+        }
 
         // Update status to VIEWED if it's PENDING
         if (doc.status === "PENDING") {
@@ -375,15 +397,68 @@ export default function TeacherDocuments() {
                         <DialogDescription>{selectedDoc?.description}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                        <div className="bg-muted/50 p-8 rounded-lg text-center">
-                            <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-sm text-muted-foreground mb-2">Document Preview</p>
-                            <p className="font-medium">{selectedDoc?.fileName}</p>
-                            <p className="text-xs text-muted-foreground mt-2">
-                                {selectedDoc && formatFileSize(selectedDoc.fileSize)}
-                            </p>
+                        <div className="bg-muted/30 rounded-lg border overflow-hidden relative" style={{ minHeight: '400px', height: '60vh' }}>
+                            {selectedDoc?.fileName === "External Link" ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-muted/50">
+                                    <ExternalLink className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                    <p className="text-lg font-medium mb-2">External Link</p>
+                                    <p className="text-sm text-muted-foreground mb-6">This document is hosted externally.</p>
+                                    {selectedDoc?.fileUrl && (
+                                        <Button
+                                            onClick={async () => {
+                                                const url = await documentService.getDocumentPublicUrl(selectedDoc.fileUrl);
+                                                window.open(url, '_blank');
+                                            }}
+                                            className="gap-2"
+                                        >
+                                            <ExternalLink className="w-4 h-4" />
+                                            Open Link in New Tab
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : previewUrl ? (
+                                <>
+                                    {isLoadingPreview && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                        </div>
+                                    )}
+                                    <iframe
+                                        src={previewUrl}
+                                        className="w-full h-full border-0"
+                                        title={selectedDoc?.title || "Document Preview"}
+                                        onLoad={() => setIsLoadingPreview(false)}
+                                    />
+                                </>
+                            ) : (
+                                <div className="absolute inset-0 flex items-center justify-center bg-muted/50 p-8 text-center">
+                                    <div>
+                                        <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                        <p className="text-sm text-muted-foreground mb-2">No preview available</p>
+                                        <p className="text-xs text-muted-foreground">{selectedDoc?.fileName}</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+
+                        {(selectedDoc?.fileName !== "External Link" && selectedDoc?.fileUrl) && (
+                            <div className="flex justify-end">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                        const url = await documentService.getDocumentPublicUrl(selectedDoc!.fileUrl);
+                                        window.open(url, '_blank');
+                                    }}
+                                    className="gap-2"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    Open Document in New Tab
+                                </Button>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-4">
                             {getStatusIcon(selectedDoc?.status || "PENDING")}
                             <span>Status: {selectedDoc?.status}</span>
                         </div>

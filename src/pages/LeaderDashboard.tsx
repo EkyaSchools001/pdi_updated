@@ -3,11 +3,13 @@ import { format } from "date-fns";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/hooks/useAuth";
+import { AssessmentManagementDashboard } from "@/components/assessments/AssessmentManagementDashboard";
 import { useAccessControl } from "@/hooks/useAccessControl";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock } from "lucide-react";
+import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock, FileCheck } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,8 +357,49 @@ export default function LeaderDashboard() {
         <Route path="attendance/:id" element={<EventAttendanceView />} />
         <Route path="participation" element={<PDParticipationView team={team} />} />
         <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
+        <Route path="users" element={<UserManagementView />} />
+        <Route path="forms" element={<FormTemplatesView />} />
+        <Route path="courses/*" element={<LeaderCoursesModule />} />
+        <Route path="documents" element={<AdminDocumentManagement />} />
+        <Route path="survey" element={<SurveyPage />} />
+        <Route path="settings" element={<SystemSettingsView />} />
       </Routes>
     </DashboardLayout>
+  );
+}
+
+function LeaderCoursesModule() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentTab = location.pathname.includes('/assessments') ? 'assessments' : 'catalogue';
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="School Leader: Courses & Assessments"
+        subtitle="Review curriculum and manage teacher evaluations"
+      />
+
+      <Tabs value={currentTab} onValueChange={(val) => navigate(val === 'catalogue' ? '/leader/courses' : '/leader/courses/assessments')}>
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="catalogue" className="gap-2">
+            <Book className="w-4 h-4" />
+            Course Catalogue
+          </TabsTrigger>
+          <TabsTrigger value="assessments" className="gap-2">
+            <FileCheck className="w-4 h-4" />
+            Assessment Templates
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="mt-6">
+          <Routes>
+            <Route index element={<CourseManagementView hideHeader />} />
+            <Route path="assessments" element={<AssessmentManagementDashboard hideHeader />} />
+          </Routes>
+        </div>
+      </Tabs>
+    </div>
   );
 }
 

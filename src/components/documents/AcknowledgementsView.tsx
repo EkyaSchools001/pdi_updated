@@ -24,6 +24,7 @@ export function AcknowledgementsView({ teacherId }: { teacherId: string }) {
     const [selectedAck, setSelectedAck] = useState<DocumentAcknowledgement | null>(null);
     const [loading, setLoading] = useState(true);
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [docContent, setDocContent] = useState<string | null>(null);
 
     useEffect(() => {
         if (teacherId) {
@@ -49,8 +50,30 @@ export function AcknowledgementsView({ teacherId }: { teacherId: string }) {
         if (ack.document) {
             try {
                 // Use fileUrl instead of file_path
-                const url = await documentService.getDocumentPublicUrl(ack.document.fileUrl);
-                setPdfUrl(url);
+                const publicUrl = await documentService.getDocumentPublicUrl(ack.document.fileUrl);
+
+                // Determine if we need an Office viewer based on extension
+                const isWordDoc = ack.document.fileName.toLowerCase().endsWith('.doc') ||
+                    ack.document.fileName.toLowerCase().endsWith('.docx');
+
+                if (isWordDoc) {
+                    try {
+                        // For localhost/private files, external viewers won't work.
+                        // We use mammoth to convert DOCX to HTML for preview
+                        setPdfUrl(''); // clear PDF url
+                        const response = await fetch(publicUrl);
+                        const arrayBuffer = await response.arrayBuffer();
+                        const mammoth = await import('mammoth');
+                        const result = await mammoth.convertToHtml({ arrayBuffer });
+                        setDocContent(result.value);
+                    } catch (err) {
+                        console.error("Error parsing Word document:", err);
+                        setDocContent("<div class='p-8 text-center text-red-500'>Failed to load Word document preview. Please download the file instead.</div>");
+                    }
+                } else {
+                    setDocContent(''); // clear text content
+                    setPdfUrl(publicUrl);
+                }
 
                 if (ack.status === 'PENDING') {
                     await documentService.markAsViewed(ack.id);
@@ -196,32 +219,51 @@ export function AcknowledgementsView({ teacherId }: { teacherId: string }) {
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => pdfUrl && window.open(pdfUrl, '_blank')}>
-                                        <ExternalLink className="w-4 h-4 mr-2" />
-                                        Open in New Tab
-                                    </Button>
-                                    {pdfUrl && (
-                                        <a href={pdfUrl} download={selectedAck.document?.title} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="sm">
-                                                <Download className="w-4 h-4 mr-2" />
-                                                Download
-                                            </Button>
-                                        </a>
+                                    {!docContent && pdfUrl && (
+                                        <Button variant="outline" size="sm" onClick={() => window.open(pdfUrl, '_blank')}>
+                                            <ExternalLink className="w-4 h-4 mr-2" />
+                                            Open in New Tab
+                                        </Button>
+                                    )}
+                                    {selectedAck.document?.fileUrl && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={async () => {
+                                                const url = await documentService.getDocumentPublicUrl(selectedAck.document!.fileUrl);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = selectedAck.document!.title;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                            }}
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Download
+                                        </Button>
                                     )}
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col gap-4 p-0 overflow-hidden">
                                 <div className="flex-1 bg-muted relative rounded-md mx-6 border overflow-hidden">
-                                    {pdfUrl ? (
+                                    {docContent ? (
+                                        <ScrollArea className="w-full h-full bg-white p-8">
+                                            <div
+                                                className="prose max-w-none docx-preview"
+                                                dangerouslySetInnerHTML={{ __html: docContent }}
+                                            />
+                                        </ScrollArea>
+                                    ) : pdfUrl ? (
                                         <iframe
                                             src={pdfUrl}
                                             className="w-full h-full border-none"
                                             title="Document Preview"
                                         />
                                     ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-                                            <AlertCircle className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
-                                            <p>Connecting to secure document storage...</p>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                                            <p>Loading document preview...</p>
                                         </div>
                                     )}
                                 </div>

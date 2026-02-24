@@ -81,6 +81,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, parse, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -120,6 +121,8 @@ import { ReflectionForm } from "@/components/ReflectionForm";
 import { MoocEvidenceForm } from "@/components/MoocEvidenceForm";
 
 import { TeacherProfileView } from "@/components/TeacherProfileView";
+import { TeacherAssessmentsView } from "@/components/assessments/TeacherAssessmentsView";
+import { AssessmentAttemptView } from "@/components/assessments/AssessmentAttemptView";
 import AttendanceForm from "@/pages/AttendanceForm";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
@@ -774,14 +777,9 @@ function CoursesView({ courses = [], enrolledCourses = [], onEnrollSuccess }: { 
 
     return matchesSearch && matchesCategory;
   });
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <PageHeader
-          title="Course Catalogue"
-          subtitle="Expand your knowledge with certified professional development courses"
-        />
         <div className="flex items-center gap-2">
           <Button onClick={() => navigate("/teacher/festival")} variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary mr-2">
             <Calendar className="w-4 h-4" />
@@ -878,6 +876,42 @@ function CoursesView({ courses = [], enrolledCourses = [], onEnrollSuccess }: { 
     </div >
   );
 }
+
+function CoursesModule({ courses, enrolledCourses }: { courses: any[], enrolledCourses: any[] }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentTab = location.pathname.includes('/assessments') ? 'assessments' : 'catalogue';
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Courses & Assessments"
+        subtitle="Manage your learning journey and professional evaluations"
+      />
+
+      <Tabs value={currentTab} onValueChange={(val) => navigate(val === 'catalogue' ? '/teacher/courses' : '/teacher/courses/assessments')}>
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="catalogue" className="gap-2">
+            <Book className="w-4 h-4" />
+            Course Catalogue
+          </TabsTrigger>
+          <TabsTrigger value="assessments" className="gap-2">
+            <FileCheck className="w-4 h-4" />
+            My Assessments
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="mt-6">
+          <Routes>
+            <Route index element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} onEnrollSuccess={() => window.dispatchEvent(new Event('courses-refresh'))} />} />
+            <Route path="assessments" element={<TeacherAssessmentsView />} />
+          </Routes>
+        </div>
+      </Tabs>
+    </div>
+  );
+}
+
 
 function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?: () => void }) {
   const [enrolling, setEnrolling] = useState(false);
@@ -1448,7 +1482,11 @@ export default function TeacherDashboard() {
       try {
         const trainingEvents = await trainingService.getAllEvents();
         if (trainingEvents) {
-          setEvents(trainingEvents);
+          const mappedEvents = trainingEvents.map((event: any) => ({
+            ...event,
+            isRegistered: event.registrants?.some((r: any) => r.id === user?.id) || false
+          }));
+          setEvents(mappedEvents);
         }
       } catch (error) {
         console.error("Failed to fetch training events:", error);
@@ -1732,12 +1770,13 @@ export default function TeacherDashboard() {
         <Route path="meetings" element={<MeetingsDashboard />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
-        <Route path="courses" element={<CoursesView courses={courses} enrolledCourses={enrolledCourses} onEnrollSuccess={() => window.dispatchEvent(new Event('courses-refresh'))} />} />
+        <Route path="courses/*" element={<CoursesModule courses={courses} enrolledCourses={enrolledCourses} />} />
         <Route path="festival" element={<LearningFestivalPage />} />
         <Route path="festival/:id/apply" element={<FestivalApplicationForm />} />
         <Route path="festival/:id/application" element={<FestivalApplicationForm />} />
         <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
+        <Route path="courses/assessments/attempt/:assessmentId" element={<AssessmentAttemptView />} />
         <Route path="insights" element={<InsightsView />} />
         <Route path="survey" element={<SurveyPage />} />
         <Route path="profile" element={

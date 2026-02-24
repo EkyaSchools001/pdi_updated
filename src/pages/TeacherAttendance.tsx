@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,11 @@ import { Loader2, ClipboardList, CheckCircle2, XCircle, ArrowRight } from "lucid
 
 export default function TeacherAttendance() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
-        const userStr = sessionStorage.getItem("user_data");
-        if (userStr) {
-            setUserData(JSON.parse(userStr));
-        }
         fetchEvents();
     }, []);
 
@@ -38,19 +35,18 @@ export default function TeacherAttendance() {
     };
 
     // Filter events:
-    // 1. Status is Completed
-    // 2. School matches (optional, prompt says "event.school_id == loggedInUser.school_id")
-    // 3. Attendance is enabled?
-    // 4. Have I already submitted? (Client side check or separate fetch)
-    // Since `getAllTrainingEvents` includes registrations but not `attendanceRecords` for current user specifically in the main list,
-    // we might need to fetch my attendance status separately or assume if I can't click it's forbidden.
-    // Ideally, valid events are those where I attended.
-    // For now, I'll filter by Completed and show availability.
+    // 1. Status is Completed or Live or attendance enabled
+    // 2. School matches
+    // 3. User is registered
+    const relevantEvents = events.filter(e => {
+        if (!user?.id) return false; // Ensure user is loaded
 
-    const relevantEvents = events.filter(e =>
-        (e.status === 'Completed' || e.status === 'COMPLETED' || e.attendanceEnabled) &&
-        (!e.schoolId || e.schoolId === userData?.campusId) // Filter by school if event has schoolId match
-    );
+        const isCompletedOrLive = e.status === 'Completed' || e.status === 'COMPLETED' || e.attendanceEnabled;
+        const matchesSchool = !e.schoolId || e.schoolId === user?.campusId;
+        const isRegistered = e.registrants?.some((r: any) => r.id === user?.id);
+
+        return isCompletedOrLive && matchesSchool && isRegistered;
+    });
 
     // Sort by date desc
     const sortedEvents = [...relevantEvents].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
