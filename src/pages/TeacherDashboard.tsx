@@ -1687,6 +1687,18 @@ export default function TeacherDashboard() {
       fetchEnrollments();
     });
 
+    socket.on('attendance:toggled', (data: any) => {
+      fetchTraining();
+      if (data.action === 'enable') {
+        toast.success(`Attendance is now live! Check "My Attendance" to mark your presence.`, {
+          action: {
+            label: "View",
+            onClick: () => navigate("/teacher/attendance")
+          }
+        });
+      }
+    });
+
     return () => {
       window.removeEventListener('courses-refresh', onCoursesRefresh);
       socket.off('observation:created');
@@ -1694,10 +1706,10 @@ export default function TeacherDashboard() {
       socket.off('goal:created');
       socket.off('goal:updated');
       socket.off('mooc:created');
-      socket.off('mooc:updated');
       socket.off('course:created');
       socket.off('course:updated');
       socket.off('course:deleted');
+      socket.off('attendance:toggled');
       socket.emit('leave_room', user?.id || userName);
     };
   }, [userName, userEmail, user?.id]);

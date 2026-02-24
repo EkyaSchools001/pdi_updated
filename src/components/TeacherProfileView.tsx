@@ -27,6 +27,7 @@ export interface TeacherProfileViewProps {
         completionRate: number;
         email?: string;
         campus?: string;
+        academics?: 'CORE' | 'NON_CORE';
     };
     observations: Observation[];
     goals: any[];
@@ -70,6 +71,14 @@ export function TeacherProfileView({ teacher, observations, goals, onBack, userR
                                 <GraduationCap className="w-3.5 h-3.5" />
                                 {teacher.role}
                             </Badge>
+                            {teacher.role === "Teacher" && (
+                                <Badge variant="secondary" className={cn(
+                                    "border-none font-bold px-3 py-1 flex gap-1.5 items-center",
+                                    teacher.academics === 'NON_CORE' ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                                )}>
+                                    {teacher.academics === 'NON_CORE' ? 'Specialist' : 'Core'}
+                                </Badge>
+                            )}
                         </div>
                         <div className="flex flex-wrap items-center gap-4 pt-1">
                             <span className="flex items-center gap-1.5 text-sm font-bold text-muted-foreground border-l border-muted-foreground/20 pl-4">

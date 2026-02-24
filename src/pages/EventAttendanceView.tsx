@@ -24,6 +24,16 @@ export default function EventAttendanceView() {
         fetchData();
     }, [id]);
 
+    useEffect(() => {
+        const handleUpdate = (e: any) => {
+            if (e.detail?.eventId === id) {
+                fetchData();
+            }
+        };
+        window.addEventListener('attendance-updated', handleUpdate);
+        return () => window.removeEventListener('attendance-updated', handleUpdate);
+    }, [id]);
+
     const fetchData = async () => {
         setLoading(true);
         try {

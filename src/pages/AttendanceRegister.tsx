@@ -21,6 +21,12 @@ export default function AttendanceRegister() {
         fetchEvents();
     }, []);
 
+    useEffect(() => {
+        const handleUpdate = () => fetchEvents();
+        window.addEventListener('attendance-updated', handleUpdate);
+        return () => window.removeEventListener('attendance-updated', handleUpdate);
+    }, []);
+
     const fetchEvents = async () => {
         try {
             const response = await api.get("/training");
@@ -141,6 +147,7 @@ export default function AttendanceRegister() {
                                     <TableHead className="text-foreground">Event Name</TableHead>
                                     <TableHead className="text-foreground">Date</TableHead>
                                     <TableHead className="text-foreground">Status</TableHead>
+                                    <TableHead className="text-foreground">Status</TableHead>
                                     <TableHead className="text-foreground">Attendance</TableHead>
                                     <TableHead className="text-foreground">Registrants</TableHead>
                                     <TableHead className="text-right text-foreground">Actions</TableHead>
@@ -149,7 +156,7 @@ export default function AttendanceRegister() {
                             <TableBody>
                                 {sortedEvents.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                             No events found. Create an event in the Calendar to get started.
                                         </TableCell>
                                     </TableRow>
@@ -169,7 +176,14 @@ export default function AttendanceRegister() {
                                                     {event.status}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>{getStatusBadge(event)}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    {getStatusBadge(event)}
+                                                    <Badge variant="outline" className="w-fit bg-emerald-500/5 text-emerald-600 border-emerald-500/20">
+                                                        {event.attendanceCount || 0} Attended
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
                                                     {event.registrants?.length || 0} Registered
