@@ -2,7 +2,9 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Eye, TrendingUp, Info, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Loader2, Eye, TrendingUp, Info, BookOpen, MessageSquare, ArrowLeft } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ObservationCard } from "@/components/ObservationCard";
 import { ReflectionForm } from "@/components/ReflectionForm";
@@ -10,6 +12,9 @@ import api from "@/lib/api";
 import { Observation, DetailedReflection } from "@/types/observation";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, X } from "lucide-react";
 
 const GrowthPage = () => {
     const { user } = useAuth();
@@ -17,6 +22,9 @@ const GrowthPage = () => {
     const [loading, setLoading] = useState(true);
     const [observations, setObservations] = useState<Observation[]>([]);
     const [selectedReflectObs, setSelectedReflectObs] = useState<Observation | null>(null);
+    const [filterType, setFilterType] = useState<'all' | 'quick'>('all');
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedDomain, setSelectedDomain] = useState("all");
 
     useEffect(() => {
         if (user) {
@@ -77,6 +85,32 @@ const GrowthPage = () => {
         }
     };
 
+    const domains = useMemo(() => {
+        const uniqueDomains = new Set(observations.map(obs => obs.domain));
+        return Array.from(uniqueDomains).sort();
+    }, [observations]);
+
+    const filteredObservations = useMemo(() => {
+        return observations.filter(obs => {
+            const matchesType = filterType === 'quick' ? (obs.type === 'Quick Feedback' || obs.domain === 'Quick Feedback') : true;
+            const matchesDomain = selectedDomain === 'all' ? true : obs.domain === selectedDomain;
+            const searchTerm = searchQuery.toLowerCase();
+            const matchesSearch = !searchQuery ||
+                obs.domain?.toLowerCase().includes(searchTerm) ||
+                obs.observerName?.toLowerCase().includes(searchTerm) ||
+                (obs.learningArea || "").toLowerCase().includes(searchTerm) ||
+                (obs.notes || "").toLowerCase().includes(searchTerm);
+
+            return matchesType && matchesDomain && matchesSearch;
+        });
+    }, [observations, filterType, selectedDomain, searchQuery]);
+
+    const clearFilters = () => {
+        setSearchQuery("");
+        setSelectedDomain("all");
+        setFilterType("all");
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -97,11 +131,22 @@ const GrowthPage = () => {
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
             <div className="p-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="flex flex-col gap-1 mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight">My Observations</h1>
-                    <p className="text-muted-foreground">
-                        Manage and reflect on your classroom observations
-                    </p>
+                <div className="flex flex-col gap-4 mb-8">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/teacher/dashboard')}
+                        className="w-fit gap-2 -ml-2 text-muted-foreground hover:text-primary transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Dashboard
+                    </Button>
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-3xl font-bold tracking-tight">My Observations</h1>
+                        <p className="text-muted-foreground">
+                            Manage and reflect on your classroom observations
+                        </p>
+                    </div>
                 </div>
 
                 <div className="grid gap-8">
@@ -129,14 +174,66 @@ const GrowthPage = () => {
                                 <Eye className="w-5 h-5 text-primary" />
                                 Observation History
                             </h2>
-                            <Badge variant="outline" className="font-medium">
-                                {observations.length} Observations Recorded
-                            </Badge>
+                            <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                                <div className="relative w-full md:w-64">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search subject, observer..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-9 h-10 rounded-xl"
+                                    />
+                                </div>
+                                <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                                    <SelectTrigger className="w-full md:w-48 h-10 rounded-xl">
+                                        <SelectValue placeholder="Domain" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Domains</SelectItem>
+                                        {domains.map(d => (
+                                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant={filterType === 'all' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setFilterType('all')}
+                                        className="rounded-full h-9"
+                                    >
+                                        All
+                                    </Button>
+                                    <Button
+                                        variant={filterType === 'quick' ? 'secondary' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setFilterType('quick')}
+                                        className={cn("rounded-full h-9 gap-2", filterType === 'quick' && "bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200")}
+                                    >
+                                        <MessageSquare className="w-4 h-4" />
+                                        Quick
+                                    </Button>
+                                </div>
+                                {(searchQuery || selectedDomain !== "all" || filterType !== "all") && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearFilters}
+                                        className="h-9 gap-2 text-muted-foreground hover:text-foreground"
+                                    >
+                                        <X className="w-4 h-4" />
+                                        Clear
+                                    </Button>
+                                )}
+                                <Badge variant="outline" className="font-medium whitespace-nowrap">
+                                    {filteredObservations.length} Results
+                                </Badge>
+                            </div>
                         </div>
 
                         <div className="grid gap-4">
-                            {observations.length > 0 ? (
-                                observations.map((obs) => (
+                            {filteredObservations.length > 0 ? (
+                                filteredObservations.map((obs) => (
                                     <ObservationCard
                                         key={obs.id}
                                         observation={obs}

@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Calendar, User, Tag, MessageSquare, Eye, CheckCircle2 } from "lucide-react";
+import { Calendar, User, Tag, MessageSquare, Eye, CheckCircle2, Zap } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface ObservationCardProps {
@@ -13,6 +13,7 @@ interface ObservationCardProps {
     notes?: string;
     hasReflection?: boolean;
     reflection?: string;
+    type?: string;
   };
   onReflect?: () => void;
   onView?: () => void;
@@ -48,6 +49,12 @@ export function ObservationCard({ observation, onReflect, onView, className }: O
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
             {observation.domain}
           </span>
+          {(observation.type === "Quick Feedback" || observation.domain === "Quick Feedback") && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-500 text-white shadow-sm gap-1 translate-y-[1px]">
+              <Zap className="w-3 h-3 fill-current" />
+              Quick Feedback
+            </span>
+          )}
         </div>
 
         {observation.notes && (

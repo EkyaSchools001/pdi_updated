@@ -28,12 +28,8 @@ const LeaderGrowthPage = () => {
                 const data = await userService.getTeachers();
                 setTeachers(data);
 
-                if (teacherId) {
-                    const teacher = data.find(t => t.id === teacherId);
-                    if (teacher) {
-                        setSelectedTeacher(teacher);
-                    }
-                }
+                const teacher = teacherId ? data.find(t => t.id === teacherId) : null;
+                setSelectedTeacher(teacher || null);
             } catch (err) {
                 toast.error("Failed to load teachers");
             } finally {

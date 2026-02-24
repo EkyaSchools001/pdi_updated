@@ -45,6 +45,7 @@ export interface DanielsonDomain {
 export interface Observation {
     id: string;
     teacher?: string; // Optional for leader dashboard view context
+    type?: string;
     teacherId?: string;
     observerId?: string;
     teacherEmail?: string;
@@ -69,6 +70,8 @@ export interface Observation {
     instructionalTools?: string[];
     learningAreaTools?: string[];
     metaTags?: string[];
+    tools?: string[];
+    otherComment?: string;
     discussionMet?: boolean;
     teacherReflection?: string;
     actionStep?: string;
@@ -83,6 +86,8 @@ export interface Observation {
     nextSteps?: string;
     status?: "Draft" | "Submitted" | "Certified" | "In Progress";
     teachingStrategies?: string[];
+    glows?: string;
+    grows?: string;
     classroom?: {
         block: string;
         grade: string;
