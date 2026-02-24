@@ -18,7 +18,9 @@ import OKRDashboard from "./pages/OKRDashboard";
 import GrowthPage from "./pages/GrowthPage";
 import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
 import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
+import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
 import NotFound from "./pages/NotFound";
+
 
 import { AuthProvider } from "./hooks/useAuth";
 import { PermissionProvider } from "./contexts/PermissionContext";
@@ -140,6 +142,22 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
                       <LeaderGrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/danielson-framework"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <DanielsonFrameworkPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/danielson-framework/:teacherId"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <DanielsonFrameworkPage />
                     </ProtectedRoute>
                   }
                 />
