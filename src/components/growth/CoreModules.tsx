@@ -23,7 +23,7 @@ const CoreModules: React.FC<CoreModulesProps> = ({ teacherId }) => {
             title: "Quick Feedback Master",
             description: "Fast, actionable feedback loops for core academic subjects.",
             icon: MessageSquare,
-            path: "/growth/feedback",
+            path: teacherId ? `/leader/quick-feedback/${teacherId}` : "/leader/quick-feedback",
             color: "bg-indigo-500",
         },
     ];

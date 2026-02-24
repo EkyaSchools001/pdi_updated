@@ -191,6 +191,13 @@ model Observation {
   grade              String?
   section            String?
   learningArea       String?
+  type               String?
+  strengths          String?
+  areasOfGrowth      String?
+  otherComment       String?
+  metaTags           String?   // JSON string
+  tools              String?   // JSON string
+  routines           String?   // JSON string
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 

@@ -45,7 +45,7 @@ const teacherNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
   { title: "My Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
-  { title: "Observations", icon: Eye, path: "/teacher/observations" },
+  { title: "Observations", icon: Eye, path: "/growth" },
   { title: "Goals", icon: Target, path: "/teacher/goals" },
   { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/teacher/calendar" },
@@ -217,7 +217,7 @@ export function DashboardSidebar({ role, userName, collapsed, onToggle }: Dashbo
             const isActive = location.pathname === item.path || (!rootPaths.includes(item.path) && location.pathname.startsWith(item.path));
             return (
               <NavLink
-                key={item.path}
+                key={item.title}
                 to={item.path}
                 onClick={(e) => {
                   if ((item as any).isPlaceholder) {

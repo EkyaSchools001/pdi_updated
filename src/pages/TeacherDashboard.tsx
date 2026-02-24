@@ -2003,7 +2003,7 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <FileCheck className="w-16 h-16 text-muted-foreground mb-4 opacity-20" />
         <h2 className="text-2xl font-bold">Observation not found</h2>
-        <Button onClick={() => navigate("/teacher/observations")} className="mt-4">Back to Observations</Button>
+        <Button onClick={() => navigate("/growth")} className="mt-4">Back to Observations</Button>
       </div>
     );
   }
@@ -2011,8 +2011,8 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/teacher/observations")} className="print:hidden">
-          <ChevronRight className="w-5 h-5 rotate-180" />
+        <Button variant="ghost" size="icon" onClick={() => navigate("/growth")} className="print:hidden">
+          <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex flex-col md:flex-row md:items-center justify-between flex-1 gap-4">
           <PageHeader
@@ -2110,39 +2110,37 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
               </div>
 
               {/* Power BI Style Data Visualization Section */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {observation.strengths && (
-                  <Card className="bg-success/5 border-success/20 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-bold uppercase tracking-wider text-success flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Strengths Observed
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm font-medium leading-relaxed text-foreground/90">
-                        {observation.strengths}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+              {observation.strengths && (
+                <Card className="bg-success/5 border-success/20 shadow-sm hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-success flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      {observation.type === "Quick Feedback" ? "Quick Feedback Glows" : "Strengths Observed"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90">
+                      {observation.strengths}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
-                {observation.improvements && (
-                  <Card className="bg-orange-500/5 border-orange-500/20 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 flex items-center gap-2">
-                        <Target className="w-4 h-4" />
-                        Areas for Growth
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm font-medium leading-relaxed text-foreground/90">
-                        {observation.improvements}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              {observation.areasOfGrowth && (
+                <Card className="bg-orange-500/5 border-orange-500/20 shadow-sm hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      {observation.type === "Quick Feedback" ? "Quick Feedback Grows" : "Areas for Growth"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90">
+                      {observation.areasOfGrowth}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {observation.teachingStrategies && observation.teachingStrategies.length > 0 && (
                 <div className="space-y-3">
@@ -2254,6 +2252,56 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
                         {tag}
                       </Badge>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tools and Routines (Quick Feedback) */}
+              {observation.type === "Quick Feedback" && (
+                <div className="grid md:grid-cols-2 gap-8 pt-4 border-t border-dashed">
+                  {observation.tools && observation.tools.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                        <PenTool className="w-5 h-5" />
+                        Tools in Action
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {observation.tools.map((tool, idx) => (
+                          <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
+                            {tool}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {observation.routines && observation.routines.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold flex items-center gap-2 text-indigo-600">
+                        <ClipboardList className="w-5 h-5" />
+                        Routines Observed
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {observation.routines.map((routine, idx) => (
+                          <Badge key={idx} variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100">
+                            {routine}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Other Comments (Quick Feedback) */}
+              {observation.type === "Quick Feedback" && observation.otherComment && (
+                <div className="space-y-4 pt-4 border-t border-dashed">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-muted-foreground">
+                    <MessageSquare className="w-5 h-5" />
+                    Additional Comments
+                  </h3>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-600 italic">
+                    "{observation.otherComment}"
                   </div>
                 </div>
               )}

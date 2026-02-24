@@ -16,7 +16,7 @@ const NonCoreModules: React.FC<NonCoreModulesProps> = ({ teacherId }) => {
             title: "Quick Feedback Master",
             description: "Fast, actionable feedback loops for non-core subjects.",
             icon: MessageSquare,
-            path: "/growth/feedback",
+            path: teacherId ? `/leader/quick-feedback/${teacherId}` : "/leader/quick-feedback",
             color: "bg-indigo-500",
         },
         {
