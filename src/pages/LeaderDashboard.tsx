@@ -48,8 +48,16 @@ import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
 
+// Admin Components
+import { UserManagementView } from "./admin/UserManagementView";
+import { FormTemplatesView } from "./admin/FormTemplatesView";
+import { SystemSettingsView } from "./admin/SystemSettingsView";
+import { CourseManagementView } from "./admin/CourseManagementView";
+import AdminDocumentManagement from "./AdminDocumentManagement";
+import SurveyPage from "./SurveyPage";
 
 // Mock data removed in favor of API calls
+
 
 
 
