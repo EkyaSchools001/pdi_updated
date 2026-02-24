@@ -14,6 +14,9 @@ import { CreateMeetingForm } from "./pages/CreateMeetingForm";
 import { MeetingDetailsView } from "./pages/MeetingDetailsView";
 import { MeetingMoMForm } from "./pages/MeetingMoMForm";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import GrowthPage from "./pages/GrowthPage";
+import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
+import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
 import NotFound from "./pages/NotFound";
 
 import { AuthProvider } from "./hooks/useAuth";
@@ -112,6 +115,38 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
                       <MeetingMoMForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/growth"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <GrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/growth"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LeaderGrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/growth/:teacherId"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LeaderGrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/growth-analytics"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                      <AdminGrowthAnalyticsPage />
                     </ProtectedRoute>
                   }
                 />

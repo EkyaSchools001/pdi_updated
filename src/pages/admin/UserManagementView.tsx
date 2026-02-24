@@ -34,6 +34,7 @@ interface User {
     department: string | null;
     status: string;
     lastActive: string | null;
+    academics?: 'CORE' | 'NON_CORE';
 }
 
 // Initial users will be fetched from API
@@ -48,7 +49,7 @@ export function UserManagementView() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false);
     const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
-    const [newUser, setNewUser] = useState({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "" });
+    const [newUser, setNewUser] = useState({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "", academics: "CORE" });
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [activeTab, setActiveTab] = useState("all");
@@ -119,7 +120,7 @@ export function UserManagementView() {
             if (response.data?.status === "success") {
                 toast.success("User added successfully");
                 setIsAddDialogOpen(false);
-                setNewUser({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "" });
+                setNewUser({ fullName: "", email: "", password: "", role: "TEACHER", campusId: "", academics: "CORE" });
                 await fetchUsers();
             } else {
                 toast.error("Failed to add user");
@@ -139,6 +140,7 @@ export function UserManagementView() {
                 fullName: editingUser.fullName,
                 role: editingUser.role,
                 campusId: editingUser.campusId,
+                academics: editingUser.academics,
             });
             if (response.data?.status === "success") {
                 toast.success("User updated successfully");
@@ -265,6 +267,20 @@ export function UserManagementView() {
                                             </Select>
                                         </div>
                                     </div>
+                                    {newUser.role === "TEACHER" && (
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="academics">Academic Type</Label>
+                                            <Select value={newUser.academics} onValueChange={v => setNewUser({ ...newUser, academics: v as any })}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="CORE">Core Academics</SelectItem>
+                                                    <SelectItem value="NON_CORE">Non-Core Academics (Specialist)</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
                                 </div>
                                 <DialogFooter>
                                     <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} disabled={actionLoading}>Cancel</Button>
@@ -316,6 +332,20 @@ export function UserManagementView() {
                                                 </Select>
                                             </div>
                                         </div>
+                                        {editingUser.role === "TEACHER" && (
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="edit-academics">Academic Type</Label>
+                                                <Select value={editingUser.academics || "CORE"} onValueChange={v => setEditingUser({ ...editingUser, academics: v as any })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="CORE">Core Academics</SelectItem>
+                                                        <SelectItem value="NON_CORE">Non-Core Academics (Specialist)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                                 <DialogFooter>
@@ -498,10 +528,17 @@ export function UserManagementView() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="flex w-fit items-center gap-1">
-                                                <Shield className="w-3 h-3" />
-                                                {user.role}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="outline" className="flex w-fit items-center gap-1">
+                                                    <Shield className="w-3 h-3" />
+                                                    {user.role}
+                                                </Badge>
+                                                {user.role === "TEACHER" && (
+                                                    <Badge variant="secondary" className={`w-fit text-[10px] ${user.academics === 'NON_CORE' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
+                                                        {user.academics === 'NON_CORE' ? 'Specialist' : 'Core'}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground">{user.campusId || "N/A"}</TableCell>
                                         <TableCell>

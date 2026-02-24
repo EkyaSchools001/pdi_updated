@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AcademicType {
+  CORE
+  NON_CORE
+}
+
 model User {
   id             String    @id @default(uuid())
   email          String    @unique
@@ -23,6 +28,7 @@ model User {
   campusAccess   String?
   dateOfBirth    String?
   managerId      String?
+  academics      AcademicType? @default(CORE)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -66,6 +72,8 @@ model User {
   assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
   assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
   assessmentAttempts    AssessmentAttempt[]
+
+  @@index([academics])
 }
 
 model Meeting {

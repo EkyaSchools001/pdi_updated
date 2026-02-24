@@ -23,7 +23,7 @@ interface UnifiedObservationFormProps {
     onSubmit: (observation: Partial<Observation>) => void;
     onCancel: () => void;
     initialData?: Partial<Observation>;
-    teachers?: { id: string; name: string; role?: string; email?: string }[];
+    teachers?: { id: string; name: string; role?: string; email?: string; academics?: string }[];
 }
 
 const RATING_SCALE: DanielsonRatingScale[] = ["Basic", "Developing", "Effective", "Highly Effective", "Not Observed"];
@@ -95,6 +95,28 @@ const DOMAINS: { id: string; title: string; subtitle: string; indicators: string
     }
 ];
 
+const SPECIALIST_DOMAINS = [
+    {
+        id: "S1",
+        title: "S1. Specialized Instruction & Skills",
+        subtitle: "Skill-Based Pedagogy",
+        indicators: [
+            "Skill-Based Pedagogy",
+            "Use of Specialist Resources",
+            "Safety & Procedure Management"
+        ]
+    },
+    {
+        id: "S2",
+        title: "S2. Student Engagement & Artistic/Physical Expression",
+        subtitle: "Authentic Expression",
+        indicators: [
+            "Engaging Diverse Talent",
+            "Feedback on Skill Development"
+        ]
+    }
+];
+
 const ROUTINES = [
     "Arrival Routine", "Attendance Routine", "Class Cleaning Routines",
     "Collection Routine", "Departure Routine", "Grouping Routine",
@@ -142,10 +164,14 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
         const loadTemplate = async () => {
             try {
                 const templates = await templateService.getAllTemplates('OBSERVATION');
-                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                const selectedTeacher = teachers?.find(t => t.id === formData.teacherId);
+                const isSpecialist = selectedTeacher?.academics === 'NON_CORE';
 
-                if (defaultTemplate && defaultTemplate.structure) {
-                    const fields = defaultTemplate.structure;
+                const templateName = isSpecialist ? 'Specialist Observation' : 'Walkthrough Observation';
+                const currentTemplate = templates.find(t => t.name === templateName) || templates.find(t => t.isDefault) || templates[0];
+
+                if (currentTemplate && currentTemplate.structure) {
+                    const fields = JSON.parse(currentTemplate.structure);
 
                     // Reconstruct DOMAINS from fields if possible
                     const newDomains = [...DOMAINS];
@@ -166,7 +192,7 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                     if (instructionalField?.options) setDynamicInstructionalTools(instructionalField.options);
                     if (laField?.options) setDynamicLaTools(laField.options);
 
-                    console.log("Loaded observation template options:", defaultTemplate.name);
+                    console.log("Loaded observation template options:", currentTemplate.name);
                 }
             } catch (error) {
                 console.error("Failed to load observation template", error);
@@ -230,12 +256,24 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
     const handleTeacherSelect = (teacherId: string) => {
         const selectedTeacher = teachers?.find(t => t.id === teacherId);
         if (selectedTeacher) {
+            const isSpecialist = selectedTeacher.academics === 'NON_CORE_ACADEMICS';
+            const targetDomains = isSpecialist ? SPECIALIST_DOMAINS : DOMAINS;
+
             setFormData(prev => ({
                 ...prev,
                 teacherId: selectedTeacher.id,
                 teacher: selectedTeacher.name,
-                teacherEmail: selectedTeacher.email || `${selectedTeacher.name.toLowerCase().replace(' ', '.')}@ekya.in`
+                teacherEmail: selectedTeacher.email || `${selectedTeacher.name.toLowerCase().replace(' ', '.')}@ekya.in`,
+                domains: targetDomains.map(d => ({
+                    domainId: d.id,
+                    title: d.title,
+                    indicators: d.indicators.map(i => ({ name: i, rating: "Not Observed" })),
+                    evidence: ""
+                }))
             }));
+
+            // Force reload template options
+            setDynamicDomains(targetDomains);
         }
     };
 

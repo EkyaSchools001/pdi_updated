@@ -319,11 +319,17 @@ export default function LeaderDashboard() {
       }
     });
 
+    socket.on('attendance:submitted', (data: any) => {
+      toast.info(`New attendance submission from ${data.attendance.teacherName}`);
+      window.dispatchEvent(new CustomEvent('attendance-updated', { detail: data }));
+    });
+
     return () => {
       socket.off('observation:created');
       socket.off('observation:updated');
       socket.off('mooc:created');
       socket.off('mooc:updated');
+      socket.off('attendance:submitted');
       socket.emit('leave_room', 'leaders');
     };
   }, []);

@@ -36,6 +36,11 @@ const courseDistributionData = [
     { name: 'Subject Specific', value: 15, color: '#ff8042' },
 ];
 
+const academicPerformanceData = [
+    { category: 'Core Academics', avgScore: 4.2, observations: 156 },
+    { category: 'Non-Core Academics', avgScore: 3.9, observations: 89 },
+];
+
 export function AdminReportsView() {
     const [timeRange, setTimeRange] = useState("6m");
     const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -44,6 +49,7 @@ export function AdminReportsView() {
         userGrowth: userGrowthData,
         campusActivity: campusActivityData,
         courseDistribution: courseDistributionData,
+        academicPerformance: academicPerformanceData,
         timeRange
     };
 
@@ -326,6 +332,35 @@ export function AdminReportsView() {
                                     <Legend />
                                     <Bar dataKey="observations" name="Observations" fill="#8884d8" radius={[4, 4, 0, 0]} />
                                     <Bar dataKey="goals" name="Goals" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+                {/* Academic Performance Chart */}
+                <Card className="col-span-1 lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Academic Type Performance</CardTitle>
+                        <div className="text-sm text-muted-foreground">
+                            Average observation scores: Core vs Non-Core (Specialist).
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pl-2">
+                        <div className="h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={academicPerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} className="stroke-muted" />
+                                    <XAxis type="number" domain={[0, 5]} stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis type="category" dataKey="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
+                                    <Tooltip
+                                        cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                                        itemStyle={{ color: 'hsl(var(--foreground))' }}
+                                    />
+                                    <Bar dataKey="avgScore" name="Avg Score" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={40} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

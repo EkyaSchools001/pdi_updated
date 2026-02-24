@@ -59,6 +59,7 @@ const teacherNav = [
 
 const leaderNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/leader" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "Observe Teacher", icon: Eye, path: "/leader/observe" },
   { title: "Team Overview", icon: Users, path: "/leader/team" },
@@ -81,6 +82,7 @@ const leaderNav = [
 
 const adminNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "User Management", icon: Users, path: "/admin/users" },
   { title: "Form Templates", icon: FileText, path: "/admin/forms" },
@@ -97,6 +99,7 @@ const adminNav = [
 
 const managementNav = [
   { title: "Overview", icon: LayoutDashboard, path: "/management/overview" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "PDI Health", icon: HeartPulse, path: "/management/pdi-health" },
   { title: "Campus Performance", icon: Building2, path: "/management/campus-performance" },

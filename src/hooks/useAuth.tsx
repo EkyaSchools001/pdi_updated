@@ -11,6 +11,7 @@ interface User {
     avatarUrl?: string;
     department?: string;
     campusId?: string;
+    academics?: 'CORE' | 'NON_CORE';
 }
 
 interface AuthContextType {
