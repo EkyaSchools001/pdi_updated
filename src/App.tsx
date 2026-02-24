@@ -18,6 +18,7 @@ import GrowthPage from "./pages/GrowthPage";
 import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
 import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
 import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
+import OKRDashboard from "./pages/OKRDashboard";
 import NotFound from "./pages/NotFound";
 
 
@@ -173,6 +174,15 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
                       <AnnouncementsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/okr"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <OKRDashboard />
                     </ProtectedRoute>
                   }
                 />

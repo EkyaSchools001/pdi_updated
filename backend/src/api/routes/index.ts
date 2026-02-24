@@ -23,6 +23,7 @@ import learningFestivalRoutes from './learningFestivalRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
 import growthRoutes from './growthRoutes';
+import okrRoutes from './okrRoutes';
 
 const router = Router();
 
@@ -48,5 +49,6 @@ router.use('/surveys', surveyRoutes);
 router.use('/festivals', learningFestivalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/assessments', assessmentRoutes);
+router.use('/okr', okrRoutes);
 
 export default router;
