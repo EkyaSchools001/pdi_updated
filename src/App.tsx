@@ -14,6 +14,7 @@ import { CreateMeetingForm } from "./pages/CreateMeetingForm";
 import { MeetingDetailsView } from "./pages/MeetingDetailsView";
 import { MeetingMoMForm } from "./pages/MeetingMoMForm";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import OKRDashboard from "./pages/OKRDashboard";
 import NotFound from "./pages/NotFound";
 
 import { AuthProvider } from "./hooks/useAuth";
@@ -120,6 +121,15 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
                       <AnnouncementsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/okr"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <OKRDashboard />
                     </ProtectedRoute>
                   }
                 />

@@ -55,6 +55,12 @@ import { MeetingMoMForm } from './MeetingMoMForm';
 
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
+import { UserManagementView } from "./admin/UserManagementView";
+import { FormTemplatesView } from "./admin/FormTemplatesView";
+import AdminDocumentManagement from "@/pages/AdminDocumentManagement";
+import SurveyPage from "@/pages/SurveyPage";
+import { SystemSettingsView } from "./admin/SystemSettingsView";
+import { CourseManagementView } from "./admin/CourseManagementView";
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
@@ -206,7 +212,7 @@ export default function LeaderDashboard() {
       // 1. Calculate Observation Stats from Real-time State
       const teacherObs = observations.filter(o =>
         o.teacherId === teacher.id ||
-        (o.teacher && o.teacher.email === teacher.email)
+        (o.teacherEmail && o.teacherEmail === teacher.email)
       );
 
       const obsCount = teacherObs.length;
