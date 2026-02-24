@@ -45,12 +45,6 @@ import { userService } from "@/services/userService";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
-import { UserManagementView } from "./admin/UserManagementView";
-import { FormTemplatesView } from "./admin/FormTemplatesView";
-import { CourseManagementView } from "./admin/CourseManagementView";
-import AdminDocumentManagement from "./AdminDocumentManagement"; // Added for module access matrix
-import { SystemSettingsView } from "./admin/SystemSettingsView"; // Added for module access matrix
-import SurveyPage from "@/pages/SurveyPage"; // Added for module access matrix
 
 
 // Mock data removed in favor of API calls
@@ -59,8 +53,6 @@ import SurveyPage from "@/pages/SurveyPage"; // Added for module access matrix
 
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
-import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
-import { LearningInsightsView } from './leader/LearningInsightsView';
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
@@ -76,15 +68,10 @@ export default function LeaderDashboard() {
   const [goals, setGoals] = useState<any[]>([]);
   const [training, setTraining] = useState<any[]>([]);
 
-  // Computed Stats - derive domains from actual observation data (e.g. Domain 3A, Domain 3B1)
+  // Computed Stats
   const domainAverages = useMemo(() => {
-    const domainSet = new Set<string>();
-    observations.forEach(o => { if (o.domain) domainSet.add(o.domain); });
-    const domainList = Array.from(domainSet).sort();
-    if (domainList.length === 0) {
-      return [{ domain: 'No data yet', average: 0, count: 0 }];
-    }
-    return domainList.map(domainName => {
+    const domains = ["Pedagogy", "Technology", "Assessment", "Curriculum"];
+    return domains.map(domainName => {
       const domainObs = observations.filter(o => o.domain === domainName);
       const avg = domainObs.length > 0
         ? Number((domainObs.reduce((acc, o) => acc + (o.score || 0), 0) / domainObs.length).toFixed(1))
@@ -111,8 +98,7 @@ export default function LeaderDashboard() {
       const response = await api.get('/observations');
       console.log("LeaderDashboard: fetchObservations response", response.data);
       if (response.data?.status === 'success') {
-        const observationsData = response.data?.data?.observations || response.data?.data || [];
-        const apiObservations = (Array.isArray(observationsData) ? observationsData : []).map((obs: any) => {
+        const apiObservations = (response.data?.data?.observations || []).map((obs: any) => {
           // Parse detailedReflection if it's a string
           let parsedReflection = obs.detailedReflection;
           if (typeof obs.detailedReflection === 'string') {
@@ -145,15 +131,14 @@ export default function LeaderDashboard() {
           };
         });
 
-        console.log(`LeaderDashboard: Setting ${apiObservations.length} observations`);
-        setObservations(apiObservations);
-      } else {
-        console.warn("LeaderDashboard: Observations API returned non-success status:", response.data?.status);
-        setObservations([]);
+        if (apiObservations.length > 0) {
+          setObservations(apiObservations);
+        } else {
+          setObservations([]);
+        }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to fetch observations:", error);
-      console.error("Error details:", error.response?.data || error.message);
       setObservations([]);
     }
   };
@@ -163,11 +148,12 @@ export default function LeaderDashboard() {
       const response = await api.get('/goals');
       if (response.data?.status === 'success') {
         const apiGoals = response.data?.data?.goals || [];
-        setGoals(apiGoals);
+        if (apiGoals.length > 0) {
+          setGoals(apiGoals);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch goals:", error);
-      setGoals([]);
     }
   };
 
@@ -190,17 +176,11 @@ export default function LeaderDashboard() {
   const fetchTeachers = async () => {
     try {
       const apiTeachers = await userService.getTeachers();
-      console.log("LeaderDashboard: Fetched teachers:", apiTeachers?.length || 0);
-      if (Array.isArray(apiTeachers)) {
+      if (apiTeachers) {
         setTeachers(apiTeachers);
-      } else {
-        console.warn("LeaderDashboard: Teachers response is not an array:", apiTeachers);
-        setTeachers([]);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to fetch teachers:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      setTeachers([]);
     }
   };
 
@@ -218,19 +198,13 @@ export default function LeaderDashboard() {
 
   // Derive Team Stats Dynamically
   useEffect(() => {
-    console.log("LeaderDashboard: Recalculating team stats", { teachersCount: teachers.length, observationsCount: observations.length, moocsCount: moocSubmissions.length });
-
-    if (teachers.length === 0) {
-      console.log("LeaderDashboard: No teachers found, setting empty team");
-      setTeam([]);
-      return;
-    }
+    if (teachers.length === 0) return;
 
     const mappedTeam = teachers.map(teacher => {
       // 1. Calculate Observation Stats from Real-time State
       const teacherObs = observations.filter(o =>
         o.teacherId === teacher.id ||
-        o.teacherEmail === teacher.email
+        (o.teacher && o.teacher.email === teacher.email)
       );
 
       const obsCount = teacherObs.length;
@@ -371,28 +345,16 @@ export default function LeaderDashboard() {
         <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
         <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
         <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
-        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} onGoalCreated={fetchGoals} />} />
+        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
         <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
-        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchMoocSubmissions} />} />
-        <Route path="meetings" element={<MeetingsDashboard />} />
-        <Route path="meetings/create" element={<CreateMeetingForm />} />
-        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
-        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
+        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeachers} />} />
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
         <Route path="participation" element={<PDParticipationView team={team} />} />
-        <Route path="festival" element={<FestivalManagementDashboard />} />
-        <Route path="insights" element={<LearningInsightsView />} />
         <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
-        <Route path="users" element={<UserManagementView />} />
-        <Route path="forms" element={<FormTemplatesView />} />
-        <Route path="courses" element={<CourseManagementView />} />
-        <Route path="documents" element={<AdminDocumentManagement />} />
-        <Route path="survey" element={<SurveyPage />} />
-        <Route path="settings" element={<SystemSettingsView />} />
       </Routes>
     </DashboardLayout>
   );
@@ -491,38 +453,29 @@ function DashboardOverview({
                     </tr>
                   </thead>
                   <tbody>
-                    {team.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                          <p className="text-sm">No team members found.</p>
-                          <p className="text-xs mt-1">Teachers will appear here once they are added to the system.</p>
+                    {team.map((member) => (
+                      <tr key={member.id} className="border-t hover:bg-muted/30 transition-colors">
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium text-foreground">{member.name}</p>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                          </div>
+                        </td>
+                        <td className="p-4 text-foreground">{member.observations}</td>
+                        <td className="p-4 text-muted-foreground">{member.lastObserved}</td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success font-bold text-sm">
+                            {member.avgScore}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <Button variant="outline" size="sm" onClick={() => navigate("/leader/observe")}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            Observe
+                          </Button>
                         </td>
                       </tr>
-                    ) : (
-                      team.map((member) => (
-                        <tr key={member.id} className="border-t hover:bg-muted/30 transition-colors">
-                          <td className="p-4">
-                            <div>
-                              <p className="font-medium text-foreground">{member.name}</p>
-                              <p className="text-sm text-muted-foreground">{member.role}</p>
-                            </div>
-                          </td>
-                          <td className="p-4 text-foreground">{member.observations}</td>
-                          <td className="p-4 text-muted-foreground">{member.lastObserved}</td>
-                          <td className="p-4">
-                            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-success/10 text-success font-bold text-sm">
-                              {member.avgScore}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            <Button variant="outline" size="sm" onClick={() => navigate("/leader/observe")}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Observe
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -567,38 +520,26 @@ function DashboardOverview({
             </Button>
           </div>
 
-          {observations.length === 0 ? (
-            <div className="dashboard-card p-8 text-center">
-              <Eye className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <p className="text-muted-foreground font-medium">No observations yet</p>
-              <p className="text-sm text-muted-foreground mt-2">Start observing teachers to see their performance data here.</p>
-              <Button className="mt-4" onClick={() => navigate("/leader/observe")}>
-                <Eye className="w-4 h-4 mr-2" />
-                Create First Observation
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {observations.map((obs) => (
-                <div
-                  key={obs.id}
-                  className="dashboard-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/20 group"
-                  onClick={() => navigate(`/leader/observations/${obs.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-sm text-muted-foreground">{obs.date}</span>
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-success/10 text-success font-bold text-sm">
-                      {obs.score}
-                    </span>
-                  </div>
-                  <p className="font-medium text-foreground mb-1 group-hover:text-primary transition-colors">{obs.teacher}</p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                    {obs.domain}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {observations.map((obs) => (
+              <div
+                key={obs.id}
+                className="dashboard-card p-5 cursor-pointer hover:shadow-md transition-all hover:border-primary/20 group"
+                onClick={() => navigate(`/leader/observations/${obs.id}`)}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <span className="text-sm text-muted-foreground">{obs.date}</span>
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-success/10 text-success font-bold text-sm">
+                    {obs.score}
                   </span>
                 </div>
-              ))}
-            </div>
-          )}
+                <p className="font-medium text-foreground mb-1 group-hover:text-primary transition-colors">{obs.teacher}</p>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                  {obs.domain}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -731,6 +672,7 @@ function TeamManagementView({ team, observations, goals, systemAvgScore }: { tea
                         </div>
                         <div>
                           <p className="font-bold text-foreground group-hover:text-primary transition-colors">{member.name}</p>
+                          <p className="text-sm text-muted-foreground">Staff ID: #EDU-{member.id.substring(0, 8).toUpperCase()}</p>
                         </div>
                       </div>
                     </td>
@@ -1041,7 +983,6 @@ function PDParticipationView({ team }: { team: any[] }) {
 function PDCalendarView({ training, setTraining }: { training: any[], setTraining: React.Dispatch<React.SetStateAction<any[]>> }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string>("all");
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 15)); // Default to Feb 15, 2026
 
   // Edit & Creation State
@@ -1084,14 +1025,12 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
     const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (e.topic || e.type || "").toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesType = selectedType === "all" || (e.topic || e.type || "").toLowerCase() === selectedType.toLowerCase();
-
     let matchesDate = true;
     if (date) {
       matchesDate = e.date === formatDateStr(date);
     }
 
-    return matchesSearch && matchesType && matchesDate;
+    return matchesSearch && matchesDate;
   });
 
   // Get dates that have events for highlighting
@@ -1391,21 +1330,6 @@ function PDCalendarView({ training, setTraining }: { training: any[], setTrainin
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Select value={selectedType} onValueChange={setSelectedType}>
-                    <SelectTrigger className="w-[150px] bg-background border-muted-foreground/20 rounded-xl h-10">
-                      <div className="flex items-center gap-2">
-                        <Filter className="w-3.5 h-3.5" />
-                        <SelectValue placeholder="All Types" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="Pedagogy">Pedagogy</SelectItem>
-                      <SelectItem value="Technology">Technology</SelectItem>
-                      <SelectItem value="Assessment">Assessment</SelectItem>
-                      <SelectItem value="Culture">Culture</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -3225,7 +3149,7 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 
 
 
-function AssignGoalView({ setGoals, team, onGoalCreated }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: any[], onGoalCreated?: () => void }) {
+function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: any[] }) {
   const navigate = useNavigate();
   const [goalTemplate, setGoalTemplate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -3315,16 +3239,12 @@ function AssignGoalView({ setGoals, team, onGoalCreated }: { setGoals: React.Dis
                 };
 
                 try {
-                  const res = await api.post('/goals', newGoal);
-                  if (res.data?.status === 'success' && res.data?.data?.goal) {
-                    const created = res.data.data.goal;
-                    setGoals(prev => [{ ...created, teacher: created.teacher?.fullName || targetTeacher?.name || 'Unknown' }, ...prev]);
-                  }
+                  await api.post('/goals', newGoal);
                   toast.success("Goal successfully assigned using Master Template.");
-                  onGoalCreated?.();
                   navigate("/leader/goals");
-                } catch (error: any) {
-                  toast.error(error.response?.data?.message || "Failed to assign goal");
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Failed to assign goal");
                 }
               }}
             />
@@ -3370,16 +3290,12 @@ function AssignGoalView({ setGoals, team, onGoalCreated }: { setGoals: React.Dis
             };
 
             try {
-              const res = await api.post('/goals', newGoal);
-              if (res.data?.status === 'success' && res.data?.data?.goal) {
-                const created = res.data.data.goal;
-                setGoals(prev => [{ ...created, teacher: created.teacher?.fullName || data.educatorName || 'Unknown' }, ...prev]);
-              }
+              await api.post('/goals', newGoal);
               toast.success("Goal successfully assigned.");
-              onGoalCreated?.();
               navigate("/leader/goals");
-            } catch (error: any) {
-              toast.error(error.response?.data?.message || "Failed to assign goal");
+            } catch (error) {
+              console.error(error);
+              toast.error("Failed to assign goal");
             }
           }}
         />

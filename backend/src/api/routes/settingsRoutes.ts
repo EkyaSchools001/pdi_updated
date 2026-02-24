@@ -4,25 +4,12 @@ import { protect, restrictTo } from '../middlewares/auth';
 
 const router = Router();
 
-// Allow public access to the access matrix configuration for frontend routing/permissions
-router.get('/access_matrix_config', (req, res, next) => {
-    (req.params as any).key = 'access_matrix_config';
-    settingsController.getSetting(req, res, next);
-});
+// Public routes - anyone can read settings (needed for access matrix)
+router.get('/', settingsController.getAllSettings);
+router.get('/:key', settingsController.getSetting);
 
-// All other routes require authentication
-router.use(protect);
-
-// Settings routes - All authenticated users can read for access control
-// IMPORTANT: /upsert must be before /:key to avoid "upsert" being matched as a key
-router.route('/upsert')
-    .post(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.upsertSetting);
-
-router.route('/')
-    .get(settingsController.getAllSettings);
-
-router.route('/:key')
-    .get(settingsController.getSetting)
-    .delete(restrictTo('ADMIN', 'SUPERADMIN'), settingsController.deleteSetting);
+// Protected routes - only ADMIN/SUPERADMIN can modify
+router.post('/upsert', protect, restrictTo('ADMIN', 'SUPERADMIN'), settingsController.upsertSetting);
+router.delete('/:key', protect, restrictTo('ADMIN', 'SUPERADMIN'), settingsController.deleteSetting);
 
 export default router;
