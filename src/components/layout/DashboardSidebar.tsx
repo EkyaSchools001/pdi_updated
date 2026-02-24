@@ -129,7 +129,7 @@ export function DashboardSidebar({ role, userName, collapsed, onToggle }: Dashbo
       }
     };
     fetchUnread();
-  }, [location.pathname]); // Refresh on navigation/initial load
+  }, [location.pathname]);
 
   const allNavItems = navByRole[role.toLowerCase() as keyof typeof navByRole];
 
