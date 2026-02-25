@@ -1,0 +1,38 @@
+﻿diff --cc frontend/src/pages/ManagementDashboard.tsx
+index e40c635,1d769be..0000000
+--- a/frontend/src/pages/ManagementDashboard.tsx
++++ b/frontend/src/pages/ManagementDashboard.tsx
+@@@ -957,18 -946,18 +957,33 @@@ export default function ManagementDashb
+                  <Routes>
+                      <Route index element={<Navigate to="overview" replace />} />
+                      <Route path="overview" element={<Overview onPostAnnouncement={() => setIsAnnouncementModalOpen(true)} />} />
+++<<<<<<< HEAD:frontend/src/pages/ManagementDashboard.tsx
+ +                    <Route path="pdi-health" element={<ModuleGuard modulePath="pdi-health"><PDIHealth /></ModuleGuard>} />
+ +                    <Route path="campus-performance" element={<ModuleGuard modulePath="campus-performance"><CampusPerformance /></ModuleGuard>} />
+ +                    <Route path="pillars" element={<ModuleGuard modulePath="pillars"><Pillars /></ModuleGuard>} />
+ +                    <Route path="pd-impact" element={<ModuleGuard modulePath="pd-impact"><PDImpact /></ModuleGuard>} />
+ +                    <Route path="meetings" element={<ModuleGuard modulePath="meetings"><MeetingsDashboard /></ModuleGuard>} />
+ +                    <Route path="meetings/:meetingId/mom" element={<ModuleGuard modulePath="meetings"><MeetingMoMForm /></ModuleGuard>} />
+ +                    <Route path="meetings/:meetingId" element={<ModuleGuard modulePath="meetings"><MeetingMoMForm /></ModuleGuard>} />
+ +                    <Route path="leadership" element={<ModuleGuard modulePath="leadership"><Leadership /></ModuleGuard>} />
+ +                    <Route path="risk" element={<ModuleGuard modulePath="risk"><Risk /></ModuleGuard>} />
+ +                    <Route path="festival" element={<ModuleGuard modulePath="festival"><FestivalManagementDashboard /></ModuleGuard>} />
+ +                    <Route path="reports" element={<ModuleGuard modulePath="reports"><Reports /></ModuleGuard>} />
+ +                    <Route path="survey" element={<ModuleGuard modulePath="survey"><SurveyPage /></ModuleGuard>} />
+++=======
++                     <Route path="pdi-health" element={<PDIHealth />} />
++                     <Route path="campus-performance" element={<CampusPerformance />} />
++                     <Route path="pillars" element={<Pillars />} />
++                     <Route path="pd-impact" element={<PDImpact />} />
++                     <Route path="meetings" element={<MeetingsDashboard />} />
++                     <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
++                     <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
++                     <Route path="leadership" element={<Leadership />} />
++                     <Route path="risk" element={<Risk />} />
++                     <Route path="festival" element={<ManagementInsightsView />} />
++                     <Route path="reports" element={<Reports />} />
++                     <Route path="survey" element={<SurveyPage />} />
+++>>>>>>> 88005bfc0bc0253b30bab1e7cc2de1392940b0e7:src/pages/ManagementDashboard.tsx
+                  </Routes>
+              </div>
+  

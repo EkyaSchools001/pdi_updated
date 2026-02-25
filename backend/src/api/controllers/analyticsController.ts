@@ -30,6 +30,7 @@ export const getCampusEngagement = async (req: Request, res: Response) => {
                 fullName: true,
                 email: true,
                 department: true,
+                campusId: true,
                 status: true,
                 lastActive: true,
                 enrollments: {
@@ -59,6 +60,7 @@ export const getCampusEngagement = async (req: Request, res: Response) => {
                 name: teacher.fullName,
                 email: teacher.email,
                 role: teacher.department ? `${teacher.department} Teacher` : 'Teacher',
+                campusId: teacher.campusId,
                 coursesEnrolled: totalEnrolled,
                 coursesCompleted: totalCompleted,
                 engagementPercent,

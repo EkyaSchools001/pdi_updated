@@ -3,6 +3,26 @@ import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import bcrypt from 'bcryptjs';
 
+const determineAcademicType = (department?: string): 'CORE' | 'NON_CORE' => {
+    const coreSubjects = [
+        "Mathematics",
+        "Science",
+        "English",
+        "Social Studies",
+        "Computer Science",
+        "Leadership",
+        "Administration",
+        "Management",
+        "Admin"
+    ];
+
+    if (department && coreSubjects.includes(department)) {
+        return "CORE";
+    }
+
+    return "NON_CORE";
+};
+
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { role } = req.query;
@@ -22,6 +42,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
                 department: true,
                 campusId: true,
                 status: true,
+                academics: true,
                 createdAt: true
             },
             orderBy: { createdAt: 'desc' }
@@ -39,7 +60,7 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { fullName, email, role, campusId, department, password } = req.body;
+        const { fullName, email, role, campusId, department, academics, password } = req.body;
 
         // Check if user exists
         const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -57,6 +78,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
                 role: role ? role : undefined,
                 campusId,
                 department,
+                academics: academics || (role === 'TEACHER' ? determineAcademicType(department) : 'CORE'),
                 passwordHash: hashedPassword,
                 status: 'Active'
             }
@@ -78,14 +100,24 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
             return next(new AppError('Invalid user ID', 400));
         }
 
-        const { fullName, role, campusId, department, status } = req.body;
+        const { fullName, role, campusId, department, status, academics } = req.body;
 
         const updateData: any = {};
         if (fullName !== undefined) updateData.fullName = fullName;
         if (role !== undefined) updateData.role = role;
         if (campusId !== undefined) updateData.campusId = campusId;
-        if (department !== undefined) updateData.department = department;
+        if (department !== undefined) {
+            updateData.department = department;
+            // Auto-update academics if not explicitly provided and role is teacher
+            if (academics === undefined) {
+                const currentUser = await prisma.user.findUnique({ where: { id } });
+                if (currentUser?.role === 'TEACHER' || (role === 'TEACHER')) {
+                    updateData.academics = determineAcademicType(department);
+                }
+            }
+        }
         if (status !== undefined) updateData.status = status;
+        if (academics !== undefined) updateData.academics = academics;
 
         const updatedUser = await prisma.user.update({
             where: { id },

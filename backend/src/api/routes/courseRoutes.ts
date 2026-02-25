@@ -17,6 +17,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/my-enrollments', getMyEnrollments);
+router.get('/user/enrollments', getMyEnrollments); // Alias used by TeacherDashboard
 
 router
     .route('/')

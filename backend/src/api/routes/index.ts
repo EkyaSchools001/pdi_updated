@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { roleModuleAuth } from '../middlewares/accessControl';
 import observationRoutes from './observationRoutes';
 import authRoutes from './authRoutes';
 import goalRoutes from './goalRoutes';
@@ -22,12 +23,16 @@ import surveyRoutes from './surveyRoutes';
 import learningFestivalRoutes from './learningFestivalRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
+import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
-
 const router = Router();
+
+// Apply dynamic access matrix configuration globally
+router.use(roleModuleAuth);
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/growth', growthRoutes);
 router.use('/goals', goalRoutes);
 router.use('/observations', observationRoutes);
 router.use('/documents', documentRoutes);
