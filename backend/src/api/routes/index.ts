@@ -24,6 +24,7 @@ import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
 import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
+import growthRoutes from './growthRoutes';
 
 const router = Router();
 

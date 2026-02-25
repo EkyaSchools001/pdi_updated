@@ -20,6 +20,11 @@ import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
 import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
 import QuickFeedbackPage from "./pages/leader/QuickFeedbackPage";
 import OKRDashboard from "./pages/OKRDashboard";
+import GrowthPage from "./pages/GrowthPage";
+import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
+import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
+import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
+import QuickFeedbackPage from "./pages/leader/QuickFeedbackPage";
 import NotFound from "./pages/NotFound";
 
 
