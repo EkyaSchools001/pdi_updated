@@ -9,7 +9,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock, FileCheck } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,7 +47,7 @@ import { userService } from "@/services/userService";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
-
+import { LearningInsightsView } from './leader/LearningInsightsView';
 
 // Mock data removed in favor of API calls
 
@@ -361,7 +361,8 @@ export default function LeaderDashboard() {
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
-        <Route path="participation" element={<PDParticipationView team={team} />} />
+        <Route path="insights" element={<LearningInsightsView />} />
+        <Route path="participation" element={<PDParticipationView team={team} training={training} />} />
         <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
         <Route path="users" element={<UserManagementView />} />
         <Route path="forms" element={<FormTemplatesView />} />
@@ -815,7 +816,7 @@ function TeacherDetailsView({ team, observations, goals }: { team: any[], observ
   );
 }
 
-function PDParticipationView({ team }: { team: any[] }) {
+function PDParticipationView({ team, training }: { team: any[], training: any[] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -829,17 +830,27 @@ function PDParticipationView({ team }: { team: any[] }) {
       m.role.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "all" || m.role === roleFilter;
     const matchesStatus = statusFilter === "all" ||
-      (statusFilter === "Certified" && m.completionRate >= 90) ||
-      (statusFilter === "In Progress" && m.completionRate < 90);
+      (statusFilter === "Certified" && m.pdHours >= 20) || // Assuming 20 is target
+      (statusFilter === "In Progress" && m.pdHours < 20);
 
     return matchesSearch && matchesRole && matchesStatus;
   });
 
   const uniqueRoles = Array.from(new Set(pdTeam.map(m => m.role)));
 
-  const totalHours = pdTeam.reduce((acc, m) => acc + m.pdHours, 0);
+  const totalHours = pdTeam.reduce((acc, m) => acc + (m.pdHours || 0), 0);
   const avgCompletion = pdTeam.length > 0
-    ? Math.round(pdTeam.reduce((acc, m) => acc + m.completionRate, 0) / pdTeam.length)
+    ? Math.round(totalHours / pdTeam.length)
+    : 0;
+
+  const missingTargetCount = pdTeam.filter(m => (m.pdHours || 0) < 20).length; // Target is 20
+
+  // Calculate attendance averages
+  const pastTrainings = training.filter(t => new Date(t.date) < new Date());
+  const upcomingTrainings = training.filter(t => new Date(t.date) >= new Date());
+
+  const avgAttendance = pastTrainings.length > 0
+    ? Math.round(pastTrainings.reduce((acc, t) => acc + ((t.registrants?.length || 0) / (t.capacity || pdTeam.length)) * 100, 0) / pastTrainings.length)
     : 0;
 
   const activeFiltersCount = (roleFilter !== "all" ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
@@ -857,7 +868,7 @@ function PDParticipationView({ team }: { team: any[] }) {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total PD Hours"
           value={totalHours}
@@ -865,16 +876,22 @@ function PDParticipationView({ team }: { team: any[] }) {
           icon={Clock}
         />
         <StatCard
-          title="Avg. Completion"
-          value={`${avgCompletion}%`}
-          subtitle="Mandatory training"
-          icon={CheckCircle2}
+          title="Avg. Training Hours"
+          value={`${avgCompletion}h`}
+          subtitle="Hours per teacher"
+          icon={TrendingUp}
         />
         <StatCard
-          title="Active Learners"
-          value={pdTeam.filter(m => m.pdHours > 20).length}
-          subtitle="Staff > 20 hours"
-          icon={Award}
+          title="Missing Target"
+          value={missingTargetCount}
+          subtitle="Staff < 20 hours"
+          icon={Target}
+        />
+        <StatCard
+          title="Training Avg. Attendance"
+          value={`${Math.min(100, avgAttendance)}%`}
+          subtitle="Across past sessions"
+          icon={Users}
         />
       </div>
 
@@ -997,14 +1014,14 @@ function PDParticipationView({ team }: { team: any[] }) {
                     <td className="p-6">
                       <div className="space-y-2">
                         <div className="flex justify-between text-xs font-bold">
-                          <span>{member.completionRate}%</span>
+                          <span>{member.pdHours}h / 20h</span>
                           <span className={cn(
-                            member.completionRate >= 90 ? "text-success" : member.completionRate >= 60 ? "text-primary" : "text-warning"
+                            (member.pdHours || 0) >= 20 ? "text-success" : (member.pdHours || 0) >= 10 ? "text-primary" : "text-warning"
                           )}>
-                            {member.completionRate >= 90 ? "Certified" : "In Progress"}
+                            {(member.pdHours || 0) >= 20 ? "Certified" : "In Progress"}
                           </span>
                         </div>
-                        <Progress value={member.completionRate} className="h-2" />
+                        <Progress value={Math.min(100, ((member.pdHours || 0) / 20) * 100)} className="h-2" />
                       </div>
                     </td>
                     <td className="p-6 text-right">
@@ -1025,6 +1042,88 @@ function PDParticipationView({ team }: { team: any[] }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Upcoming & Past Trainings Data Split */}
+      <div className="grid md:grid-cols-2 gap-6 mt-8">
+        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
+          <CardHeader className="border-b bg-muted/20 pb-4">
+            <CardTitle>Upcoming Trainings (Whole School)</CardTitle>
+            <CardDescription>Scheduled PDI training sessions.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Training</TableHead>
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Date</TableHead>
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Registrants</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-muted-foreground/10">
+                  {upcomingTrainings.length > 0 ? upcomingTrainings.slice(0, 5).map(event => (
+                    <TableRow key={event.id} className="hover:bg-primary/5 transition-colors">
+                      <TableCell className="p-6 font-bold text-foreground">{event.title}</TableCell>
+                      <TableCell className="p-6 text-muted-foreground whitespace-nowrap">{event.date}</TableCell>
+                      <TableCell className="p-6">
+                        <Badge variant="secondary" className="font-bold">{event.registrants?.length || 0} Registered</Badge>
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground font-medium">No upcoming trainings.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
+          <CardHeader className="border-b bg-muted/20 pb-4">
+            <CardTitle>Campus Training Attendance</CardTitle>
+            <CardDescription>Attendance percentage for past sessions.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Training Session</TableHead>
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Date</TableHead>
+                    <TableHead className="py-4 px-6 text-xs font-bold uppercase tracking-wider">Attendance %</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-muted-foreground/10">
+                  {pastTrainings.length > 0 ? pastTrainings.slice(0, 5).map(event => {
+                    const attendancePct = Math.min(100, Math.round(((event.registrants?.length || 0) / (event.capacity || pdTeam.length)) * 100)) || 0;
+                    return (
+                      <TableRow key={event.id} className="hover:bg-primary/5 transition-colors">
+                        <TableCell className="p-6 font-bold text-foreground">{event.title}</TableCell>
+                        <TableCell className="p-6 text-muted-foreground whitespace-nowrap">{event.date}</TableCell>
+                        <TableCell className="p-6 w-1/3">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-xs font-bold">
+                              <span>{attendancePct}%</span>
+                              <Users className="w-3 h-3 text-muted-foreground" />
+                            </div>
+                            <Progress value={attendancePct} className="h-1.5 w-full" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }) : (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground font-medium">No past trainings recorded.</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -2240,7 +2339,10 @@ function TeacherGoalsView({ goals }: { goals: any[] }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGoal, setSelectedGoal] = useState<any | null>(null);
-  const [reviewFeedback, setReviewFeedback] = useState("");
+
+  const [settingText, setSettingText] = useState("");
+  const [completionText, setCompletionText] = useState("");
+  const [activeTab, setActiveTab] = useState("setting");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -2280,10 +2382,27 @@ function TeacherGoalsView({ goals }: { goals: any[] }) {
     setProgressFilter("All");
   };
 
-  const handleReviewSubmit = () => {
-    toast.success(`Review submitted for ${selectedGoal?.teacher}'s goal.`);
-    setSelectedGoal(null);
-    setReviewFeedback("");
+  const handleReviewSubmit = async () => {
+    if (!selectedGoal) return;
+    try {
+      const updateData: any = {};
+      if (activeTab === "setting") {
+        updateData.goalSettingForm = JSON.stringify({ text: settingText });
+        updateData.goalSettingCompletedAt = new Date().toISOString();
+      } else if (activeTab === "completion") {
+        updateData.goalCompletionForm = JSON.stringify({ text: completionText });
+        updateData.goalCompletionCompletedAt = new Date().toISOString();
+        updateData.status = "COMPLETED";
+        updateData.progress = 100;
+      }
+
+      await api.patch(`/goals/${selectedGoal.id}`, updateData);
+      toast.success(`${activeTab === 'setting' ? 'Goal Setting' : 'Goal Completion'} saved for ${selectedGoal?.teacher}.`);
+      setSelectedGoal(null);
+      window.location.reload();
+    } catch (err) {
+      toast.error("Failed to save goal updates.");
+    }
   };
 
   return (
@@ -2483,7 +2602,16 @@ function TeacherGoalsView({ goals }: { goals: any[] }) {
                         variant="ghost"
                         size="sm"
                         className="h-10 px-4 hover:bg-primary/10 hover:text-primary font-bold"
-                        onClick={() => setSelectedGoal(goal)}
+                        onClick={() => {
+                          setSelectedGoal(goal);
+                          setActiveTab("setting");
+                          try {
+                            setSettingText(goal.goalSettingForm ? JSON.parse(goal.goalSettingForm).text : "");
+                          } catch (e) { setSettingText(goal.goalSettingForm || ""); }
+                          try {
+                            setCompletionText(goal.goalCompletionForm ? JSON.parse(goal.goalCompletionForm).text : "");
+                          } catch (e) { setCompletionText(goal.goalCompletionForm || ""); }
+                        }}
                       >
                         Review
                       </Button>
@@ -2536,24 +2664,66 @@ function TeacherGoalsView({ goals }: { goals: any[] }) {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <Label htmlFor="feedback" className="text-sm font-bold text-foreground">Leader Feedback</Label>
-              <Textarea
-                id="feedback"
-                placeholder="Share your thoughts on the progress, areas of improvement, or words of encouragement..."
-                className="min-h-[120px] bg-background border-muted-foreground/20 rounded-2xl focus:ring-primary/20 resize-none p-4"
-                value={reviewFeedback}
-                onChange={(e) => setReviewFeedback(e.target.value)}
-              />
-            </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="setting">Goal Setting</TabsTrigger>
+                <TabsTrigger value="reflection">Self Reflection</TabsTrigger>
+                <TabsTrigger value="completion">Completion</TabsTrigger>
+              </TabsList>
 
-            <div className="flex gap-4 pt-4">
-              <Button variant="outline" className="flex-1 h-12 rounded-xl border-muted-foreground/20" onClick={() => setSelectedGoal(null)}>
+              <TabsContent value="setting" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="settingText" className="text-sm font-bold text-foreground">HOS Goal Setting Note</Label>
+                  <Textarea
+                    id="settingText"
+                    placeholder="Provide direction and set expectations for this goal..."
+                    className="min-h-[120px] bg-background border-muted-foreground/20 rounded-2xl p-4"
+                    value={settingText}
+                    onChange={(e) => setSettingText(e.target.value)}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="reflection" className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-foreground">Teacher's Self Reflection</Label>
+                  <div className="min-h-[120px] bg-muted/30 border border-muted-foreground/20 rounded-2xl p-4 text-sm whitespace-pre-wrap">
+                    {selectedGoal?.selfReflectionForm
+                      ? (
+                        (() => {
+                          try { return JSON.parse(selectedGoal.selfReflectionForm).text; }
+                          catch { return selectedGoal.selfReflectionForm; }
+                        })()
+                      )
+                      : <span className="text-muted-foreground italic">No self reflection submitted yet.</span>
+                    }
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="completion" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="completionText" className="text-sm font-bold text-foreground">Final Goal Completion Report</Label>
+                  <Textarea
+                    id="completionText"
+                    placeholder="Summarize the final outcome and achievements for this goal. Submitting this will mark the goal as 100% completed."
+                    className="min-h-[120px] bg-background border-muted-foreground/20 rounded-2xl p-4"
+                    value={completionText}
+                    onChange={(e) => setCompletionText(e.target.value)}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex gap-4 pt-4 mt-4 border-t border-muted-foreground/10">
+              <Button variant="outline" className="flex-1 h-12 rounded-xl" onClick={() => setSelectedGoal(null)}>
                 Cancel
               </Button>
-              <Button className="flex-1 h-12 rounded-xl shadow-lg shadow-primary/20 font-bold" onClick={handleReviewSubmit}>
-                Submit Review
-              </Button>
+              {activeTab !== "reflection" && (
+                <Button className="flex-1 h-12 rounded-xl shadow-lg shadow-primary/20 font-bold" onClick={handleReviewSubmit}>
+                  {activeTab === "setting" ? "Save Setting Note" : "Submit Completion"}
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -3200,30 +3370,7 @@ function ObserveView({ setObservations, setTeam, team, observations }: {
 
 function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.SetStateAction<any[]>>, team: any[] }) {
   const navigate = useNavigate();
-  const [goalTemplate, setGoalTemplate] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchTemplate = async () => {
-      try {
-        const response = await api.get('/templates');
-        if (response.data?.status === 'success') {
-          const templates = response.data.data.templates || [];
-          const active = templates.find((t: any) => t.type === 'Goal Setting' && t.status === 'Active');
-          if (active) setGoalTemplate(active);
-        }
-      } catch (error) {
-        console.error("Failed to fetch goal template", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTemplate();
-  }, []);
-
-  if (loading) {
-    return <div className="p-12 text-center text-muted-foreground">Loading goal template...</div>;
-  }
+  // We don't need to fetch a dynamic template if we are strictly embedding the static form
 
   return (
     <div className="space-y-6">
@@ -3239,116 +3386,54 @@ function AssignGoalView({ setGoals, team }: { setGoals: React.Dispatch<React.Set
         </div>
       </div>
 
-      {goalTemplate ? (
-        <Card className="border-none shadow-premium bg-background/50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <DynamicForm
-              fields={goalTemplate.fields.map((f: any) =>
-                f.id === "g1" ? { ...f, type: "select" as const, options: team.map(t => t.name) } : f
-              )}
-              submitLabel="Assign Goal"
-              onCancel={() => navigate("/leader/goals")}
-              onSubmit={async (data) => {
-                console.log("Goal Submission Data (Template):", data); // DEBUG LOG
-                console.log("Current Team State:", team); // DEBUG LOG
+      <GoalSettingForm
+        teachers={team}
+        defaultCoachName="Rohit"
+        onCancel={() => navigate("/leader/goals")}
+        onSubmit={async (data) => {
+          const targetTeacher = team.find(t => t.name === data.educatorName);
 
-                if (!data.g1 || data.g1 === "Unknown Teacher") {
-                  toast.error("Please select a teacher.");
-                  return;
-                }
-                const targetTeacher = team.find(t => t.name === data.g1);
+          if (!targetTeacher) {
+            toast.error("Selected teacher not found in team records.");
+            return;
+          }
 
-                if (!targetTeacher) {
-                  toast.error("Selected teacher not found in team records.");
-                  return;
-                }
+          const emailToSave = data.teacherEmail || targetTeacher.email;
 
-                if (!targetTeacher.email) {
-                  toast.error("Selected teacher is missing an email address. Cannot assign goal.");
-                  return;
-                }
+          if (!emailToSave) {
+            toast.error("Selected teacher is missing an email address.");
+            return;
+          }
 
-                const newGoal = {
-                  teacher: data.g1 || "Unknown Teacher",
-                  teacherEmail: targetTeacher?.email,
-                  title: data.g9 || "New School Goal",
-                  category: data.g12 || "General",
-                  progress: 0,
-                  status: "Assigned",
-                  dueDate: data.g_end_date ? format(new Date(data.g_end_date), "MMM dd, yyyy") : "Jun 28, 2026",
-                  assignedBy: data.g2 || "Admin",
-                  description: data.g10 || "",
-                  actionStep: data.g11 || "",
-                  pillar: data.g12 || "Professional Practice",
-                  campus: data.g3 || "HQ",
-                  ay: "25-26",
-                  isSchoolAligned: true,
-                  assignedDate: new Date().toISOString(),
-                  reflectionCompleted: true,
-                };
+          const newGoal = {
+            teacher: data.educatorName,
+            teacherEmail: emailToSave,
+            title: data.goalForYear,
+            category: data.pillarTag,
+            progress: 0,
+            status: "Assigned",
+            dueDate: format(data.goalEndDate, "MMM dd, yyyy"),
+            assignedBy: data.coachName,
+            description: data.reasonForGoal,
+            actionStep: data.actionStep,
+            pillar: data.pillarTag,
+            campus: data.campus,
+            ay: "25-26",
+            isSchoolAligned: true,
+            assignedDate: new Date().toISOString(),
+            reflectionCompleted: true,
+          };
 
-                try {
-                  await api.post('/goals', newGoal);
-                  toast.success("Goal successfully assigned using Master Template.");
-                  navigate("/leader/goals");
-                } catch (error) {
-                  console.error(error);
-                  toast.error("Failed to assign goal");
-                }
-              }}
-            />
-          </CardContent>
-        </Card>
-      ) : (
-        <GoalSettingForm
-          teachers={team}
-          defaultCoachName="Rohit"
-          onCancel={() => navigate("/leader/goals")}
-          onSubmit={async (data) => {
-            const targetTeacher = team.find(t => t.name === data.educatorName);
-
-            if (!targetTeacher) {
-              toast.error("Selected teacher not found in team records.");
-              return;
-            }
-
-            const emailToSave = data.teacherEmail || targetTeacher.email;
-
-            if (!emailToSave) {
-              toast.error("Selected teacher is missing an email address.");
-              return;
-            }
-
-            const newGoal = {
-              teacher: data.educatorName,
-              teacherEmail: emailToSave,
-              title: data.goalForYear,
-              category: data.pillarTag,
-              progress: 0,
-              status: "Assigned",
-              dueDate: format(data.goalEndDate, "MMM dd, yyyy"),
-              assignedBy: data.coachName,
-              description: data.reasonForGoal,
-              actionStep: data.actionStep,
-              pillar: data.pillarTag,
-              campus: data.campus,
-              ay: "25-26",
-              isSchoolAligned: true,
-              assignedDate: new Date().toISOString(),
-              reflectionCompleted: true,
-            };
-
-            try {
-              await api.post('/goals', newGoal);
-              toast.success("Goal successfully assigned.");
-              navigate("/leader/goals");
-            } catch (error) {
-              console.error(error);
-              toast.error("Failed to assign goal");
-            }
-          }}
-        />
-      )}
+          try {
+            await api.post('/goals', newGoal);
+            toast.success("Goal successfully assigned.");
+            navigate("/leader/goals");
+          } catch (error) {
+            console.error(error);
+            toast.error("Failed to assign goal");
+          }
+        }}
+      />
     </div>
   );
 }

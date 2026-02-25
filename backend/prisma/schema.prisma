@@ -215,9 +215,15 @@ model Goal {
   isSchoolAligned Boolean  @default(false)
   category        String?
   assignedBy      String?
-  actionStep      String?
-  campus          String?
-  createdAt       DateTime @default(now())
+  actionStep                String? // Kept for backwards compatibility
+  campus                    String?
+  selfReflectionForm        String? // JSON string
+  goalSettingForm           String? // JSON string
+  goalCompletionForm        String? // JSON string
+  selfReflectionCompletedAt DateTime?
+  goalSettingCompletedAt    DateTime?
+  goalCompletionCompletedAt DateTime?
+  createdAt                 DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   teacher User @relation(fields: [teacherId], references: [id])

@@ -16,13 +16,17 @@ interface GoalCardProps {
     isSchoolAligned?: boolean;
     teacher?: string;
     reflectionCompleted?: boolean;
+    selfReflectionForm?: string;
+    goalSettingForm?: string;
+    goalCompletionForm?: string;
   };
+  onReflect?: () => void;
   className?: string;
 }
 
-export function GoalCard({ goal, className }: GoalCardProps) {
+export function GoalCard({ goal, onReflect, className }: GoalCardProps) {
   return (
-    <div className={cn("dashboard-card p-5", className)}>
+    <div className={cn("dashboard-card p-5 relative", className)}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-lg bg-accent/10">
@@ -81,6 +85,22 @@ export function GoalCard({ goal, className }: GoalCardProps) {
           </span>
         )}
       </div>
+
+      {onReflect && (
+        <div className="mt-4 pt-4 border-t flex justify-end">
+          <button
+            onClick={(e) => { e.stopPropagation(); onReflect(); }}
+            className={cn(
+              "px-4 py-2 text-sm font-medium rounded-lg transition-colors border",
+              goal.selfReflectionForm
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            )}
+          >
+            {goal.selfReflectionForm ? "View Reflection" : "Self Reflection"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

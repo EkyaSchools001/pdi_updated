@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { MeetingMoMForm } from './MeetingMoMForm';
+import { ManagementGoalsView } from './management/ManagementGoalsView';
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -954,6 +955,7 @@ export default function ManagementDashboard() {
                     <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
                     <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
                     <Route path="leadership" element={<Leadership />} />
+                    <Route path="goals" element={<ManagementGoalsView />} />
                     <Route path="risk" element={<Risk />} />
                     <Route path="festival" element={<FestivalManagementDashboard />} />
                     <Route path="reports" element={<Reports />} />

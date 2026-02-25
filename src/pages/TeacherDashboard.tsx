@@ -352,6 +352,9 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
   const [newGoal, setNewGoal] = useState({ title: "", description: "", dueDate: "" });
   const [filter, setFilter] = useState<string>("all");
 
+  const [selectedReflectGoal, setSelectedReflectGoal] = useState<any>(null);
+  const [reflectionText, setReflectionText] = useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGoal.title || !newGoal.dueDate) return;
@@ -368,6 +371,24 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
     if (filter === "in-progress") return (goal.progress || 0) < 100;
     return true;
   });
+
+  const handleReflectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReflectGoal || !reflectionText) return;
+
+    try {
+      await api.patch(`/goals/${selectedReflectGoal.id}`, {
+        selfReflectionForm: JSON.stringify({ text: reflectionText }),
+        selfReflectionCompletedAt: new Date().toISOString()
+      });
+      toast.success("Self-reflection submitted successfully!");
+      setSelectedReflectGoal(null);
+      setReflectionText("");
+      window.location.reload();
+    } catch (err) {
+      toast.error("Failed to submit reflection.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -397,7 +418,23 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredGoals.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} />
+          <GoalCard
+            key={goal.id}
+            goal={goal}
+            onReflect={() => {
+              setSelectedReflectGoal(goal);
+              if (goal.selfReflectionForm) {
+                try {
+                  const parsed = JSON.parse(goal.selfReflectionForm);
+                  setReflectionText(parsed.text || "");
+                } catch (e) {
+                  setReflectionText(goal.selfReflectionForm);
+                }
+              } else {
+                setReflectionText("");
+              }
+            }}
+          />
         ))}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -454,6 +491,40 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
               <DialogFooter className="pt-4">
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button type="submit">Create Goal</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!selectedReflectGoal} onOpenChange={(open) => !open && setSelectedReflectGoal(null)}>
+          <DialogContent className="sm:max-w-[500px] bg-background border-none shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                <Target className="w-6 h-6 text-primary" />
+                {selectedReflectGoal?.selfReflectionForm ? "View Self-Reflection" : "Goal Self-Reflection"}
+              </DialogTitle>
+              <DialogDescription>
+                Reflect on your progress towards: <strong className="text-foreground">{selectedReflectGoal?.title}</strong>
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleReflectSubmit} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="reflection">Your Reflection</Label>
+                <Textarea
+                  id="reflection"
+                  placeholder="Describe your achievements, challenges, and learnings..."
+                  className="min-h-[150px]"
+                  value={reflectionText}
+                  onChange={(e) => setReflectionText(e.target.value)}
+                  disabled={!!selectedReflectGoal?.selfReflectionForm}
+                  required
+                />
+              </div>
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="ghost" onClick={() => setSelectedReflectGoal(null)}>Close</Button>
+                {!selectedReflectGoal?.selfReflectionForm && (
+                  <Button type="submit">Submit Reflection</Button>
+                )}
               </DialogFooter>
             </form>
           </DialogContent>
@@ -994,7 +1065,7 @@ function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?
   );
 }
 
-function PDHoursView({ pdHours }: { pdHours: any }) {
+function PDHoursView({ pdHours, upcomingEvents, onRegister }: { pdHours: any, upcomingEvents: any[], onRegister: (id: string) => void }) {
   const { user } = useAuth();
   const userName = user?.fullName || "Teacher";
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
@@ -1063,8 +1134,11 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
         {/* Progress Card */}
         <Card className="lg:col-span-2 border-none shadow-xl bg-background/50 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-xl font-bold">Annual Progress</CardTitle>
-            <CardDescription>You have completed {pdHours.total} of {pdHours.target} required hours</CardDescription>
+            <CardTitle className="text-xl font-bold">Annual Target Progress</CardTitle>
+            <CardDescription>
+              Hours completed till date: <span className="font-bold text-foreground">{pdHours.total}h</span> |
+              Hours left: <span className="font-bold text-foreground">{Math.max(0, pdHours.target - pdHours.total)}h</span>
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -1083,16 +1157,28 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              {pdHours.categories.map((cat: any, idx: number) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <div className={cn("w-2 h-2 rounded-full", cat.color)} />
-                    {cat.name}
-                  </div>
-                  <div className="text-lg font-bold">{cat.hours}h</div>
-                </div>
-              ))}
+            <div className="pt-4 border-t">
+              <h4 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3">Targets by Block</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {pdHours.categories.map((cat: any, idx: number) => {
+                  const hoursLeft = Math.max(0, cat.target - cat.hours);
+                  return (
+                    <div key={idx} className="space-y-2 p-3 rounded-lg bg-muted/20 border">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                        <div className={cn("w-2 h-2 rounded-full", cat.color)} />
+                        {cat.name}
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div className="text-2xl font-black">{cat.hours}<span className="text-sm font-normal text-muted-foreground">/{cat.target}h</span></div>
+                        <div className="text-xs font-medium text-muted-foreground whitespace-nowrap">{hoursLeft}h left</div>
+                      </div>
+                      <Progress value={(cat.hours / cat.target) * 100} className="h-1"
+                        style={{ '--progress-background': 'var(--muted)', '--progress-foreground': `var(--${cat.color.split('-')[1]})` } as any}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1127,6 +1213,54 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
           </Card>
         </div>
       </div>
+
+      {/* Upcoming PDI Trainings */}
+      <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm mt-8 overflow-hidden">
+        <CardHeader className="border-b border-muted/50 pb-4">
+          <CardTitle className="text-xl font-bold flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            Upcoming Trainings (PDI Team)
+          </CardTitle>
+          <CardDescription>Register for upcoming professional development sessions to meet your targets.</CardDescription>
+        </CardHeader>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-muted/50">
+                <TableHead>Training Session</TableHead>
+                <TableHead>Block / Category</TableHead>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead className="w-[150px]">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {upcomingEvents.length > 0 ? upcomingEvents.filter(e => !e.isRegistered).slice(0, 5).map((event: any) => (
+                <TableRow key={event.id}>
+                  <TableCell className="font-bold">{event.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{event.topic || event.type}</Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm flex flex-col">
+                    <span>{event.date}</span>
+                    <span className="text-xs">{event.time}</span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{event.location}</TableCell>
+                  <TableCell>
+                    <Button size="sm" onClick={() => onRegister(event.id)}>Register</Button>
+                  </TableCell>
+                </TableRow>
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">No upcoming trainings available.</TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      <div className="mt-8" />
 
       {/* History Table */}
       <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm overflow-hidden">
@@ -1208,131 +1342,133 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
       </Card>
 
       {/* Activity Detail Dialog */}
-      {selectedActivity && (
-        <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
-          <DialogContent className="max-w-4xl bg-background/95 backdrop-blur-xl border-none">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                <Book className="w-6 h-6 text-primary" />
-                Activity Details
-              </DialogTitle>
-              <DialogDescription>
-                Comprehensive overview of your professional development activity
-              </DialogDescription>
-            </DialogHeader>
+      {
+        selectedActivity && (
+          <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
+            <DialogContent className="max-w-4xl bg-background/95 backdrop-blur-xl border-none">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                  <Book className="w-6 h-6 text-primary" />
+                  Activity Details
+                </DialogTitle>
+                <DialogDescription>
+                  Comprehensive overview of your professional development activity
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="space-y-6 pt-4">
-              {/* Header Stats */}
-              <div className="grid grid-cols-3 gap-4">
-                <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-blue-50/80 text-xs font-medium mb-1">PD Hours</p>
-                        <p className="text-2xl font-bold">{selectedActivity.hours}h</p>
+              <div className="space-y-6 pt-4">
+                {/* Header Stats */}
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-blue-50/80 text-xs font-medium mb-1">PD Hours</p>
+                          <p className="text-2xl font-bold">{selectedActivity.hours}h</p>
+                        </div>
+                        <Clock className="w-8 h-8 text-blue-50/50" />
                       </div>
-                      <Clock className="w-8 h-8 text-blue-50/50" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-purple-50/80 text-xs font-medium mb-1">Enrolled</p>
-                        <p className="text-2xl font-bold">{selectedActivity.enrolled || 'N/A'}</p>
+                  <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-purple-50/80 text-xs font-medium mb-1">Enrolled</p>
+                          <p className="text-2xl font-bold">{selectedActivity.enrolled || 'N/A'}</p>
+                        </div>
+                        <Users className="w-8 h-8 text-purple-50/50" />
                       </div>
-                      <Users className="w-8 h-8 text-purple-50/50" />
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card className={cn(
-                  "border-none shadow-lg text-white",
-                  selectedActivity.status === "Approved"
-                    ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
-                    : "bg-gradient-to-br from-amber-500 to-amber-600"
-                )}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className={cn(
-                          "text-xs font-medium mb-1",
-                          selectedActivity.status === "Approved" ? "text-emerald-50/80" : "text-amber-50/80"
-                        )}>Status</p>
-                        <p className="text-xl font-bold">{selectedActivity.status}</p>
+                  <Card className={cn(
+                    "border-none shadow-lg text-white",
+                    selectedActivity.status === "Approved"
+                      ? "bg-gradient-to-br from-emerald-500 to-emerald-600"
+                      : "bg-gradient-to-br from-amber-500 to-amber-600"
+                  )}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={cn(
+                            "text-xs font-medium mb-1",
+                            selectedActivity.status === "Approved" ? "text-emerald-50/80" : "text-amber-50/80"
+                          )}>Status</p>
+                          <p className="text-xl font-bold">{selectedActivity.status}</p>
+                        </div>
+                        <ShieldCheck className={cn(
+                          "w-8 h-8",
+                          selectedActivity.status === "Approved" ? "text-emerald-50/50" : "text-amber-50/50"
+                        )} />
                       </div>
-                      <ShieldCheck className={cn(
-                        "w-8 h-8",
-                        selectedActivity.status === "Approved" ? "text-emerald-50/50" : "text-amber-50/50"
-                      )} />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Main Details */}
+                <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-primary" />
+                      Course Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Course Title</Label>
+                        <p className="text-lg font-semibold text-foreground">{selectedActivity.activity}</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Category</Label>
+                        <div>
+                          <Badge className="text-sm py-1 px-3">{selectedActivity.category}</Badge>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Instructor</Label>
+                        <p className="text-base font-medium flex items-center gap-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          {selectedActivity.instructor || 'Not Specified'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Date Completed</Label>
+                        <p className="text-base font-medium flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          {selectedActivity.date}
+                        </p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Main Details */}
-              <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Course Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Course Title</Label>
-                      <p className="text-lg font-semibold text-foreground">{selectedActivity.activity}</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Category</Label>
-                      <div>
-                        <Badge className="text-sm py-1 px-3">{selectedActivity.category}</Badge>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Instructor</Label>
-                      <p className="text-base font-medium flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        {selectedActivity.instructor || 'Not Specified'}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Date Completed</Label>
-                      <p className="text-base font-medium flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        {selectedActivity.date}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <DialogFooter className="flex justify-between items-center pt-4 border-t">
-              <Button variant="outline" onClick={() => setSelectedActivity(null)}>
-                Close
-              </Button>
-              <div className="flex gap-2">
-                <Button variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  Download Certificate
+              <DialogFooter className="flex justify-between items-center pt-4 border-t">
+                <Button variant="outline" onClick={() => setSelectedActivity(null)}>
+                  Close
                 </Button>
-                <Button className="gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </Button>
-              </div>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Download Certificate
+                  </Button>
+                  <Button className="gap-2">
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </Button>
+                </div>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )
+      }
+    </div >
   );
 }
 
@@ -1384,11 +1520,11 @@ export default function TeacherDashboard() {
   const [observations, setObservations] = useState<Observation[]>([]);
   const [pdHours, setPdHours] = useState({
     total: 0,
-    target: 30,
+    target: 30, // overall target
     categories: [
-      { name: "Workshops", hours: 0, color: "bg-blue-500" },
-      { name: "Online Courses", hours: 0, color: "bg-purple-500" },
-      { name: "Seminars", hours: 0, color: "bg-emerald-500" }
+      { name: "Pedagogy", hours: 0, target: 10, color: "bg-blue-500" },
+      { name: "Technology", hours: 0, target: 10, color: "bg-purple-500" },
+      { name: "Culture", hours: 0, target: 10, color: "bg-emerald-500" }
     ],
     history: []
   });
@@ -1774,7 +1910,7 @@ export default function TeacherDashboard() {
         <Route path="festival" element={<LearningFestivalPage />} />
         <Route path="festival/:id/apply" element={<FestivalApplicationForm />} />
         <Route path="festival/:id/application" element={<FestivalApplicationForm />} />
-        <Route path="hours" element={<PDHoursView pdHours={pdHours} />} />
+        <Route path="hours" element={<PDHoursView pdHours={pdHours} upcomingEvents={events} onRegister={handleRegister} />} />
         <Route path="documents" element={<AcknowledgementsView teacherId={user?.id || "unknown"} />} />
         <Route path="courses/assessments/attempt/:assessmentId" element={<AssessmentAttemptView />} />
         <Route path="insights" element={<InsightsView />} />

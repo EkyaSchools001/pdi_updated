@@ -87,9 +87,10 @@ interface GoalSettingFormProps {
     defaultCoachName?: string;
     onCancel: () => void;
     teachers: { id: string; name: string; email?: string }[];
+    initialData?: Partial<z.infer<typeof formSchema>>;
 }
 
-export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, teachers }: GoalSettingFormProps) {
+export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, teachers, initialData = {} }: GoalSettingFormProps) {
     const [campuses, setCampuses] = useState(DEFAULT_CAMPUSES);
     const [pillars, setPillars] = useState(DEFAULT_PILLARS);
 
@@ -118,6 +119,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
             educatorName: "",
             teacherEmail: "",
             additionalNotes: "",
+            ...initialData,
         },
     });
 

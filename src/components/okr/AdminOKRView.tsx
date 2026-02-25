@@ -28,6 +28,7 @@ const CampusRow: React.FC<{ c: CampusOKRMetric }> = ({ c }) => (
         <TableCell className="font-mono text-sm">{fmt(c.avgObservationScore)}</TableCell>
         <TableCell className="font-mono text-sm">{fmt(c.postOrientationAvg, '%')}</TableCell>
         <TableCell className="font-mono text-sm">{fmt(c.preparednessAvg, '%')}</TableCell>
+        <TableCell className="font-mono text-sm">{fmt(c.avgInstructionalTools)}</TableCell>
         <TableCell className="font-mono text-sm">{fmt(c.avgPDFeedbackScore, '/5')}</TableCell>
         <TableCell className="font-mono text-sm">{fmt(c.selfPacedEngagement, '%')}</TableCell>
         <TableCell className="font-mono text-sm">{fmt(c.schoolLeadershipSupportScore)}</TableCell>
@@ -140,6 +141,7 @@ export const AdminOKRView: React.FC<Props> = ({ data, isManagement }) => {
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">Avg Obs Score</TableHead>
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">Post-Orientation Avg</TableHead>
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">Preparedness Avg</TableHead>
+                                <TableHead className="text-xs font-bold uppercase text-zinc-400">Avg Instr. Tools</TableHead>
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">PD Feedback</TableHead>
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">Self-Paced Eng.</TableHead>
                                 <TableHead className="text-xs font-bold uppercase text-zinc-400">Leadership Score</TableHead>
@@ -149,7 +151,7 @@ export const AdminOKRView: React.FC<Props> = ({ data, isManagement }) => {
                         <TableBody>
                             {filtered.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center py-12 text-zinc-400">
+                                    <TableCell colSpan={10} className="text-center py-12 text-zinc-400">
                                         No campus data available
                                     </TableCell>
                                 </TableRow>

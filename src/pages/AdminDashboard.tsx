@@ -1,7 +1,7 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList, Shield, FileCheck } from "lucide-react";
+import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList, Shield, FileCheck, Target } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { AdminReportsView } from "./admin/AdminReportsView";
 import { SystemSettingsView } from "./admin/SystemSettingsView";
 import { SuperAdminView } from "./admin/SuperAdminView";
 import AdminDocumentManagement from "./AdminDocumentManagement";
+import { AdminGoalsView } from "./admin/AdminGoalsView";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
@@ -148,6 +149,7 @@ export default function AdminDashboard() {
         <Route path="meetings/create" element={<CreateMeetingForm />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
+        <Route path="goals" element={<AdminGoalsView />} />
         <Route path="courses/*" element={<AdminCoursesModule />} />
         <Route path="calendar" element={<AdminCalendarView />} />
         <Route path="attendance" element={<AttendanceRegister />} />
@@ -248,6 +250,13 @@ const adminModules = [
     icon: Settings,
     path: "/admin/settings",
     stats: "System configuration",
+  },
+  {
+    title: "Goal Management",
+    description: "Manage goal setting windows and monitor campus metrics",
+    icon: Target,
+    path: "/admin/goals",
+    stats: "Goal forms & metrics",
   },
 ];
 

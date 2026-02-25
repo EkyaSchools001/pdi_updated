@@ -53,7 +53,6 @@ const teacherNav = [
 
   { title: "PD Hours", icon: Clock, path: "/teacher/hours" },
   { title: "Documents", icon: FileCheck, path: "/teacher/documents" },
-  { title: "Insights", icon: Lightbulb, path: "/teacher/insights" },
   { title: "Survey", icon: ClipboardList, path: "/teacher/survey" },
   { title: "My Profile", icon: Users, path: "/teacher/profile" },
   { title: "OKR Dashboard", icon: BarChart3, path: "/okr" },
@@ -85,6 +84,7 @@ const leaderNav = [
 const adminNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
+  { title: "Goals", icon: Target, path: "/admin/goals" },
   { title: "User Management", icon: Users, path: "/admin/users" },
   { title: "Form Templates", icon: FileText, path: "/admin/forms" },
   { title: "Meetings", icon: Video, path: "/meetings" },
@@ -102,6 +102,7 @@ const adminNav = [
 const managementNav = [
   { title: "Overview", icon: LayoutDashboard, path: "/management/overview" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
+  { title: "Goals", icon: Target, path: "/management/goals" },
   { title: "PDI Health", icon: HeartPulse, path: "/management/pdi-health" },
   { title: "Campus Performance", icon: Building2, path: "/management/campus-performance" },
   { title: "Pillars", icon: Target, path: "/management/pillars" },
