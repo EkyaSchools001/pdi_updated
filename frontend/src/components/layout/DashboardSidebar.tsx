@@ -43,8 +43,9 @@ interface DashboardSidebarProps {
 
 const teacherNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
+  { title: "My Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
-  { title: "Observations", icon: Eye, path: "/teacher/observations" },
+  { title: "Observations", icon: Eye, path: "/growth" },
   { title: "Goals", icon: Target, path: "/teacher/goals" },
   { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/teacher/calendar" },
@@ -61,6 +62,7 @@ const teacherNav = [
 
 const leaderNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/leader" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "Observe Teacher", icon: Eye, path: "/leader/observe" },
   { title: "Team Overview", icon: Users, path: "/leader/team" },
@@ -84,6 +86,7 @@ const leaderNav = [
 
 const adminNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "User Management", icon: Users, path: "/admin/users" },
   { title: "Form Templates", icon: FileText, path: "/admin/forms" },
@@ -101,6 +104,7 @@ const adminNav = [
 
 const managementNav = [
   { title: "Overview", icon: LayoutDashboard, path: "/management/overview" },
+  { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
   { title: "PDI Health", icon: HeartPulse, path: "/management/pdi-health" },
   { title: "Campus Performance", icon: Building2, path: "/management/campus-performance" },
@@ -213,12 +217,19 @@ export function DashboardSidebar({ role, userName, collapsed, onToggle }: Dashbo
             const isActive = location.pathname === item.path || (!rootPaths.includes(item.path) && location.pathname.startsWith(item.path));
             return (
               <NavLink
-                key={item.path}
+                key={item.title}
                 to={item.path}
+                onClick={(e) => {
+                  if ((item as any).isPlaceholder) {
+                    e.preventDefault();
+                    return;
+                  }
+                }}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
                   "text-sidebar-foreground hover:bg-sidebar-accent hover:translate-x-1",
-                  isActive && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:translate-x-0 shadow-lg shadow-sidebar-primary/20"
+                  isActive && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:translate-x-0 shadow-lg shadow-sidebar-primary/20",
+                  (item as any).isPlaceholder && "cursor-default hover:translate-x-0"
                 )}
               >
                 <item.icon className={cn("w-5 h-5 shrink-0 transition-transform", !isActive && "group-hover:scale-110")} />

@@ -116,7 +116,7 @@ export function LearningFestivalPage() {
                                             <div className="flex items-center gap-2">
                                                 <Clock className="w-4 h-4 text-orange-500 opacity-70" />
                                                 <span className="font-semibold text-orange-600">
-                                                    Apply by: {format(new Date(festival.applyDeadline), 'MMM do, yyyy')}
+                                                    Apply by: {festival.registrationEnd ? format(new Date(festival.registrationEnd), 'MMM do, yyyy') : 'No deadline'}
                                                 </span>
                                             </div>
                                         </div>

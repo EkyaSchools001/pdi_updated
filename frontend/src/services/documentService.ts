@@ -64,20 +64,29 @@ export const documentService = {
         description: string;
         version: string;
         requiresSignature: boolean;
-        file: File;
+        file?: File | null;
+        linkUrl?: string;
     }) {
         try {
-            // 1. Upload the file first
-            const formData = new FormData();
-            formData.append('file', data.file);
+            let fileUrl = data.linkUrl || '';
+            let fileName = data.linkUrl ? 'External Link' : '';
+            let fileSize = 0;
 
-            const uploadResponse = await api.post('/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            // 1. Upload the file if provided and no linkUrl
+            if (data.file && !data.linkUrl) {
+                const formData = new FormData();
+                formData.append('file', data.file);
 
-            const { fileUrl, fileName, fileSize } = uploadResponse.data.data;
+                const uploadResponse = await api.post('/upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                fileUrl = uploadResponse.data.data.fileUrl;
+                fileName = uploadResponse.data.data.fileName;
+                fileSize = uploadResponse.data.data.fileSize;
+            }
 
             // 2. Create document record
             const docData = {

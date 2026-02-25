@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import html2canvas from "html2canvas";
 import { Routes, Route, Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
@@ -172,7 +173,7 @@ const DashboardOverview = ({
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${userName.split(' ')[0]}!`}
+        title={`Welcome back, ${userName.split(' ')[0]} !`}
         subtitle="Here's your professional development overview"
         actions={
           <Button
@@ -212,7 +213,7 @@ const DashboardOverview = ({
           <StatCard
             title="Active Goals"
             value={goals.length}
-            subtitle={`${schoolAlignedGoals} school-aligned`}
+            subtitle={`${schoolAlignedGoals} school - aligned`}
             icon={Target}
 
             onClick={() => navigate("/teacher/goals")}
@@ -473,6 +474,7 @@ function CalendarView({
   const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 25)); // Set a default date in center of mock data
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | "all">("all");
+  const [selectedCampus, setSelectedCampus] = useState<string | "all">("all");
 
   const parseEventDate = (dateStr: string) => {
     try {
@@ -483,17 +485,19 @@ function CalendarView({
   };
 
   const eventTypes = Array.from(new Set(events.map(e => e.topic || e.type).filter(Boolean)));
+  const eventCampuses = Array.from(new Set(events.map(e => e.schoolId || e.campusId || e.location).filter(Boolean)));
 
   const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.topic.toLowerCase().includes(searchQuery.toLowerCase());
+      (event.topic || "").toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesType = selectedType === "all" || (event.topic || event.type) === selectedType;
+    const matchesCampus = selectedCampus === "all" || (event.schoolId || event.campusId || event.location) === selectedCampus;
 
-    if (!date) return matchesSearch && matchesType;
+    if (!date) return matchesSearch && matchesType && matchesCampus;
 
     const eventDate = parseEventDate(event.date);
-    return isSameDay(eventDate, date) && matchesSearch && matchesType;
+    return isSameDay(eventDate, date) && matchesSearch && matchesType && matchesCampus;
   });
 
   const formatDateStr = (d: Date | string) => {
@@ -634,18 +638,42 @@ function CalendarView({
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="gap-2">
                       <Filter className="w-4 h-4" />
-                      {selectedType === "all" ? "All Types" : selectedType}
+                      Filter Sessions
+                      {(selectedType !== "all" || selectedCampus !== "all") && (
+                        <span className="ml-1 w-2 h-2 rounded-full bg-primary" />
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setSelectedType("all")}>
+                  <DropdownMenuContent align="end" className="w-56 overflow-y-auto max-h-[70vh]">
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">By Type</span>
+                      {selectedType !== "all" && (
+                        <Button variant="ghost" size="sm" className="h-auto p-0 text-[10px]" onClick={(e) => { e.stopPropagation(); setSelectedType("all"); }}>Clear</Button>
+                      )}
+                    </div>
+                    <DropdownMenuItem onClick={() => setSelectedType("all")} className={selectedType === "all" ? "bg-muted" : ""}>
                       All Types
                     </DropdownMenuItem>
                     {eventTypes.map(type => (
-                      <DropdownMenuItem key={type} onClick={() => setSelectedType(type)}>
-                        {type}
+                      <DropdownMenuItem key={`type - ${type} `} onClick={() => setSelectedType(type as string)} className={selectedType === type ? "bg-muted" : ""}>
+                        {type as string}
+                      </DropdownMenuItem>
+                    ))}
+
+                    <DropdownMenuSeparator />
+
+                    <div className="flex items-center justify-between px-2 py-1.5">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">By Campus</span>
+                      {selectedCampus !== "all" && (
+                        <Button variant="ghost" size="sm" className="h-auto p-0 text-[10px]" onClick={(e) => { e.stopPropagation(); setSelectedCampus("all"); }}>Clear</Button>
+                      )}
+                    </div>
+                    <DropdownMenuItem onClick={() => setSelectedCampus("all")} className={selectedCampus === "all" ? "bg-muted" : ""}>
+                      All Campuses
+                    </DropdownMenuItem>
+                    {eventCampuses.map(campus => (
+                      <DropdownMenuItem key={`campus - ${campus} `} onClick={() => setSelectedCampus(campus as string)} className={selectedCampus === campus ? "bg-muted" : ""}>
+                        {campus as string}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -947,7 +975,7 @@ function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?
             <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary transition-all duration-500"
-                style={{ width: `${course.progress}%` }}
+                style={{ width: `${course.progress}% ` }}
               />
             </div>
           </div>
@@ -973,7 +1001,7 @@ function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?
             } else if (course.status === 'recommended') {
               setEnrolling(true);
               try {
-                await api.post(`/courses/${course.id}/enroll`);
+                await api.post(`/ courses / ${course.id}/enroll`);
                 toast.success("Enrolled in course!");
                 onEnrollSuccess?.();
               } catch (e: any) {
@@ -988,9 +1016,9 @@ function CourseCard({ course, onEnrollSuccess }: { course: any, onEnrollSuccess?
         >
           {enrolling ? 'Enrolling...' : course.status === 'in-progress' ? 'Continue Lesson' : course.status === 'completed' ? 'Review Course' : 'Start Learning'}
           {course.isDownloadable ? <ExternalLink className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" /> : <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />}
-        </Button>
-      </div>
-    </Card>
+        </Button >
+      </div >
+    </Card >
   );
 }
 
@@ -999,6 +1027,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
   const userName = user?.fullName || "Teacher";
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | "all">("all");
+  const [isEmailing, setIsEmailing] = useState(false);
 
   const categories = Array.from(new Set(pdHours.history.map((h: any) => h.category).filter(Boolean)));
 
@@ -1050,6 +1079,50 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
     doc.save("activity_history.pdf");
   };
 
+  const handleEmailReport = async () => {
+    try {
+      setIsEmailing(true);
+
+      const pdHoursElement = document.getElementById("pd-hours-summary-container");
+      if (!pdHoursElement) {
+        toast.error("Could not capture the PD Hours summary.");
+        return;
+      }
+
+      // Temporarily add a class or tweak styles if needed before capture
+      const canvas = await html2canvas(pdHoursElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#fdfbf7" // match standard background
+      });
+
+      const imageDataUrl = canvas.toDataURL("image/png");
+
+      // Usually, you can't embed base64 directly into a mailto link body efficiently
+      // But we can trigger a download of the image and show instructions or use a backend mail API.
+      // Since there's no backend mail API built specifically for this attachment out of the box right here,
+      // we'll download the image snapshot and open a mail client with generic text.
+
+      const link = document.createElement('a');
+      link.download = `PD_Hours_Snapshot_${format(new Date(), 'MMM_dd_yyyy')}.png`;
+      link.href = imageDataUrl;
+      link.click();
+
+      toast.success("Snapshot downloaded! You can now attach it to an email.");
+
+      // Open default mail client
+      const subject = encodeURIComponent(`PD Hours Record - ${userName}`);
+      const body = encodeURIComponent(`Please find attached my PD Hours Record snapshot generated on ${format(new Date(), 'MMM d, yyyy')}.`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+
+    } catch (error) {
+      console.error("Failed to generate email snapshot:", error);
+      toast.error("Failed to generate email snapshot.");
+    } finally {
+      setIsEmailing(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1059,7 +1132,7 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6" id="pd-hours-summary-container">
         {/* Progress Card */}
         <Card className="lg:col-span-2 border-none shadow-xl bg-background/50 backdrop-blur-sm">
           <CardHeader>
@@ -1159,6 +1232,10 @@ function PDHoursView({ pdHours }: { pdHours: any }) {
             <Button variant="outline" size="sm" className="gap-2" onClick={handleExportPDF}>
               <Download className="w-4 h-4" />
               Export PDF
+            </Button>
+            <Button variant="default" size="sm" className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handleEmailReport} disabled={isEmailing}>
+              <Mail className="w-4 h-4" />
+              {isEmailing ? "Preparing..." : "Email Record"}
             </Button>
           </div>
         </CardHeader>
@@ -1621,6 +1698,18 @@ export default function TeacherDashboard() {
       fetchEnrollments();
     });
 
+    socket.on('attendance:toggled', (data: any) => {
+      fetchTraining();
+      if (data.action === 'enable') {
+        toast.success(`Attendance is now live! Check "My Attendance" to mark your presence.`, {
+          action: {
+            label: "View",
+            onClick: () => navigate("/teacher/attendance")
+          }
+        });
+      }
+    });
+
     return () => {
       window.removeEventListener('courses-refresh', onCoursesRefresh);
       socket.off('observation:created');
@@ -1628,10 +1717,10 @@ export default function TeacherDashboard() {
       socket.off('goal:created');
       socket.off('goal:updated');
       socket.off('mooc:created');
-      socket.off('mooc:updated');
       socket.off('course:created');
       socket.off('course:updated');
       socket.off('course:deleted');
+      socket.off('attendance:toggled');
       socket.emit('leave_room', user?.id || userName);
     };
   }, [userName, userEmail, user?.id]);
@@ -1919,7 +2008,7 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
         <FileCheck className="w-16 h-16 text-muted-foreground mb-4 opacity-20" />
         <h2 className="text-2xl font-bold">Observation not found</h2>
-        <Button onClick={() => navigate("/teacher/observations")} className="mt-4">Back to Observations</Button>
+        <Button onClick={() => navigate("/growth")} className="mt-4">Back to Observations</Button>
       </div>
     );
   }
@@ -1927,8 +2016,8 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/teacher/observations")} className="print:hidden">
-          <ChevronRight className="w-5 h-5 rotate-180" />
+        <Button variant="ghost" size="icon" onClick={() => navigate("/growth")} className="print:hidden">
+          <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex flex-col md:flex-row md:items-center justify-between flex-1 gap-4">
           <PageHeader
@@ -2026,39 +2115,37 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
               </div>
 
               {/* Power BI Style Data Visualization Section */}
-              <div className="grid md:grid-cols-2 gap-6">
-                {observation.strengths && (
-                  <Card className="bg-success/5 border-success/20 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-bold uppercase tracking-wider text-success flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4" />
-                        Strengths Observed
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm font-medium leading-relaxed text-foreground/90">
-                        {observation.strengths}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
+              {observation.strengths && (
+                <Card className="bg-success/5 border-success/20 shadow-sm hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-success flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4" />
+                      {observation.type === "Quick Feedback" ? "Quick Feedback Glows" : "Strengths Observed"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90">
+                      {observation.strengths}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
-                {observation.improvements && (
-                  <Card className="bg-orange-500/5 border-orange-500/20 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 flex items-center gap-2">
-                        <Target className="w-4 h-4" />
-                        Areas for Growth
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm font-medium leading-relaxed text-foreground/90">
-                        {observation.improvements}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              {observation.areasOfGrowth && (
+                <Card className="bg-orange-500/5 border-orange-500/20 shadow-sm hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold uppercase tracking-wider text-orange-600 flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      {observation.type === "Quick Feedback" ? "Quick Feedback Grows" : "Areas for Growth"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90">
+                      {observation.areasOfGrowth}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {observation.teachingStrategies && observation.teachingStrategies.length > 0 && (
                 <div className="space-y-3">
@@ -2170,6 +2257,56 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
                         {tag}
                       </Badge>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tools and Routines (Quick Feedback) */}
+              {observation.type === "Quick Feedback" && (
+                <div className="grid md:grid-cols-2 gap-8 pt-4 border-t border-dashed">
+                  {observation.tools && observation.tools.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                        <PenTool className="w-5 h-5" />
+                        Tools in Action
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {observation.tools.map((tool, idx) => (
+                          <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
+                            {tool}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {observation.routines && observation.routines.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-bold flex items-center gap-2 text-indigo-600">
+                        <ClipboardList className="w-5 h-5" />
+                        Routines Observed
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {observation.routines.map((routine, idx) => (
+                          <Badge key={idx} variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100">
+                            {routine}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Other Comments (Quick Feedback) */}
+              {observation.type === "Quick Feedback" && observation.otherComment && (
+                <div className="space-y-4 pt-4 border-t border-dashed">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-muted-foreground">
+                    <MessageSquare className="w-5 h-5" />
+                    Additional Comments
+                  </h3>
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-600 italic">
+                    "{observation.otherComment}"
                   </div>
                 </div>
               )}

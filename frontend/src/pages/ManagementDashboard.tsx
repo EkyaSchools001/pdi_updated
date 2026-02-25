@@ -47,6 +47,7 @@ import { announcementService, Announcement } from "@/services/announcementServic
 import { useEffect } from "react";
 import { format } from 'date-fns';
 import SurveyPage from "@/pages/SurveyPage";
+import { ManagementInsightsView } from './management/ManagementInsightsView';
 import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
 
 // --- Mock Data ---
@@ -965,8 +966,9 @@ export default function ManagementDashboard() {
                     <Route path="meetings/:meetingId/mom" element={<ModuleGuard modulePath="meetings"><MeetingMoMForm /></ModuleGuard>} />
                     <Route path="meetings/:meetingId" element={<ModuleGuard modulePath="meetings"><MeetingMoMForm /></ModuleGuard>} />
                     <Route path="leadership" element={<ModuleGuard modulePath="leadership"><Leadership /></ModuleGuard>} />
-                    <Route path="risk" element={<ModuleGuard modulePath="risk"><Risk /></ModuleGuard>} />
+                    <Route path="risk" element={<ModuleGuard modulePath=" риск"><Risk /></ModuleGuard>} />
                     <Route path="festival" element={<ModuleGuard modulePath="festival"><FestivalManagementDashboard /></ModuleGuard>} />
+                    <Route path="insights" element={<ModuleGuard modulePath="insights"><ManagementInsightsView /></ModuleGuard>} />
                     <Route path="reports" element={<ModuleGuard modulePath="reports"><Reports /></ModuleGuard>} />
                     <Route path="survey" element={<ModuleGuard modulePath="survey"><SurveyPage /></ModuleGuard>} />
                 </Routes>

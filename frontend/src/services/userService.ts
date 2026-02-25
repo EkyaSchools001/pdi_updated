@@ -8,6 +8,7 @@ export interface User {
     department?: string;
     campusId?: string;
     status: string;
+    academics?: 'CORE' | 'NON_CORE';
 }
 
 export const userService = {
@@ -16,7 +17,7 @@ export const userService = {
             const params = role ? { role } : {};
             const response = await api.get('/users', { params });
             console.log('UserService: API response', { status: response.data?.status, usersCount: response.data?.data?.users?.length });
-            
+
             if (response.data?.status === 'success') {
                 return response.data.data?.users || [];
             } else {

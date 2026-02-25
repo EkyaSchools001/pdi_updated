@@ -11,8 +11,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
     Users, BookOpen, Target, Settings, MessageSquare, Tag,
     ChevronLeft, ChevronRight, Save, Eye, CheckCircle2,
-    AlertCircle, Sparkles, ClipboardCheck, Layout, Star
+    AlertCircle, Sparkles, ClipboardCheck, Layout, Star,
+    Check, ChevronsUpDown, Search
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+
 import { cn } from "@/lib/utils";
 import { Observation, DanielsonRatingScale, DanielsonDomain } from "@/types/observation";
 import { toast } from "sonner";
@@ -23,7 +27,7 @@ interface UnifiedObservationFormProps {
     onSubmit: (observation: Partial<Observation>) => void;
     onCancel: () => void;
     initialData?: Partial<Observation>;
-    teachers?: { id: string; name: string; role?: string; email?: string }[];
+    teachers?: { id: string; name: string; role?: string; email?: string; academics?: string }[];
 }
 
 const RATING_SCALE: DanielsonRatingScale[] = ["Basic", "Developing", "Effective", "Highly Effective", "Not Observed"];
@@ -95,6 +99,28 @@ const DOMAINS: { id: string; title: string; subtitle: string; indicators: string
     }
 ];
 
+const SPECIALIST_DOMAINS = [
+    {
+        id: "S1",
+        title: "S1. Specialized Instruction & Skills",
+        subtitle: "Skill-Based Pedagogy",
+        indicators: [
+            "Skill-Based Pedagogy",
+            "Use of Specialist Resources",
+            "Safety & Procedure Management"
+        ]
+    },
+    {
+        id: "S2",
+        title: "S2. Student Engagement & Artistic/Physical Expression",
+        subtitle: "Authentic Expression",
+        indicators: [
+            "Engaging Diverse Talent",
+            "Feedback on Skill Development"
+        ]
+    }
+];
+
 const ROUTINES = [
     "Arrival Routine", "Attendance Routine", "Class Cleaning Routines",
     "Collection Routine", "Departure Routine", "Grouping Routine",
@@ -130,6 +156,10 @@ const META_TAGS = [
     "Participating in a Professional Community", "Growing and Developing Professionally"
 ];
 
+const GRADE_OPTIONS = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"];
+const LEARNING_AREA_OPTIONS = ["Mathematics", "Science", "English", "Social Studies", "Arts", "Physical Education", "Technology", "Languages"];
+
+
 export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, teachers }: UnifiedObservationFormProps) {
     const [step, setStep] = useState(1);
     const [dynamicDomains, setDynamicDomains] = useState(DOMAINS);
@@ -137,15 +167,22 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
     const [dynamicCultureTools, setDynamicCultureTools] = useState(CULTURE_TOOLS);
     const [dynamicInstructionalTools, setDynamicInstructionalTools] = useState(INSTRUCTIONAL_TOOLS);
     const [dynamicLaTools, setDynamicLaTools] = useState(LA_TOOLS);
+    const [openGrade, setOpenGrade] = useState(false);
+    const [openLA, setOpenLA] = useState(false);
+
 
     useEffect(() => {
         const loadTemplate = async () => {
             try {
                 const templates = await templateService.getAllTemplates('OBSERVATION');
-                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                const selectedTeacher = teachers?.find(t => t.id === formData.teacherId);
+                const isSpecialist = selectedTeacher?.academics === 'NON_CORE';
 
-                if (defaultTemplate && defaultTemplate.structure) {
-                    const fields = defaultTemplate.structure;
+                const templateName = isSpecialist ? 'Specialist Observation' : 'Walkthrough Observation';
+                const currentTemplate = templates.find(t => t.name === templateName) || templates.find(t => t.isDefault) || templates[0];
+
+                if (currentTemplate && currentTemplate.structure) {
+                    const fields = JSON.parse(currentTemplate.structure);
 
                     // Reconstruct DOMAINS from fields if possible
                     const newDomains = [...DOMAINS];
@@ -166,7 +203,7 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                     if (instructionalField?.options) setDynamicInstructionalTools(instructionalField.options);
                     if (laField?.options) setDynamicLaTools(laField.options);
 
-                    console.log("Loaded observation template options:", defaultTemplate.name);
+                    console.log("Loaded observation template options:", currentTemplate.name);
                 }
             } catch (error) {
                 console.error("Failed to load observation template", error);
@@ -214,7 +251,7 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
             ...initialData,
             learningArea: initialData.learningArea || initialData.classroom?.learningArea || ""
         };
-        return obs as any;
+        return obs as Partial<Observation> & { block: string; grade: string; section: string };
     });
 
     const updateField = <K extends keyof (Partial<Observation> & { block: string; grade: string; section: string })>(
@@ -230,12 +267,24 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
     const handleTeacherSelect = (teacherId: string) => {
         const selectedTeacher = teachers?.find(t => t.id === teacherId);
         if (selectedTeacher) {
+            const isSpecialist = selectedTeacher.academics === 'NON_CORE_ACADEMICS';
+            const targetDomains = isSpecialist ? SPECIALIST_DOMAINS : DOMAINS;
+
             setFormData(prev => ({
                 ...prev,
                 teacherId: selectedTeacher.id,
                 teacher: selectedTeacher.name,
-                teacherEmail: selectedTeacher.email || `${selectedTeacher.name.toLowerCase().replace(' ', '.')}@ekya.in`
+                teacherEmail: selectedTeacher.email || `${selectedTeacher.name.toLowerCase().replace(' ', '.')}@ekya.in`,
+                domains: targetDomains.map(d => ({
+                    domainId: d.id,
+                    title: d.title,
+                    indicators: d.indicators.map(i => ({ name: i, rating: "Not Observed" })),
+                    evidence: ""
+                }))
             }));
+
+            // Force reload template options
+            setDynamicDomains(targetDomains);
         }
     };
 
@@ -355,17 +404,20 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
             });
             const scoreValue = observedCount > 0 ? Number((totalPoints / observedCount).toFixed(1)) : 0;
 
+            const finalGrade = formData.section ? `${formData.grade} - ${formData.section}` : formData.grade;
+
             const finalData: Partial<Observation> = {
                 ...formData,
                 score: scoreValue,
                 domain: formData.metaTags?.[0] || "General Instruction",
                 classroom: {
                     block: formData.block || "",
-                    grade: formData.grade || "",
+                    grade: finalGrade || "",
                     section: formData.section || "",
                     learningArea: formData.learningArea || ""
                 }
             };
+
 
             onSubmit(finalData);
         }
@@ -542,19 +594,47 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                 <div className="grid md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Grade *</Label>
-                                        <Select
-                                            value={formData.grade || ""}
-                                            onValueChange={(val) => updateField("grade", val)}
-                                        >
-                                            <SelectTrigger className="h-12 border-muted-foreground/20 rounded-xl">
-                                                <SelectValue placeholder="Select Grade" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map(g => (
-                                                    <SelectItem key={g} value={g}>{g}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <Popover open={openGrade} onOpenChange={setOpenGrade}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    aria-expanded={openGrade}
+                                                    className="w-full h-12 justify-between border-muted-foreground/20 rounded-xl text-base"
+                                                >
+                                                    {formData.grade
+                                                        ? GRADE_OPTIONS.find((g) => g === formData.grade)
+                                                        : "Select Grade"}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                    <CommandInput placeholder="Search grade..." />
+                                                    <CommandEmpty>No grade found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {GRADE_OPTIONS.map((g) => (
+                                                            <CommandItem
+                                                                key={g}
+                                                                value={g}
+                                                                onSelect={(currentValue) => {
+                                                                    updateField("grade", currentValue === formData.grade ? "" : currentValue);
+                                                                    setOpenGrade(false);
+                                                                }}
+                                                            >
+                                                                <Check
+                                                                    className={cn(
+                                                                        "mr-2 h-4 w-4",
+                                                                        formData.grade === g ? "opacity-100" : "opacity-0"
+                                                                    )}
+                                                                />
+                                                                {g}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Section</Label>
@@ -569,21 +649,47 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
 
                                 <div className="space-y-2">
                                     <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Learning Area *</Label>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                                        {["Mathematics", "Science", "English", "Social Studies", "Arts", "Physical Education", "Technology", "Languages"].map(la => (
-                                            <Badge
-                                                key={la}
-                                                variant={formData.learningArea === la ? "default" : "outline"}
-                                                className={cn(
-                                                    "cursor-pointer px-4 py-3 justify-center text-center rounded-xl transition-all border-muted-foreground/10",
-                                                    formData.learningArea === la ? "bg-indigo-500 hover:bg-indigo-600" : "text-muted-foreground hover:bg-indigo-50 px-2"
-                                                )}
-                                                onClick={() => updateField("learningArea", la)}
+                                    <Popover open={openLA} onOpenChange={setOpenLA}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                aria-expanded={openLA}
+                                                className="w-full h-12 justify-between border-muted-foreground/20 rounded-xl text-base"
                                             >
-                                                {la}
-                                            </Badge>
-                                        ))}
-                                    </div>
+                                                {formData.learningArea
+                                                    ? LEARNING_AREA_OPTIONS.find((la) => la === formData.learningArea)
+                                                    : "Search or Select Learning Area"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search learning area..." />
+                                                <CommandEmpty>No learning area found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {LEARNING_AREA_OPTIONS.map((la) => (
+                                                        <CommandItem
+                                                            key={la}
+                                                            value={la}
+                                                            onSelect={(currentValue) => {
+                                                                updateField("learningArea", currentValue === formData.learningArea ? "" : (LEARNING_AREA_OPTIONS.find(opt => opt.toLowerCase() === currentValue.toLowerCase()) || currentValue));
+                                                                setOpenLA(false);
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    formData.learningArea === la ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {la}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </CardContent>
                         </Card>

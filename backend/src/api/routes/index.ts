@@ -23,7 +23,9 @@ import surveyRoutes from './surveyRoutes';
 import learningFestivalRoutes from './learningFestivalRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
+import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
+import growthRoutes from './growthRoutes';
 
 const router = Router();
 
@@ -32,6 +34,7 @@ router.use(roleModuleAuth);
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/growth', growthRoutes);
 router.use('/goals', goalRoutes);
 router.use('/observations', observationRoutes);
 router.use('/documents', documentRoutes);

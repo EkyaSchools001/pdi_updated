@@ -2,6 +2,7 @@ import { Response } from 'express';
 import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
+import { getIO } from '../../core/socket';
 
 // Toggle Attendance (Enable/Close)
 // Toggle Attendance (Enable/Close)
@@ -47,6 +48,15 @@ export const toggleAttendance = async (req: AuthRequest, res: Response) => {
         const updatedEvent = await prisma.trainingEvent.update({
             where: { id },
             data: updateData
+        });
+
+        // Emit real-time update
+        const io = getIO();
+        io.emit('attendance:toggled', {
+            eventId: id,
+            action,
+            attendanceEnabled: updatedEvent.attendanceEnabled,
+            attendanceClosed: updatedEvent.attendanceClosed
         });
 
         res.status(200).json({
@@ -116,6 +126,13 @@ export const submitAttendance = async (req: AuthRequest, res: Response) => {
                 department,
                 status: true
             }
+        });
+
+        // Emit real-time update
+        const io = getIO();
+        io.emit('attendance:submitted', {
+            eventId: id,
+            attendance
         });
 
         res.status(201).json({

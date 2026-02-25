@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AcademicType {
+  CORE
+  NON_CORE
+}
+
 model User {
   id             String    @id @default(uuid())
   email          String    @unique
@@ -23,6 +28,7 @@ model User {
   campusAccess   String?
   dateOfBirth    String?
   managerId      String?
+  academics      AcademicType? @default(CORE)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -66,6 +72,8 @@ model User {
   assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
   assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
   assessmentAttempts    AssessmentAttempt[]
+
+  @@index([academics])
 }
 
 model Meeting {
@@ -183,6 +191,13 @@ model Observation {
   grade              String?
   section            String?
   learningArea       String?
+  type               String?
+  strengths          String?
+  areasOfGrowth      String?
+  otherComment       String?
+  metaTags           String?   // JSON string
+  tools              String?   // JSON string
+  routines           String?   // JSON string
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
@@ -571,18 +586,23 @@ model PostOrientationAssessment {
 }
 
 model LearningFestival {
-  id               String   @id @default(uuid())
-  name             String
-  theme            String
-  description      String?
-  startDate        DateTime
-  endDate          DateTime
-  applyDeadline    DateTime
-  status           String   @default("Draft") // Draft, Upcoming, Active, Completed
-  eligibilityRules String?  // JSON string
-  campusLimits     String?  // JSON string for limits per campus
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String   @id @default(uuid())
+  name              String
+  theme             String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime
+  registrationStart DateTime?
+  registrationEnd   DateTime? @map("applyDeadline") // Replacing the conceptual applyDeadline
+  location          String?
+  duration          String?
+  documents         String?  // JSON string
+  sharedWithRoles   String?  // JSON string array e.g. ["TEACHER", "ADMIN"]
+  status            String   @default("Draft") // Draft, Upcoming, Active, Completed
+  eligibilityRules  String?  // JSON string
+  campusLimits      String?  // JSON string for limits per campus
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   applications LearningFestivalApplication[]
 }

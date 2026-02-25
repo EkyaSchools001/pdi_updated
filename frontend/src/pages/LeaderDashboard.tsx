@@ -48,19 +48,18 @@ import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
 
-
-// Mock data removed in favor of API calls
-
-
+// Admin Components
+import { UserManagementView } from "./admin/UserManagementView";
+import { FormTemplatesView } from "./admin/FormTemplatesView";
+import { SystemSettingsView } from "./admin/SystemSettingsView";
+import { CourseManagementView } from "./admin/CourseManagementView";
+import AdminDocumentManagement from "./AdminDocumentManagement";
+import SurveyPage from "./SurveyPage";
 
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
-import { UserManagementView } from "./admin/UserManagementView";
-import { FormTemplatesView } from "./admin/FormTemplatesView";
-import AdminDocumentManagement from "@/pages/AdminDocumentManagement";
-import SurveyPage from "@/pages/SurveyPage";
-import { SystemSettingsView } from "./admin/SystemSettingsView";
-import { CourseManagementView } from "./admin/CourseManagementView";
+
+
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
@@ -325,11 +324,17 @@ export default function LeaderDashboard() {
       }
     });
 
+    socket.on('attendance:submitted', (data: any) => {
+      toast.info(`New attendance submission from ${data.attendance.teacherName}`);
+      window.dispatchEvent(new CustomEvent('attendance-updated', { detail: data }));
+    });
+
     return () => {
       socket.off('observation:created');
       socket.off('observation:updated');
       socket.off('mooc:created');
       socket.off('mooc:updated');
+      socket.off('attendance:submitted');
       socket.emit('leave_room', 'leaders');
     };
   }, []);
@@ -2981,13 +2986,40 @@ function ObservationReportView({ observations, team }: { observations: Observati
 function ObservationsManagementView({ observations, systemAvgScore }: { observations: Observation[], systemAvgScore: string }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGrade, setSelectedGrade] = useState("all");
+  const [selectedLA, setSelectedLA] = useState("all");
 
   const filteredObservations = observations.filter(obs => {
     const teacherName = obs.teacher || obs.teacherEmail || 'Unknown Teacher';
     const domainName = obs.domain || 'General';
-    return teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       domainName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const obsGrade = obs.classroom?.grade || obs.grade || "";
+    const obsLA = obs.classroom?.learningArea || obs.learningArea || "";
+
+    const matchesGrade = selectedGrade === "all" || obsGrade.split(' - ')[0] === selectedGrade;
+    const matchesLA = selectedLA === "all" || obsLA === selectedLA;
+
+    return matchesSearch && matchesGrade && matchesLA;
   });
+
+  const grades = Array.from(new Set(observations.map(o => {
+    const g = o.classroom?.grade || o.grade || "";
+    return g.split(' - ')[0];
+  }))).filter(Boolean).sort((a, b) => {
+    const numA = parseInt(a.replace(/\D/g, ''));
+    const numB = parseInt(b.replace(/\D/g, ''));
+    return numA - numB;
+  });
+
+  const learningAreas = Array.from(new Set(observations.map(o => o.classroom?.learningArea || o.learningArea || ""))).filter(Boolean).sort();
+
+  const resetFilters = () => {
+    setSelectedGrade("all");
+    setSelectedLA("all");
+    setSearchQuery("");
+  };
 
   return (
     <div className="space-y-6">
@@ -3011,10 +3043,54 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filter
-          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className={cn("rounded-xl", (selectedGrade !== "all" || selectedLA !== "all") && "border-primary text-primary bg-primary/10")}>
+                <Filter className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium leading-none">Filter Observations</h4>
+                  <p className="text-sm text-muted-foreground">Narrow down the list by grade or learning area.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Grade</Label>
+                  <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Grades" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Grades</SelectItem>
+                      {grades.map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Learning Area</Label>
+                  <Select value={selectedLA} onValueChange={setSelectedLA}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Learning Areas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Learning Areas</SelectItem>
+                      {learningAreas.map(la => (
+                        <SelectItem key={la} value={la}>{la}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-muted-foreground hover:text-foreground">
+                    Reset Filters
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

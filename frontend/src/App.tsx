@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import TeacherDashboard from "./pages/TeacherDashboard";
@@ -14,8 +14,14 @@ import { CreateMeetingForm } from "./pages/CreateMeetingForm";
 import { MeetingDetailsView } from "./pages/MeetingDetailsView";
 import { MeetingMoMForm } from "./pages/MeetingMoMForm";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
+import GrowthPage from "./pages/GrowthPage";
+import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
+import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
+import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
+import QuickFeedbackPage from "./pages/leader/QuickFeedbackPage";
 import OKRDashboard from "./pages/OKRDashboard";
 import NotFound from "./pages/NotFound";
+
 
 import { AuthProvider } from "./hooks/useAuth";
 import { PermissionProvider } from "./contexts/PermissionContext";
@@ -113,6 +119,74 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
                       <MeetingMoMForm />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/growth"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN', 'MANAGEMENT']}>
+                      <GrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/growth/feedback"
+                  element={<Navigate to="/leader/danielson-framework" replace />}
+                />
+                <Route
+                  path="/leader/growth"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LeaderGrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/growth/:teacherId"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LeaderGrowthPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/danielson-framework"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <DanielsonFrameworkPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/danielson-framework/:teacherId"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <DanielsonFrameworkPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/quick-feedback"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <QuickFeedbackPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/quick-feedback/:teacherId"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <QuickFeedbackPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/growth-analytics"
+                  element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'SUPERADMIN']}>
+                      <AdminGrowthAnalyticsPage />
                     </ProtectedRoute>
                   }
                 />
