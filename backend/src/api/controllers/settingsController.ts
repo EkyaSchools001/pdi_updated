@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { getIO } from '../../core/socket';
+import { invalidateAccessMatrixCache } from '../middlewares/accessControl';
 
 const prisma = new PrismaClient();
 
@@ -71,6 +72,12 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
             console.log(`[SOCKET] Broadcast complete to all clients`);
         } catch (socketErr) {
             console.error('[SOCKET] Failed to broadcast setting update:', socketErr);
+        }
+
+        // Immediately invalidate backend access matrix cache so API routes
+        // use the new permissions on the very next request
+        if (key === 'access_matrix_config') {
+            invalidateAccessMatrixCache();
         }
 
         res.status(200).json({
