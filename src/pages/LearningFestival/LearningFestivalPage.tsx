@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Calendar, Award, Clock, Target } from 'lucide-react';
+import { Calendar, Award, Clock, Target, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function LearningFestivalPage() {
@@ -59,7 +59,14 @@ export function LearningFestivalPage() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto px-4 py-8">
+        <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto px-4 py-8">
+            <div className="flex items-center gap-4 mb-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/teacher/courses')} className="gap-2 text-muted-foreground hover:text-foreground">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Courses
+                </Button>
+            </div>
+
             <PageHeader
                 title="Learning Festivals"
                 subtitle="Discover upcoming professional learning events, apply to showcase your growth, and engage with the community."

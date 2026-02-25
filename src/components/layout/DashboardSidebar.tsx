@@ -28,6 +28,7 @@ import {
   Megaphone,
   Bell,
   Award,
+  BarChart3,
 } from "lucide-react";
 import { Role, RoleBadge } from "../RoleBadge";
 import { Button } from "../ui/button";
@@ -55,6 +56,7 @@ const teacherNav = [
   { title: "Insights", icon: Lightbulb, path: "/teacher/insights" },
   { title: "Survey", icon: ClipboardList, path: "/teacher/survey" },
   { title: "My Profile", icon: Users, path: "/teacher/profile" },
+  { title: "OKR Dashboard", icon: BarChart3, path: "/okr" },
 ];
 
 const leaderNav = [
@@ -77,6 +79,7 @@ const leaderNav = [
   { title: "Documents", icon: FileCheck, path: "/leader/documents" },
   { title: "Settings", icon: Settings, path: "/leader/settings" },
   { title: "Survey", icon: ClipboardList, path: "/leader/survey" },
+  { title: "OKR Dashboard", icon: BarChart3, path: "/okr" },
 ];
 
 const adminNav = [
@@ -93,6 +96,7 @@ const adminNav = [
   { title: "Reports", icon: FileText, path: "/admin/reports" },
   { title: "Survey", icon: ClipboardList, path: "/admin/survey" },
   { title: "Settings", icon: Settings, path: "/admin/settings" },
+  { title: "OKR Dashboard", icon: BarChart3, path: "/okr" },
 ];
 
 const managementNav = [
@@ -108,6 +112,7 @@ const managementNav = [
   { title: "Risk & Intervention", icon: AlertTriangle, path: "/management/risk" },
   { title: "Reports", icon: FileText, path: "/management/reports" },
   { title: "Survey", icon: ClipboardList, path: "/management/survey" },
+  { title: "OKR Dashboard", icon: BarChart3, path: "/okr" },
 ];
 
 const superAdminNav = [

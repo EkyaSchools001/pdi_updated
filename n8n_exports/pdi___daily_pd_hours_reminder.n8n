@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "templateId": "default"
+  },
+  "name": "PDI - Daily PD Hours Reminder",
+  "nodes": [
+    {
+      "id": "cron-node-1",
+      "name": "Schedule: 8:30 AM Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-node-1",
+      "name": "POST → PDI: Trigger PD Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:4000/api/v1/reminders/pd-hours",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"type\":\"pd_hours_reminder\",\"threshold_days\":7}"
+      }
+    },
+    {
+      "id": "noop-1",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Schedule: 8:30 AM Daily": {
+      "main": [
+        [
+          {
+            "node": "POST → PDI: Trigger PD Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST → PDI: Trigger PD Reminder": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

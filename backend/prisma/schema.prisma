@@ -60,6 +60,12 @@ model User {
   // Learning Festival
   festivalApplications LearningFestivalApplication[] @relation("Applicant")
   reviewedApplications LearningFestivalApplication[] @relation("ApplicationReviewer")
+
+  // Assessments
+  createdAssessments    Assessment[]
+  assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
+  assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
+  assessmentAttempts    AssessmentAttempt[]
 }
 
 model Meeting {
@@ -600,3 +606,63 @@ model LearningFestivalApplication {
   reviewer User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
 }
 
+model Assessment {
+  id               String   @id @default(uuid())
+  title            String
+  description      String?
+  type             String   @default("CUSTOM") // POST_ORIENTATION, PREPAREDNESS, CUSTOM
+  isTimed          Boolean  @default(false)
+  timeLimitMinutes Int?
+  maxAttempts      Int      @default(1)
+  createdById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy   User                   @relation(fields: [createdById], references: [id])
+  questions   AssessmentQuestion[]
+  assignments AssessmentAssignment[]
+  attempts    AssessmentAttempt[]
+}
+
+model AssessmentQuestion {
+  id            String  @id @default(uuid())
+  assessmentId  String
+  prompt        String
+  type          String  @default("MCQ") // MCQ, TEXT
+  options       String? // JSON string
+  correctAnswer String? // JSON string or text mapping
+  points        Int     @default(1)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentAssignment {
+  id                 String   @id @default(uuid())
+  assessmentId       String
+  assignedToId       String?  // Can be assigned to a specific user
+  assignedToCampusId String?  // Or a whole campus
+  assignedToRole     String?  // Or a specific role
+  assignedById       String
+  assignedAt         DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assignedTo User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedBy User       @relation("AssignedBy", fields: [assignedById], references: [id])
+}
+
+model AssessmentAttempt {
+  id            String    @id @default(uuid())
+  assessmentId  String
+  userId        String
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+  status        String    @default("IN_PROGRESS") // IN_PROGRESS, SUBMITTED, TIMED_OUT
+  attemptNumber Int       @default(1)
+  score         Float?
+  answers       String?   // JSON string mapping questionId to user's answer
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

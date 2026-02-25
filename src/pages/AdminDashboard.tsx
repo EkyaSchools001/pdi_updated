@@ -1,7 +1,8 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList, Shield } from "lucide-react";
+import { Users, FileText, Book, Calendar, Settings, Activity, ClipboardList, Shield, FileCheck } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Link, Routes, Route, useNavigate, useLocation, useParams } from "react-router-dom";
@@ -21,6 +22,7 @@ import api from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 import AttendanceRegister from "@/pages/AttendanceRegister";
 import EventAttendanceView from "@/pages/EventAttendanceView";
+import { AssessmentManagementDashboard } from "@/components/assessments/AssessmentManagementDashboard";
 import { useAccessControl } from "@/hooks/useAccessControl";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
@@ -72,7 +74,7 @@ export default function AdminDashboard() {
           templates: templatesResponse.data?.status
         });
 
-        const observationsData = obsResponse.data?.status === 'success' 
+        const observationsData = obsResponse.data?.status === 'success'
           ? (obsResponse.data?.data?.observations || [])
           : [];
         setObservations(observationsData);
@@ -146,7 +148,7 @@ export default function AdminDashboard() {
         <Route path="meetings/create" element={<CreateMeetingForm />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
-        <Route path="courses" element={<CourseManagementView />} />
+        <Route path="courses/*" element={<AdminCoursesModule />} />
         <Route path="calendar" element={<AdminCalendarView />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
@@ -158,6 +160,41 @@ export default function AdminDashboard() {
         <Route path="superadmin" element={<SuperAdminView />} />
       </Routes>
     </DashboardLayout>
+  );
+}
+
+function AdminCoursesModule() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentTab = location.pathname.includes('/assessments') ? 'assessments' : 'catalogue';
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Admin: Courses & Assessments"
+        subtitle="Manage platform curriculum and evaluation templates"
+      />
+
+      <Tabs value={currentTab} onValueChange={(val) => navigate(val === 'catalogue' ? '/admin/courses' : '/admin/courses/assessments')}>
+        <TabsList className="bg-muted/50 p-1">
+          <TabsTrigger value="catalogue" className="gap-2">
+            <Book className="w-4 h-4" />
+            Course Catalogue
+          </TabsTrigger>
+          <TabsTrigger value="assessments" className="gap-2">
+            <FileCheck className="w-4 h-4" />
+            Assessment Templates
+          </TabsTrigger>
+        </TabsList>
+
+        <div className="mt-6">
+          <Routes>
+            <Route index element={<CourseManagementView hideHeader />} />
+            <Route path="assessments" element={<AssessmentManagementDashboard hideHeader />} />
+          </Routes>
+        </div>
+      </Tabs>
+    </div>
   );
 }
 

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Search, Filter, CheckCircle2, XCircle, Award, Target, FileText, Download } from 'lucide-react';
+import { Search, Filter, CheckCircle2, XCircle, Award, Target, FileText, Download, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -89,7 +89,26 @@ export function FestivalManagementDashboard() {
     const isAdminOrMgmt = ['ADMIN', 'SUPERADMIN', 'MANAGEMENT'].includes(role);
 
     return (
-        <div className="container mx-auto py-8 px-4 space-y-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-8 px-4 space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center gap-4 mb-2">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                        // Dynamically route back based on user role
+                        if (role === 'SUPERADMIN' || role === 'ADMIN') {
+                            window.location.href = '/admin/courses';
+                        } else {
+                            window.location.href = '/leader/courses';
+                        }
+                    }}
+                    className="gap-2 text-muted-foreground hover:text-foreground"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Courses
+                </Button>
+            </div>
+
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <PageHeader
                     title="Learning Festival Tracker"

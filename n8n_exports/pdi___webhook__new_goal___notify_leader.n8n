@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "templateId": "default"
+  },
+  "name": "PDI - Webhook: New Goal → Notify Leader",
+  "nodes": [
+    {
+      "id": "webhook-node-3",
+      "name": "Webhook: Teacher Created Goal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "pdi-goal-created",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      }
+    },
+    {
+      "id": "set-node-3",
+      "name": "Extract Goal Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "teacherId",
+              "value": "={{ $json.body.teacherId }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "goalTitle",
+              "value": "={{ $json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "s3",
+              "name": "campusId",
+              "value": "={{ $json.body.campusId }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-node-3",
+      "name": "POST → PDI: Notify Leader",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:4000/api/v1/notifications/goal-created",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"teacherId\":\"{{ $json.teacherId }}\",\"goalTitle\":\"{{ $json.goalTitle }}\",\"campusId\":\"{{ $json.campusId }}\"}"
+      }
+    },
+    {
+      "id": "respond-node-3",
+      "name": "Respond: OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"status\":\"notification_sent\",\"message\":\"Leader notified of new goal\"}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Teacher Created Goal": {
+      "main": [
+        [
+          {
+            "node": "Extract Goal Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Goal Data": {
+      "main": [
+        [
+          {
+            "node": "POST → PDI: Notify Leader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST → PDI: Notify Leader": {
+      "main": [
+        [
+          {
+            "node": "Respond: OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

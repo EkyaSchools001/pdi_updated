@@ -28,7 +28,7 @@ const initialCourses: any[] = [];
 // Enrolled members will be fetched from API
 const mockEnrolledMembers: Record<string, any[]> = {};
 
-export function CourseManagementView() {
+export function CourseManagementView({ hideHeader = false }: { hideHeader?: boolean }) {
     const navigate = useNavigate();
     const [courses, setCourses] = useState<any[]>([]);
     const [pendingCourses, setPendingCourses] = useState<any[]>([]);
@@ -159,95 +159,97 @@ export function CourseManagementView() {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            <PageHeader
-                title="Course Catalogue"
-                subtitle="Manage professional development courses and workshops"
-                actions={
-                    <div className="flex gap-2">
-                        <Button onClick={() => navigate("../festival")} variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
-                            <Calendar className="w-4 h-4" />
-                            Learning Festival
-                        </Button>
-                        <Button variant="outline" className="gap-2" onClick={() => setIsDownloadableOpen(true)}>
-                            <Download className="w-4 h-4" />
-                            Downloadable Course
-                        </Button>
-                        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add New Course
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add New Course</DialogTitle>
-                                    <DialogDescription>Create a new professional development course.</DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="title">Course Title</Label>
-                                        <Input id="title" value={newCourse.title} onChange={e => setNewCourse({ ...newCourse, title: e.target.value })} />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
+            {!hideHeader && (
+                <PageHeader
+                    title="Course Catalogue"
+                    subtitle="Manage professional development courses and workshops"
+                    actions={
+                        <div className="flex gap-2">
+                            <Button onClick={() => navigate("../festival")} variant="outline" className="gap-2 border-primary/20 hover:bg-primary/5 text-primary">
+                                <Calendar className="w-4 h-4" />
+                                Learning Festival
+                            </Button>
+                            <Button variant="outline" className="gap-2" onClick={() => setIsDownloadableOpen(true)}>
+                                <Download className="w-4 h-4" />
+                                Downloadable Course
+                            </Button>
+                            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Add New Course
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Add New Course</DialogTitle>
+                                        <DialogDescription>Create a new professional development course.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
                                         <div className="grid gap-2">
-                                            <Label htmlFor="category">Category</Label>
-                                            <Select value={newCourse.category} onValueChange={v => setNewCourse({ ...newCourse, category: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Pedagogy">Pedagogy</SelectItem>
-                                                    <SelectItem value="Technology">Technology</SelectItem>
-                                                    <SelectItem value="Assessment">Assessment</SelectItem>
-                                                    <SelectItem value="Culture">Culture</SelectItem>
-                                                    <SelectItem value="Compliance">Compliance</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Label htmlFor="title">Course Title</Label>
+                                            <Input id="title" value={newCourse.title} onChange={e => setNewCourse({ ...newCourse, title: e.target.value })} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="category">Category</Label>
+                                                <Select value={newCourse.category} onValueChange={v => setNewCourse({ ...newCourse, category: v })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Pedagogy">Pedagogy</SelectItem>
+                                                        <SelectItem value="Technology">Technology</SelectItem>
+                                                        <SelectItem value="Assessment">Assessment</SelectItem>
+                                                        <SelectItem value="Culture">Culture</SelectItem>
+                                                        <SelectItem value="Compliance">Compliance</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="hours">PD Hours</Label>
+                                                <Input id="hours" type="number" value={newCourse.hours} onChange={e => setNewCourse({ ...newCourse, hours: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="instructor">Instructor</Label>
+                                                <Input id="instructor" value={newCourse.instructor} onChange={e => setNewCourse({ ...newCourse, instructor: e.target.value })} />
+                                            </div>
+                                            <div className="grid gap-2">
+                                                <Label htmlFor="status">Initial Status</Label>
+                                                <Select value={newCourse.status} onValueChange={v => setNewCourse({ ...newCourse, status: v })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Active">Active</SelectItem>
+                                                        <SelectItem value="Draft">Draft</SelectItem>
+                                                        <SelectItem value="Mandatory">Mandatory</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="hours">PD Hours</Label>
-                                            <Input id="hours" type="number" value={newCourse.hours} onChange={e => setNewCourse({ ...newCourse, hours: e.target.value })} />
+                                            <Label htmlFor="course-url">Course Link / Video URL (Optional)</Label>
+                                            <Input
+                                                id="course-url"
+                                                placeholder="https://..."
+                                                value={newCourse.url}
+                                                onChange={e => setNewCourse({ ...newCourse, url: e.target.value })}
+                                            />
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="instructor">Instructor</Label>
-                                            <Input id="instructor" value={newCourse.instructor} onChange={e => setNewCourse({ ...newCourse, instructor: e.target.value })} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="status">Initial Status</Label>
-                                            <Select value={newCourse.status} onValueChange={v => setNewCourse({ ...newCourse, status: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Active">Active</SelectItem>
-                                                    <SelectItem value="Draft">Draft</SelectItem>
-                                                    <SelectItem value="Mandatory">Mandatory</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="course-url">Course Link / Video URL (Optional)</Label>
-                                        <Input
-                                            id="course-url"
-                                            placeholder="https://..."
-                                            value={newCourse.url}
-                                            onChange={e => setNewCourse({ ...newCourse, url: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                                    <Button onClick={handleAddCourse}>Add Course</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                }
-            />
+                                    <DialogFooter>
+                                        <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                                        <Button onClick={handleAddCourse}>Add Course</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    }
+                />
+            )}
 
             {/* Downloadable Course Upload Dialog */}
             <Dialog open={isDownloadableOpen} onOpenChange={setIsDownloadableOpen}>
