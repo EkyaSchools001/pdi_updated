@@ -60,7 +60,9 @@ import {
   Paperclip,
   ClipboardCheck,
   Tag,
-  ClipboardList
+  ClipboardList,
+  ArrowLeft,
+  PenTool
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AcknowledgementsView } from "@/components/documents/AcknowledgementsView";
@@ -1835,7 +1837,7 @@ export default function TeacherDashboard() {
     });
 
     socket.on('attendance:toggled', (data: any) => {
-      fetchTraining();
+      fetchEvents();
       if (data.action === 'enable') {
         toast.success(`Attendance is now live! Check "My Attendance" to mark your presence.`, {
           action: {
