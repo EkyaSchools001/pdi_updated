@@ -124,7 +124,7 @@ export const createAnnouncement = async (req: AuthRequest, res: Response, next: 
             const parsedDepts = Array.isArray(targetDepartments) ? targetDepartments : JSON.parse(targetDepartments || '[]');
 
             // Determine targeting filters
-            const userFilters = [];
+            const userFilters: any[] = [];
             if (parsedRoles.length > 0) userFilters.push({ role: { in: parsedRoles } });
             if (parsedCampuses.length > 0 && !parsedCampuses.includes('ALL')) userFilters.push({ campusId: { in: parsedCampuses } });
             if (parsedDepts.length > 0 && !parsedDepts.includes('ALL')) userFilters.push({ department: { in: parsedDepts } });

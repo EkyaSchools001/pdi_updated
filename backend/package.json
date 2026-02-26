@@ -48,6 +48,6 @@
     "ts-node": "^10.9.2"
   },
   "prisma": {
-    "seed": "ts-node src/seed.ts"
+    "seed": "node dist/seed.js"
   }
 }

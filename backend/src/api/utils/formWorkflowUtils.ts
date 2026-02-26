@@ -45,7 +45,7 @@ export async function getFormRouting(
 
         if (workflows.length === 0) return null;
 
-        let bestMatch = null;
+        let bestMatch: any = null;
         let highestScore = -1;
 
         for (const wf of workflows) {
