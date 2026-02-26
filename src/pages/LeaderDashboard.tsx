@@ -349,15 +349,11 @@ export default function LeaderDashboard() {
         <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
         <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
         <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
-<<<<<<< HEAD
         <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchMoocSubmissions} />} />
-=======
-        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeam} />} />
         <Route path="meetings" element={<MeetingsDashboard />} />
         <Route path="meetings/create" element={<CreateMeetingForm />} />
         <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
         <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
->>>>>>> 3cc1cbfc3f08e193697b210371f283f921df6366
         <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
