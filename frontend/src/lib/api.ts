@@ -19,7 +19,7 @@ const getApiUrl = () => {
 
     // 3. Cloudflare Pages/Netlify/Production backend routing
     if (import.meta.env.PROD) {
-        return 'https://bountiful-endurance-production-d25a.up.railway.app/api/v1';
+        return '/api/v1';
     }
 
     // 4. Localhost fallback
