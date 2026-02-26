@@ -33,6 +33,18 @@ export const getSetting = async (req: Request, res: Response, next: NextFunction
         });
 
         if (!setting) {
+            // Provide a default access_matrix_config if not yet initialized
+            if (key === 'access_matrix_config') {
+                return res.status(200).json({
+                    status: 'success',
+                    data: {
+                        setting: {
+                            key: 'access_matrix_config',
+                            value: JSON.stringify({ accessMatrix: [], formFlows: [] })
+                        }
+                    }
+                });
+            }
             return next(new AppError('Setting not found', 404));
         }
 

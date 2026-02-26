@@ -5,6 +5,7 @@ import prisma from '../../infrastructure/database/prisma';
 import bcrypt from 'bcryptjs';
 import { getIO } from '../../core/socket';
 import { createNotification } from './notificationController';
+import { getFormRouting } from '../utils/formWorkflowUtils';
 
 export const getAllObservations = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -201,13 +202,21 @@ export const createObservation = async (req: Request, res: Response, next: NextF
         // Real-time update
         getIO().emit('observation:created', mappedObservation);
 
+        // Determine routing dynamically based on FormWorkflow settings
+        const routing = await getFormRouting(
+            'Walkthrough Observation',
+            authReq.user?.role || 'LEADER',
+            mappedObservation.campus || undefined,
+            mappedObservation.learningArea || undefined // Use learningArea as subject
+        );
+
         // Send in-app notification to teacher
         await createNotification({
             userId: mappedObservation.teacherId,
             title: 'New Observation',
             message: `A new ${mappedObservation.domain} observation has been submitted by ${authReq.user?.fullName}.`,
             type: 'SUCCESS',
-            link: '/teacher/dashboard'
+            link: routing ? `${routing.route}/dashboard` : '/teacher/dashboard'
         });
 
         res.status(201).json({

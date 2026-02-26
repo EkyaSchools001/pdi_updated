@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
+import { FormWorkflowsConfig } from "./FormWorkflowsConfig";
 
 // --- Interfaces ---
 
@@ -434,6 +435,9 @@ export function SystemSettingsView() {
                     </TabsTrigger>
                     <TabsTrigger value="workflows" className="w-full justify-start gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                         <Workflow className="w-4 h-4" /> Workflows (n8n)
+                    </TabsTrigger>
+                    <TabsTrigger value="form-workflows" className="w-full justify-start gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                        <Layout className="w-4 h-4" /> Form Mapping
                     </TabsTrigger>
                 </TabsList>
 
@@ -882,6 +886,11 @@ export function SystemSettingsView() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    {/* Form Workflows Tab */}
+                    <TabsContent value="form-workflows" className="m-0 space-y-6">
+                        <FormWorkflowsConfig />
                     </TabsContent>
                 </div>
             </Tabs>

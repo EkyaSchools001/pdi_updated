@@ -4,6 +4,7 @@ import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 import { getIO } from '../../core/socket';
 import { createNotification } from './notificationController';
+import { getFormRouting } from '../utils/formWorkflowUtils';
 
 const prisma = new PrismaClient();
 
@@ -62,7 +63,8 @@ export const submitMoocEvidence = async (req: AuthRequest, res: Response) => {
                 user: {
                     select: {
                         fullName: true,
-                        email: true
+                        email: true,
+                        campusId: true
                     }
                 }
             }
@@ -71,6 +73,18 @@ export const submitMoocEvidence = async (req: AuthRequest, res: Response) => {
         // Emit to leaders
         const io = getIO();
         io.to('leaders').emit('mooc:created', submission);
+
+        // Determine routing and notify relevant parties
+        const routing = await getFormRouting(
+            'MOOC Evidence',
+            req.user?.role || 'TEACHER',
+            submission.user?.campusId || undefined,
+            undefined // Subject not applicable for MOOC evidence usually
+        );
+
+        // For now, we notify the target dashboard users via notification if needed
+        // But the requirement specifically mentioned "the response will be visible in the [Dashboard]"
+        // So we can at least log or use this routing info for later.
 
         res.status(201).json({
             status: 'success',
@@ -149,7 +163,8 @@ export const updateMoocStatus = async (req: AuthRequest, res: Response) => {
                 user: {
                     select: {
                         fullName: true,
-                        email: true
+                        email: true,
+                        campusId: true
                     }
                 }
             }
@@ -161,13 +176,21 @@ export const updateMoocStatus = async (req: AuthRequest, res: Response) => {
         io.to(`user:${submission.userId}`).emit('mooc:updated', submission); // Using new user:ID room convention
         io.to('leaders').emit('mooc:updated', submission);
 
+        // Determine routing for the update notification (Teacher side)
+        const routing = await getFormRouting(
+            'MOOC Evidence',
+            'TEACHER', // The teacher is receiving the notification
+            submission.user?.campusId || undefined,
+            undefined
+        );
+
         // Persist notification for the teacher
         await createNotification({
             userId: submission.userId,
             title: `MOOC Submission ${status}`,
             message: `Your evidence for "${submission.courseName}" has been ${status.toLowerCase()}.`,
             type: status === 'APPROVED' ? 'SUCCESS' : 'WARNING',
-            link: '/teacher/mooc'
+            link: routing ? `${routing.route}/mooc` : '/teacher/mooc'
         });
 
         res.status(200).json({

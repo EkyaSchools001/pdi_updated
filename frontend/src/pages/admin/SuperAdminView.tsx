@@ -31,22 +31,28 @@ interface FormFlowConfig {
     senderRole: string;
     targetDashboard: string;
     targetLocation: string;
+    subjectType?: string;
+    specificSubjects?: string;
+    targetSchool?: string;
 }
 
 
 // Aligned with FormTemplate names + Attendance Submission (used by AttendanceForm)
 const defaultFormFlows: FormFlowConfig[] = [
-    { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
-    { id: '2', formName: 'Professional Goal', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
-    { id: '3', formName: 'MOOC Evidence', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
-    { id: '4', formName: 'Teacher Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
-    { id: '5', formName: 'Attendance Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Attendance Register' },
+    { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports', targetSchool: 'ALL', subjectType: 'ALL', specificSubjects: '' },
+    { id: '2', formName: 'Professional Goal', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals', targetSchool: 'ALL', subjectType: 'ALL', specificSubjects: '' },
+    { id: '3', formName: 'MOOC Evidence', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews', targetSchool: 'ALL', subjectType: 'ALL', specificSubjects: '' },
+    { id: '4', formName: 'Teacher Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio', targetSchool: 'ALL', subjectType: 'ALL', specificSubjects: '' },
+    { id: '5', formName: 'Attendance Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Attendance Register', targetSchool: 'ALL', subjectType: 'ALL', specificSubjects: '' },
 ];
 
 const FORM_NAME_OPTIONS = [
     'Walkthrough Observation', 'Teacher Reflection', 'MOOC Evidence', 'Professional Goal',
     'Attendance Submission', 'Annual Goal Setting', 'MOOC Submission', 'Self-Reflection'
 ];
+
+const coreSubjects = ["Mathematics", "Science", "English", "Social Science", "Physics", "Chemistry", "Biology"];
+const nonCoreSubjects = ["Physical Education", "Computer Science", "Art", "Music", "Hindi", "Kannada", "Value Education"];
 
 export function SuperAdminView() {
     const [isLoading, setIsLoading] = useState(true);
@@ -59,8 +65,9 @@ export function SuperAdminView() {
             try {
                 const response = await api.get('/settings/access_matrix_config');
                 if (response.data.status === 'success' && response.data.data.setting) {
-                    const value = JSON.parse(response.data.data.setting.value);
-                    if (value.accessMatrix) {
+                    const valueData = response.data.data.setting.value;
+                    const value = typeof valueData === 'string' ? JSON.parse(valueData) : valueData;
+                    if (value && value.accessMatrix) {
                         const mergedMatrix = defaultAccessMatrix.map(defaultItem => {
                             const loadedItem = value.accessMatrix.find((item: any) => item.moduleId === defaultItem.moduleId);
                             if (loadedItem) {
@@ -144,7 +151,10 @@ export function SuperAdminView() {
             formName: firstTemplate,
             senderRole: 'TEACHER',
             targetDashboard: 'Leader Dashboard',
-            targetLocation: 'Reports'
+            targetLocation: 'Reports',
+            targetSchool: 'ALL',
+            subjectType: 'ALL',
+            specificSubjects: ''
         };
         setFormFlows([...formFlows, newFlow]);
     };
@@ -323,7 +333,59 @@ export function SuperAdminView() {
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="grid md:grid-cols-4 gap-4">
+                                    <div className="grid md:grid-cols-4 gap-4 mt-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase text-muted-foreground">Subject Type</Label>
+                                            <Select
+                                                value={flow.subjectType || 'ALL'}
+                                                onValueChange={(v) => updateFormFlow(flow.id, 'subjectType', v)}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="ALL">Any / All</SelectItem>
+                                                    <SelectItem value="CORE">Core Subjects</SelectItem>
+                                                    <SelectItem value="NON_CORE">Non-Core Subjects</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase text-muted-foreground">Specific Subjects</Label>
+                                            <Select
+                                                value={flow.specificSubjects || 'NONE'}
+                                                onValueChange={(v) => updateFormFlow(flow.id, 'specificSubjects', v === 'NONE' ? '' : v)}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="Any Subject" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="NONE">Any / Not Specified</SelectItem>
+                                                    <SelectItem disabled value="label-core" className="font-bold text-gray-800 bg-gray-50">--- Core Subjects ---</SelectItem>
+                                                    {coreSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                    <SelectItem disabled value="label-noncore" className="font-bold text-gray-800 bg-gray-50 mt-2">--- Non-Core Subjects ---</SelectItem>
+                                                    {nonCoreSubjects.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label className="text-xs uppercase text-muted-foreground">Target School</Label>
+                                            <Select
+                                                value={flow.targetSchool || 'ALL'}
+                                                onValueChange={(v) => updateFormFlow(flow.id, 'targetSchool', v)}
+                                            >
+                                                <SelectTrigger className="h-9">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {["ALL", "Ekya ITPL", "Ekya BTM", "Ekya JP Nagar", "Ekya Byrathi", "Ekya NICE Road", "CMR NPS", "CMR NPUC"].map(s => (
+                                                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <div className="grid md:grid-cols-4 gap-4 mt-4">
                                         <div className="space-y-2">
                                             <Label className="text-xs uppercase text-muted-foreground">Sent By</Label>
                                             <Select
@@ -339,6 +401,8 @@ export function SuperAdminView() {
                                                     <SelectItem value="LEADER">Leader</SelectItem>
                                                     <SelectItem value="MANAGEMENT">Management</SelectItem>
                                                     <SelectItem value="TEACHER">Teacher</SelectItem>
+                                                    <SelectItem value="CORE_TEACHER">Core Teacher</SelectItem>
+                                                    <SelectItem value="NON_CORE_TEACHER">Non-Core Teacher</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -372,7 +436,9 @@ export function SuperAdminView() {
                                     <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg">
                                         <Workflow className="w-3.5 h-3.5" />
                                         <span>
-                                            <strong>Logic:</strong> When a <strong>{flow.senderRole}</strong> submits <strong>{flow.formName}</strong>,
+                                            <strong>Logic:</strong> When a <strong>{flow.senderRole}</strong>
+                                            {flow.targetSchool && flow.targetSchool !== 'ALL' && ` at ${flow.targetSchool}`} submits <strong>{flow.formName}</strong>
+                                            {flow.subjectType && flow.subjectType !== 'ALL' && ` (for ${flow.subjectType} ${flow.specificSubjects ? `: ${flow.specificSubjects}` : ''})`},
                                             the response will be visible in the <strong>{flow.targetDashboard}</strong> under <strong>{flow.targetLocation}</strong>.
                                         </span>
                                     </div>

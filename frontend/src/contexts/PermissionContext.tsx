@@ -131,8 +131,10 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
             console.log('[PERMISSIONS] Fetching latest access matrix...');
             const response = await api.get('/settings/access_matrix_config');
             if (response.data.status === 'success' && response.data.data.setting) {
-                const value = JSON.parse(response.data.data.setting.value);
-                if (value.accessMatrix) {
+                const valueData = response.data.data.setting.value;
+                const value = typeof valueData === 'string' ? JSON.parse(valueData) : valueData;
+
+                if (value && value.accessMatrix) {
                     // Merge loaded matrix with defaults (so new modules get defaults)
                     const mergedMatrix = defaultAccessMatrix.map(defaultItem => {
                         const loadedItem = value.accessMatrix.find((item: any) => item.moduleId === defaultItem.moduleId);
@@ -154,7 +156,7 @@ export function PermissionProvider({ children }: { children: React.ReactNode }) 
                     console.log('[PERMISSIONS] Matrix synced successfully');
                     setMatrix(mergedMatrix);
                 }
-                if (value.formFlows) {
+                if (value && value.formFlows) {
                     setFormFlows(value.formFlows);
                 }
             }
