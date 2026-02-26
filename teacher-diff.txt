@@ -1,0 +1,18 @@
+﻿diff --cc frontend/src/pages/TeacherDashboard.tsx
+index 0d9e81e,3a08eea..0000000
+--- a/frontend/src/pages/TeacherDashboard.tsx
++++ b/frontend/src/pages/TeacherDashboard.tsx
+@@@ -1,7 -1,8 +1,12 @@@
+  import { useState, useEffect, useMemo } from "react";
+- import jsPDF from "jspdf";
++ import { jsPDF } from "jspdf";
+  import autoTable from "jspdf-autotable";
+++<<<<<<< HEAD:frontend/src/pages/TeacherDashboard.tsx
+ +import { Routes, Route, Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
+++=======
++ import html2canvas from "html2canvas";
++ import { Routes, Route, Link, useLocation, useNavigate, useParams } from "react-router-dom";
+++>>>>>>> 88005bfc0bc0253b30bab1e7cc2de1392940b0e7:src/pages/TeacherDashboard.tsx
+  import api from "@/lib/api";
+  import { getSocket } from "@/lib/socket";
+  import { useAuth } from "@/hooks/useAuth";

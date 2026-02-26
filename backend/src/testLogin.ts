@@ -1,3 +1,4 @@
+// @ts-ignore
 import axios from 'axios';
 
 async function testLogin() {

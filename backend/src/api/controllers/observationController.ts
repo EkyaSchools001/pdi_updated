@@ -48,6 +48,9 @@ export const getAllObservations = async (req: Request, res: Response, next: Next
             return {
                 ...rest,
                 detailedReflection: parsedReflection,
+                metaTags: (() => { try { return JSON.parse(rest.metaTags || '[]'); } catch (e) { return []; } })(),
+                tools: (() => { try { return JSON.parse(rest.tools || '[]'); } catch (e) { return []; } })(),
+                routines: (() => { try { return JSON.parse(rest.routines || '[]'); } catch (e) { return []; } })(),
                 domains: domainRatings.map(dr => ({
                     ...dr,
                     indicators: (() => {
@@ -128,6 +131,13 @@ export const createObservation = async (req: Request, res: Response, next: NextF
             grade: String(data.grade || data.classroom?.grade || ''),
             section: String(data.section || data.classroom?.section || ''),
             learningArea: String(data.learningArea || data.classroom?.learningArea || ''),
+            type: String(data.type || ''),
+            strengths: String(data.strengths || data.glows || ''),
+            areasOfGrowth: String(data.areasOfGrowth || data.grows || ''),
+            otherComment: String(data.otherComment || ''),
+            metaTags: typeof data.metaTags === 'object' ? JSON.stringify(data.metaTags) : String(data.metaTags || '[]'),
+            tools: typeof data.tools === 'object' ? JSON.stringify(data.tools) : String(data.tools || '[]'),
+            routines: typeof data.routines === 'object' ? JSON.stringify(data.routines) : String(data.routines || '[]'),
             createdAt: new Date()
         };
 
@@ -257,7 +267,7 @@ export const updateObservation = async (req: Request, res: Response, next: NextF
 
         const allowedFields = userRole === 'TEACHER'
             ? ['teacherReflection', 'detailedReflection', 'hasReflection', 'status']
-            : ['teacherReflection', 'detailedReflection', 'hasReflection', 'notes', 'actionStep', 'discussionMet', 'score', 'domain', 'status', 'campus', 'block', 'grade', 'section', 'learningArea'];
+            : ['teacherReflection', 'detailedReflection', 'hasReflection', 'notes', 'actionStep', 'discussionMet', 'score', 'domain', 'status', 'campus', 'block', 'grade', 'section', 'learningArea', 'type', 'strengths', 'areasOfGrowth', 'otherComment', 'metaTags', 'tools', 'routines'];
 
         allowedFields.forEach(field => {
             if (data[field] !== undefined) {
@@ -277,6 +287,8 @@ export const updateObservation = async (req: Request, res: Response, next: NextF
                     updateData[field] = !!data[field];
                 } else {
                     if (field === 'detailedReflection' && typeof data[field] === 'object') {
+                        updateData[field] = JSON.stringify(data[field]);
+                    } else if (['metaTags', 'tools', 'routines'].includes(field) && typeof data[field] === 'object') {
                         updateData[field] = JSON.stringify(data[field]);
                     } else {
                         updateData[field] = String(data[field]);

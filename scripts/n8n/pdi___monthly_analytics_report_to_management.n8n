@@ -1,0 +1,185 @@
+{
+  "meta": {
+    "templateId": "default"
+  },
+  "name": "PDI - Monthly Analytics Report to Management",
+  "nodes": [
+    {
+      "id": "cron-node-4",
+      "name": "Schedule: 1st of Month 7 AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 1 * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-node-4a",
+      "name": "GET → PDI: Fetch Monthly Analytics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:4000/api/v1/analytics/monthly-summary",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-node-4",
+      "name": "Format Report Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "reportMonth",
+              "value": "={{ new Date().toLocaleString('default', {month: 'long', year: 'numeric'}) }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "totalTeachers",
+              "value": "={{ $json.data ? $json.data.totalTeachers : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f3",
+              "name": "avgPdHours",
+              "value": "={{ $json.data ? ($json.data.avgPdHours || 0).toFixed(1) : 0 }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "goalsOnTrack",
+              "value": "={{ $json.data ? $json.data.goalsOnTrack : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f5",
+              "name": "obsCompleted",
+              "value": "={{ $json.data ? $json.data.observationsCompleted : 0 }}",
+              "type": "number"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-node-4b",
+      "name": "POST → PDI: Send to Management",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:4000/api/v1/notifications/monthly-report",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"reportMonth\":\"{{ $json.reportMonth }}\",\"totalTeachers\":{{ $json.totalTeachers }},\"avgPdHours\":\"{{ $json.avgPdHours }}\",\"goalsOnTrack\":{{ $json.goalsOnTrack }},\"observationsCompleted\":{{ $json.obsCompleted }}}"
+      }
+    },
+    {
+      "id": "noop-4",
+      "name": "Report Dispatched",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Schedule: 1st of Month 7 AM": {
+      "main": [
+        [
+          {
+            "node": "GET → PDI: Fetch Monthly Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET → PDI: Fetch Monthly Analytics": {
+      "main": [
+        [
+          {
+            "node": "Format Report Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Report Payload": {
+      "main": [
+        [
+          {
+            "node": "POST → PDI: Send to Management",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST → PDI: Send to Management": {
+      "main": [
+        [
+          {
+            "node": "Report Dispatched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

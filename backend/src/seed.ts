@@ -11,13 +11,16 @@ async function main() {
 
     // ── USERS ─────────────────────────────────────────────────────────────────
     const userData = [
-        { name: 'Rohit', email: 'rohit.schoolleader@pdi.com', pass: 'Rohit@123', role: 'LEADER', campusId: 'BTM Layout', department: 'Leadership' },
-        { name: 'Avani', email: 'avani.admin@pdi.com', pass: 'Avani@123', role: 'ADMIN', campusId: 'BTM Layout', department: 'Administration' },
-        { name: 'Teacher One', email: 'teacher1.btmlayout@pdi.com', pass: 'Teacher1@123', role: 'TEACHER', campusId: 'BTM Layout', department: 'Science' },
-        { name: 'Teacher Two', email: 'teacher2.jpnagar@pdi.com', pass: 'Teacher2@123', role: 'TEACHER', campusId: 'JP Nagar', department: 'Mathematics' },
-        { name: 'Teacher Three', email: 'teacher3.itpl@pdi.com', pass: 'Teacher3@123', role: 'TEACHER', campusId: 'ITPL', department: 'English' },
-        { name: 'Indu', email: 'indu.management@pdi.com', pass: 'Indu@123', role: 'MANAGEMENT', campusId: 'Head Office', department: 'Management' },
-        { name: 'Bharath', email: 'bharath.superadmin@padi.com', pass: 'Bharath@123', role: 'SUPERADMIN', campusId: 'Head Office', department: 'Admin' },
+        { name: 'Rohit', email: 'rohit.schoolleader@pdi.com', pass: 'Rohit@123', role: 'LEADER', campusId: 'BTM Layout', department: 'Leadership', academics: 'CORE' as const },
+        { name: 'Avani', email: 'avani.admin@pdi.com', pass: 'Avani@123', role: 'ADMIN', campusId: 'BTM Layout', department: 'Administration', academics: 'CORE' as const },
+        { name: 'Teacher One', email: 'teacher1.btmlayout@pdi.com', pass: 'Teacher1@123', role: 'TEACHER', campusId: 'BTM Layout', department: 'Science', academics: 'CORE' as const },
+        { name: 'Teacher Two', email: 'teacher2.jpnagar@pdi.com', pass: 'Teacher2@123', role: 'TEACHER', campusId: 'JP Nagar', department: 'Mathematics', academics: 'CORE' as const },
+        { name: 'Teacher Three', email: 'teacher3.itpl@pdi.com', pass: 'Teacher3@123', role: 'TEACHER', campusId: 'ITPL', department: 'English', academics: 'CORE' as const },
+        { name: 'Teacher Four', email: 'teacher4.art@pdi.com', pass: 'Teacher4@123', role: 'TEACHER', campusId: 'BTM Layout', department: 'Arts', academics: 'NON_CORE' as const },
+        { name: 'Teacher Five', email: 'teacher5.pt@pdi.com', pass: 'Teacher5@123', role: 'TEACHER', campusId: 'JP Nagar', department: 'Physical Education', academics: 'NON_CORE' as const },
+        { name: 'Teacher Six', email: 'teacher6.vart@pdi.com', pass: 'Teacher6@123', role: 'TEACHER', campusId: 'ITPL', department: 'Visual Arts', academics: 'NON_CORE' as const },
+        { name: 'Indu', email: 'indu.management@pdi.com', pass: 'Indu@123', role: 'MANAGEMENT', campusId: 'Head Office', department: 'Management', academics: 'CORE' as const },
+        { name: 'Bharath', email: 'bharath.superadmin@padi.com', pass: 'Bharath@123', role: 'SUPERADMIN', campusId: 'Head Office', department: 'Admin', academics: 'CORE' as const },
     ];
 
     const ids: Record<string, string> = {};
@@ -25,8 +28,8 @@ async function main() {
         const hash = await bcrypt.hash(u.pass, 10);
         const user = await prisma.user.upsert({
             where: { email: u.email },
-            update: { fullName: u.name, passwordHash: hash, role: u.role as any, campusId: u.campusId, department: u.department },
-            create: { fullName: u.name, email: u.email, passwordHash: hash, role: u.role as any, campusId: u.campusId, department: u.department },
+            update: { fullName: u.name, passwordHash: hash, role: u.role as any, campusId: u.campusId, department: u.department, academics: u.academics },
+            create: { fullName: u.name, email: u.email, passwordHash: hash, role: u.role as any, campusId: u.campusId, department: u.department, academics: u.academics },
         });
         ids[u.email] = user.id;
         console.log(`User: ${u.name} → ${user.id}`);
@@ -41,6 +44,7 @@ async function main() {
     // ── SYSTEM SETTINGS / ACCESS MATRIX ──────────────────────────────────────
     const accessMatrix = [
         { moduleId: 'users', moduleName: 'User Management', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
+        { moduleId: 'team', moduleName: 'Team Overview', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: false, TEACHER: false } },
         { moduleId: 'forms', moduleName: 'Form Templates', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: false, TEACHER: false } },
         { moduleId: 'courses', moduleName: 'Course Catalogue', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'calendar', moduleName: 'Training Calendar', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
@@ -55,12 +59,14 @@ async function main() {
         { moduleId: 'meetings', moduleName: 'Meetings', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
         { moduleId: 'survey', moduleName: 'Surveys', roles: { SUPERADMIN: true, ADMIN: true, LEADER: false, MANAGEMENT: true, TEACHER: true } },
+        { moduleId: 'announcements', moduleName: 'Announcements', roles: { SUPERADMIN: true, ADMIN: true, LEADER: true, MANAGEMENT: true, TEACHER: true } },
     ];
     const formFlows = [
         { id: '1', formName: 'Walkthrough Observation', senderRole: 'LEADER', targetDashboard: 'Teacher Dashboard', targetLocation: 'Growth Reports' },
-        { id: '2', formName: 'Annual Goal Setting', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
-        { id: '3', formName: 'MOOC Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
-        { id: '4', formName: 'Self-Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+        { id: '2', formName: 'Professional Goal', senderRole: 'TEACHER', targetDashboard: 'Leader Dashboard', targetLocation: 'Pending Approvals' },
+        { id: '3', formName: 'MOOC Evidence', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Course Reviews' },
+        { id: '4', formName: 'Teacher Reflection', senderRole: 'TEACHER', targetDashboard: 'Teacher Dashboard', targetLocation: 'My Portfolio' },
+        { id: '5', formName: 'Attendance Submission', senderRole: 'TEACHER', targetDashboard: 'Admin Dashboard', targetLocation: 'Attendance Register' },
     ];
     await prisma.systemSettings.upsert({
         where: { key: 'access_matrix_config' },
@@ -70,7 +76,7 @@ async function main() {
 
     // ── FORM TEMPLATES ────────────────────────────────────────────────────────
     const observationFields = [
-        { id: 'teacherId', type: 'select', label: 'Name of the Teacher', required: true, options: ['Teacher One', 'Teacher Two', 'Teacher Three'] },
+        { id: 'teacherId', type: 'select', label: 'Name of the Teacher', required: true, options: ['Teacher One', 'Teacher Two', 'Teacher Three', 'Teacher Four', 'Teacher Five', 'Teacher Six'] },
         { id: 'date', type: 'date', label: 'Date of Observation', required: true },
         { id: 'campus', type: 'select', label: 'Campus', required: true, options: ['EJPN', 'EITPL', 'EBTM', 'EBYR', 'ENICE', 'ENAVA'] },
         { id: 'observerRole', type: 'radio', label: "Observer's Role", required: true, options: ['Academic Coordinator', 'Head of School', 'PDI Team Member', 'Other'] },
@@ -87,6 +93,22 @@ async function main() {
         { id: '3B1_3', type: 'radio', label: 'Managing Classroom Procedures', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
         { id: '3B1_4', type: 'radio', label: 'Managing Student Behaviour', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
         { id: '3B1_evidence', type: 'textarea', label: 'Evidence for 3B1' },
+    ];
+
+    const specialistFields = [
+        { id: 'teacherId', type: 'select', label: 'Name of the Specialist Teacher', required: true, options: ['Teacher Four', 'Teacher Five', 'Teacher Six'] },
+        { id: 'date', type: 'date', label: 'Date of Observation', required: true },
+        { id: 'campus', type: 'select', label: 'Campus', required: true, options: ['EJPN', 'EITPL', 'EBTM', 'EBYR', 'ENICE', 'ENAVA'] },
+        { id: 'observerRole', type: 'radio', label: "Observer's Role", required: true, options: ['Academic Coordinator', 'Head of School', 'PDI Team Member', 'Other'] },
+        { id: 'domainS1', type: 'header', label: 'S1: Specialized Instruction & Skills' },
+        { id: 'S1_1', type: 'radio', label: 'Skill-Based Pedagogy', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
+        { id: 'S1_2', type: 'radio', label: 'Use of Specialist Resources', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
+        { id: 'S1_3', type: 'radio', label: 'Safety & Procedure Management', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
+        { id: 'S1_evidence', type: 'textarea', label: 'Evidence for S1' },
+        { id: 'domainS2', type: 'header', label: 'S2: Student Engagement & Artistic/Physical Expression' },
+        { id: 'S2_1', type: 'radio', label: 'Engaging Diverse Talent', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
+        { id: 'S2_2', type: 'radio', label: 'Feedback on Skill Development', options: ['Basic', 'Developing', 'Effective', 'Highly Effective', 'Not Observed'] },
+        { id: 'S2_evidence', type: 'textarea', label: 'Evidence for S2' },
     ];
 
     const reflectionFields = [
@@ -111,7 +133,7 @@ async function main() {
     ];
 
     const goalFields = [
-        { id: 'educatorName', type: 'select', label: 'Name of the Educator', required: true, options: ['Teacher One', 'Teacher Two', 'Teacher Three'] },
+        { id: 'educatorName', type: 'select', label: 'Name of the Educator', required: true, options: ['Teacher One', 'Teacher Two', 'Teacher Three', 'Teacher Four', 'Teacher Five', 'Teacher Six'] },
         { id: 'campus', type: 'select', label: 'Campus', required: true, options: ['EJPN', 'EITPL', 'EBTM', 'EBYR'] },
         { id: 'dateOfGoalSetting', type: 'date', label: 'Date of Goal Setting', required: true },
         { id: 'goalForYear', type: 'textarea', label: 'Goal for the Academic Year', required: true },
@@ -120,14 +142,20 @@ async function main() {
         { id: 'pillarTag', type: 'select', label: 'Pillar Tag', required: true, options: ['Live the Lesson', 'Authentic Assessments', 'Instruct to Inspire', 'Care about Culture', 'Engaging Environment', 'Professional Practice'] },
     ];
 
-    for (const tmpl of [
+    const templates = [
         { name: 'Walkthrough Observation', type: 'OBSERVATION', isDefault: true, structure: JSON.stringify(observationFields) },
+        { name: 'Specialist Observation', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(specialistFields) },
         { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
         { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
         { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
-    ]) {
-        const existingTmpl = await prisma.formTemplate.findFirst({ where: { name: tmpl.name, type: tmpl.type as any } });
-        if (!existingTmpl) await prisma.formTemplate.create({ data: tmpl as any });
+        { name: 'Attendance Submission', type: 'ATTENDANCE', isDefault: true, structure: JSON.stringify([]) }, // Added placeholder for the new flow if needed
+    ];
+
+    for (const t of templates) {
+        const existing = await prisma.formTemplate.findFirst({ where: { name: t.name } });
+        if (!existing) {
+            await prisma.formTemplate.create({ data: t });
+        }
     }
     console.log('Seeded form templates');
 

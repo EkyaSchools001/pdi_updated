@@ -1,0 +1,70 @@
+﻿On branch main
+Your branch and 'origin/main' have diverged,
+and have 1 and 14 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
+
+Changes to be committed:
+	modified:   backend/src/api/controllers/analyticsController.ts
+	modified:   backend/src/api/controllers/attendanceController.ts
+	new file:   backend/src/api/controllers/growthController.ts
+	modified:   backend/src/api/controllers/learningFestivalController.ts
+	modified:   backend/src/api/controllers/observationController.ts
+	modified:   backend/src/api/controllers/trainingController.ts
+	modified:   backend/src/api/controllers/uploadController.ts
+	modified:   backend/src/api/controllers/userController.ts
+	new file:   backend/src/api/routes/growthRoutes.ts
+	modified:   backend/src/api/routes/index.ts
+	new file:   backend/src/scripts/updateAcademics.ts
+	modified:   backend/src/seed.ts
+	new file:   backend/test_db.js
+	modified:   database/prisma/schema.prisma
+	modified:   frontend/src/App.tsx
+	modified:   frontend/src/components/ObservationCard.tsx
+	modified:   frontend/src/components/TeacherProfileView.tsx
+	modified:   frontend/src/components/UnifiedObservationForm.tsx
+	modified:   frontend/src/components/layout/DashboardSidebar.tsx
+	modified:   frontend/src/hooks/useAuth.tsx
+	modified:   frontend/src/pages/AdminDocumentManagement.tsx
+	modified:   frontend/src/pages/AttendanceRegister.tsx
+	modified:   frontend/src/pages/Auth.tsx
+	modified:   frontend/src/pages/EventAttendanceView.tsx
+	modified:   frontend/src/pages/LeaderDashboard.tsx
+	modified:   frontend/src/pages/LearningFestival/FestivalManagementDashboard.tsx
+	modified:   frontend/src/pages/LearningFestival/LearningFestivalPage.tsx
+	modified:   frontend/src/pages/TeacherDocuments.tsx
+	modified:   frontend/src/pages/admin/AdminReportsView.tsx
+	modified:   frontend/src/pages/admin/UserManagementView.tsx
+	modified:   frontend/src/services/documentService.ts
+	modified:   frontend/src/services/learningFestivalService.ts
+	modified:   frontend/src/services/userService.ts
+	modified:   frontend/src/types/observation.ts
+
+Unmerged paths:
+  (use "git add/rm <file>..." as appropriate to mark resolution)
+	both modified:   frontend/package-lock.json
+	both modified:   frontend/package.json
+	added by them:   frontend/src/components/QuickFeedbackForm.tsx
+	added by them:   frontend/src/components/growth/AdminAnalyticsView.tsx
+	added by them:   frontend/src/components/growth/CoreModules.tsx
+	added by them:   frontend/src/components/growth/NonCoreModules.tsx
+	added by them:   frontend/src/components/growth/TeacherSelection.tsx
+	added by them:   frontend/src/pages/GrowthPage.tsx
+	added by them:   frontend/src/pages/LearningFestival/CreateFestivalModal.tsx
+	both modified:   frontend/src/pages/ManagementDashboard.tsx
+	both modified:   frontend/src/pages/TeacherDashboard.tsx
+	added by them:   frontend/src/pages/admin/AdminGrowthAnalyticsPage.tsx
+	added by them:   frontend/src/pages/leader/DanielsonFrameworkPage.tsx
+	added by them:   frontend/src/pages/leader/LeaderGrowthPage.tsx
+	added by them:   frontend/src/pages/leader/QuickFeedbackPage.tsx
+	added by them:   frontend/src/pages/management/ManagementInsightsView.tsx
+	deleted by us:   pdi_updated
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	status.txt
+	status_utf8.txt
+

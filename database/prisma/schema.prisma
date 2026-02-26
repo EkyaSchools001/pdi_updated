@@ -1,0 +1,694 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AcademicType {
+  CORE
+  NON_CORE
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String?   @default("")
+  fullName       String
+  profilePicture String?
+  role           String    @default("TEACHER")
+  campusId       String?
+  department     String?
+  status         String    @default("Active")
+  lastActive     DateTime?
+  lastSeen       DateTime?
+  isVerified     Boolean   @default(false)
+  campusAccess   String?
+  dateOfBirth    String?
+  managerId      String?
+  academics      AcademicType? @default(CORE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  sentObservations     Observation[]             @relation("Observer")
+  receivedObservations Observation[]             @relation("Teacher")
+  proposedEvents       TrainingEvent[]           @relation("ProposedEvents")
+  createdEvents        TrainingEvent[]           @relation("CreatedEvents")
+  goals                Goal[]
+  registrations        Registration[]
+  attendanceRecords    EventAttendance[]
+  pdHours              PDHour[]
+  createdDocuments     Document[]
+  acknowledgements DocumentAcknowledgement[]
+  moocSubmissions  MoocSubmission[]
+  enrollments      CourseEnrollment[]
+
+  // New Relations for Meetings
+  createdMeetings  Meeting[]         @relation("MeetingCreator")
+  meetingAttendees MeetingAttendee[]
+  meetingReplies   MeetingReply[]
+  momCreated       MeetingMinutes[]  @relation("MoMCreator")
+
+  // Notifications
+  notifications Notification[]
+
+  // Announcements
+  createdAnnouncements   Announcement[]              @relation("AnnouncementCreator")
+  announcementAcknowledgements AnnouncementAcknowledgement[]
+  
+  // Survey Relations
+  surveyResponses SurveyResponse[]
+  postOrientationAssessments PostOrientationAssessment[]
+
+  // Learning Festival
+  festivalApplications LearningFestivalApplication[] @relation("Applicant")
+  reviewedApplications LearningFestivalApplication[] @relation("ApplicationReviewer")
+
+  // Assessments
+  createdAssessments    Assessment[]
+  assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
+  assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
+  assessmentAttempts    AssessmentAttempt[]
+
+  @@index([academics])
+}
+
+model Meeting {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  meetingType  String // Staff, Department, Management, Academic Review, Custom
+  campusId     String?
+  departmentId String?
+  meetingDate  String
+  startTime    String
+  endTime      String
+  mode         String // Online, Offline
+  locationLink String?
+  createdById  String
+  status       String   @default("Draft") // Draft, Scheduled, Ongoing, Completed, Archived
+  momStatus    String   @default("Not Created") // Not Created, Draft, Published
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  createdBy     User                @relation("MeetingCreator", fields: [createdById], references: [id])
+  attendees     MeetingAttendee[]
+  minutes       MeetingMinutes?
+  replies       MeetingReply[]
+  shares        MeetingShare[]
+  actionItems   MeetingActionItem[]
+}
+
+model MeetingAttendee {
+  id               String  @id @default(uuid())
+  meetingId        String
+  userId           String
+  attendanceStatus String @default("Invited") // Invited, Attended, Absent
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+}
+
+model MeetingMinutes {
+  id                String   @id @default(uuid())
+  meetingId         String   @unique
+  objective         String
+  agendaPoints      String // JSON string or text
+  discussionSummary String
+  decisions         String // JSON string or text
+  attendanceCount   Int      @default(0)
+  attendanceSummary String?  // Added field
+  departments       String? // JSON string
+  attachments       String? // JSON string
+  status            String   @default("Draft") // Draft, Published, Archived
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("MoMCreator", fields: [createdById], references: [id])
+}
+
+model MeetingActionItem {
+  id              String   @id @default(uuid())
+  meetingId       String
+  taskDescription String
+  assignedTo      String
+  deadline        String
+  priority        String   @default("Medium") // High, Medium, Low
+  status          String   @default("Pending") // Pending, In Progress, Completed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model MeetingReply {
+  id        String   @id @default(uuid())
+  meetingId String
+  userId    String
+  replyText String
+  createdAt DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MeetingShare {
+  id             String   @id @default(uuid())
+  meetingId      String
+  sharedBy       String
+  targetRole     String
+  targetCampusId String?
+  sharedAt       DateTime @default(now())
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model Observation {
+  id                 String              @id @default(uuid())
+  teacherId          String
+  observerId         String
+  date               String
+  domain             String
+  score              Float
+  notes              String?
+  status             String              @default("SUBMITTED")
+  actionStep         String?
+  teacherReflection  String?
+  detailedReflection String?
+  discussionMet      Boolean             @default(false)
+  hasReflection      Boolean             @default(false)
+  campus             String?
+  block              String?
+  grade              String?
+  section            String?
+  learningArea       String?
+  type               String?
+  strengths          String?
+  areasOfGrowth      String?
+  otherComment       String?
+  metaTags           String?   // JSON string
+  tools              String?   // JSON string
+  routines           String?   // JSON string
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  // Relations
+  teacher       User                @relation("Teacher", fields: [teacherId], references: [id])
+  observer      User                @relation("Observer", fields: [observerId], references: [id])
+  domainRatings ObservationDomain[]
+}
+
+model ObservationDomain {
+  id            String      @id @default(uuid())
+  observationId String
+  domainId      String
+  title         String
+  rating        String
+  evidence      String?
+
+  observation Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id              String   @id @default(uuid())
+  teacherId       String
+  teacherEmail    String?
+  title           String
+  description     String?
+  progress        Int      @default(0)
+  dueDate         String
+  status          String   @default("IN_PROGRESS")
+  isSchoolAligned Boolean  @default(false)
+  category        String?
+  assignedBy      String?
+  actionStep                String? // Kept for backwards compatibility
+  campus                    String?
+  selfReflectionForm        String? // JSON string
+  goalSettingForm           String? // JSON string
+  goalCompletionForm        String? // JSON string
+  selfReflectionCompletedAt DateTime?
+  goalSettingCompletedAt    DateTime?
+  goalCompletionCompletedAt DateTime?
+  createdAt                 DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  teacher User @relation(fields: [teacherId], references: [id])
+}
+
+model TrainingEvent {
+  id                    String            @id @default(uuid())
+  title                 String
+  topic                 String
+  type                  String
+  date                  String
+  location              String
+  capacity              Int
+  status                String            @default("PLANNED")
+  time                  String?
+  description           String?
+  objectives            String?
+  schoolId              String?
+  createdById           String?
+  attendanceEnabled     Boolean           @default(false)
+  attendanceTriggeredAt DateTime?
+  attendanceClosed      Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  registrations         Registration[]
+  attendanceRecords     EventAttendance[]
+  proposedById          String?
+  proposedBy            User?             @relation("ProposedEvents", fields: [proposedById], references: [id])
+  createdBy             User?             @relation("CreatedEvents", fields: [createdById], references: [id])
+}
+
+model Registration {
+  id               String   @id @default(uuid())
+  eventId          String
+  userId           String
+  registrationDate DateTime @default(now())
+
+  event TrainingEvent @relation(fields: [eventId], references: [id])
+  user  User          @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model EventAttendance {
+  id           String   @id @default(uuid())
+  eventId      String
+  teacherId    String
+  teacherName  String
+  teacherEmail String
+  mobile       String?
+  employeeId   String?
+  department   String?
+  schoolId     String?
+  submittedAt  DateTime @default(now())
+  status       Boolean  @default(true) // attendance_status
+
+  event   TrainingEvent @relation(fields: [eventId], references: [id])
+  teacher User          @relation(fields: [teacherId], references: [id])
+
+  @@unique([eventId, teacherEmail])
+}
+
+
+
+model PDHour {
+  id       String   @id @default(uuid())
+  userId   String
+  activity String
+  hours    Float
+  category String
+  status   String   @default("APPROVED")
+  date     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model MoocSubmission {
+  id                  String   @id @default(uuid())
+  userId              String
+  courseName          String
+  platform            String
+  otherPlatform       String?
+  hours               Float
+  startDate           DateTime
+  endDate             DateTime
+  hasCertificate      String
+  certificateType     String?
+  proofLink           String?
+  certificateFile     String?
+  certificateFileName String?
+  keyTakeaways        String?
+  unansweredQuestions String?
+  enjoyedMost         String?
+  effectivenessRating Int
+  additionalFeedback  String?
+  teacherName         String?
+  teacherEmail        String?
+  status              String   @default("PENDING")
+  submittedAt         DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id                String   @id @default(uuid())
+  title             String
+  description       String?
+  fileUrl           String
+  fileName          String
+  fileSize          Int?
+  version           String   @default("1.0")
+  requiresSignature Boolean  @default(false)
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  hash              String?
+
+  createdBy        User                      @relation(fields: [createdById], references: [id])
+  acknowledgements DocumentAcknowledgement[]
+}
+
+model DocumentAcknowledgement {
+  id             String    @id @default(uuid())
+  documentId     String
+  teacherId      String
+  status         String    @default("PENDING")
+  viewedAt       DateTime?
+  acknowledgedAt DateTime?
+  signatureUrl   String?
+  ipAddress      String?
+  userAgent      String?
+  receiptUrl     String?
+  documentHash   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  teacher  User     @relation(fields: [teacherId], references: [id])
+}
+
+model Chat {
+  id String @id @default(uuid())
+}
+
+model ChatParticipant {
+  id String @id @default(uuid())
+}
+
+model MeetingRoom {
+  id String @id @default(uuid())
+}
+
+model Message {
+  id String @id @default(uuid())
+}
+
+model Project {
+  id String @id @default(uuid())
+}
+
+model Task {
+  id String @id @default(uuid())
+}
+
+model ProjectMembers {
+  A String
+  B String
+
+  @@unique([A, B])
+  @@map("_ProjectMembers")
+}
+
+model TaskAssignees {
+  A String
+  B String
+
+  @@unique([A, B])
+  @@map("_TaskAssignees")
+}
+
+model Course {
+  id             String             @id @default(uuid())
+  title          String
+  category       String
+  hours          Float
+  instructor     String
+  status         String             @default("Draft")
+  description    String?
+  thumbnail      String?
+  url            String?
+  isDownloadable Boolean            @default(false)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  enrollments    CourseEnrollment[]
+}
+
+model CourseEnrollment {
+  id          String    @id @default(uuid())
+  courseId    String
+  userId      String
+  status      String    @default("IN_PROGRESS")
+  progress    Int       @default(0)
+  completedAt DateTime?
+  enrolledAt  DateTime  @default(now())
+
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@unique([courseId, userId])
+}
+
+model SystemSettings {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model FormTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  type      String
+  structure String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  createdById       String
+  role              String   // Role of the creator
+  priority          String   @default("Normal") // Normal, High
+  status            String   @default("Published") // Draft, Published, Archived
+  isPinned          Boolean  @default(false)
+  targetRoles       String   @default("[]") // JSON string of roles
+  targetDepartments String?  @default("[]") // JSON string of departments
+  targetCampuses    String?  @default("[]") // JSON string of campus IDs
+  expiryDate        DateTime?
+  attachments       String?  // JSON string of file info
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  createdBy        User                        @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  acknowledgements AnnouncementAcknowledgement[]
+}
+
+model AnnouncementAcknowledgement {
+  id              String   @id @default(uuid())
+  announcementId  String
+  userId          String
+  acknowledgedAt  DateTime @default(now())
+
+  // Relations
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([announcementId, userId])
+}
+
+model Survey {
+  id             String    @id @default(uuid())
+  title          String
+  academicYear   String    @map("academic_year")
+  term           String
+  description    String?
+  isActive       Boolean   @default(true) @map("is_active")
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  isAnonymous    Boolean   @default(true) @map("is_anonymous")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  questions SurveyQuestion[]
+  responses SurveyResponse[]
+  @@map("surveys")
+}
+
+model SurveyQuestion {
+  id           String  @id @default(uuid())
+  surveyId     String  @map("survey_id")
+  pageNumber   Int     @map("page_number")
+  questionText String  @map("question_text")
+  questionType String  @map("question_type") // short_text, long_text, rating_scale, multiple_choice, multi_select, yes_no
+  options      String? // JSON string
+  isRequired   Boolean @default(true) @map("is_required")
+  orderIndex   Int     @map("order_index")
+
+  survey  Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+  @@map("survey_questions")
+}
+
+model SurveyResponse {
+  id          String   @id @default(uuid())
+  surveyId    String   @map("survey_id")
+  userId      String   @map("user_id")
+  campus      String?
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  isCompleted Boolean  @default(false) @map("is_completed")
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id])
+  answers SurveyAnswer[]
+  @@map("survey_responses")
+}
+
+model SurveyAnswer {
+  id            String  @id @default(uuid())
+  responseId    String  @map("response_id")
+  questionId    String  @map("question_id")
+  answerText    String? @map("answer_text")
+  answerNumeric Float?  @map("answer_numeric") // For analytics
+  answerJson    String? @map("answer_json") // For multi-select
+
+  response SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@map("survey_answers")
+}
+
+model PostOrientationAssessment {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  campus       String?
+  score        Float
+  completed    Boolean  @default(false)
+  term         String
+  academicYear String   @map("academic_year")
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  @@map("post_orientation_assessments")
+}
+
+model LearningFestival {
+  id                String   @id @default(uuid())
+  name              String
+  theme             String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime
+  registrationStart DateTime?
+  registrationEnd   DateTime? @map("applyDeadline") // Replacing the conceptual applyDeadline
+  location          String?
+  duration          String?
+  documents         String?  // JSON string
+  sharedWithRoles   String?  // JSON string array e.g. ["TEACHER", "ADMIN"]
+  status            String   @default("Draft") // Draft, Upcoming, Active, Completed
+  eligibilityRules  String?  // JSON string
+  campusLimits      String?  // JSON string for limits per campus
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  applications LearningFestivalApplication[]
+}
+
+model LearningFestivalApplication {
+  id                 String   @id @default(uuid())
+  festivalId         String
+  userId             String
+  statementOfPurpose String
+  relevantExperience String?
+  preferredStrand    String?
+  status             String   @default("Draft") // Draft, Submitted, Under Review, Shortlisted, Rejected, Confirmed
+  documents          String?  // JSON string of uploaded proofs
+  feedback           String?
+  appliedAt          DateTime?
+  reviewedAt         DateTime?
+  reviewedById       String?
+
+  festival LearningFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
+  user     User             @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+}
+
+model Assessment {
+  id               String   @id @default(uuid())
+  title            String
+  description      String?
+  type             String   @default("CUSTOM") // POST_ORIENTATION, PREPAREDNESS, CUSTOM
+  isTimed          Boolean  @default(false)
+  timeLimitMinutes Int?
+  maxAttempts      Int      @default(1)
+  createdById      String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdBy   User                   @relation(fields: [createdById], references: [id])
+  questions   AssessmentQuestion[]
+  assignments AssessmentAssignment[]
+  attempts    AssessmentAttempt[]
+}
+
+model AssessmentQuestion {
+  id            String  @id @default(uuid())
+  assessmentId  String
+  prompt        String
+  type          String  @default("MCQ") // MCQ, TEXT
+  options       String? // JSON string
+  correctAnswer String? // JSON string or text mapping
+  points        Int     @default(1)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentAssignment {
+  id                 String   @id @default(uuid())
+  assessmentId       String
+  assignedToId       String?  // Can be assigned to a specific user
+  assignedToCampusId String?  // Or a whole campus
+  assignedToRole     String?  // Or a specific role
+  assignedById       String
+  assignedAt         DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assignedTo User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assignedBy User       @relation("AssignedBy", fields: [assignedById], references: [id])
+}
+
+model AssessmentAttempt {
+  id            String    @id @default(uuid())
+  assessmentId  String
+  userId        String
+  startTime     DateTime  @default(now())
+  endTime       DateTime?
+  status        String    @default("IN_PROGRESS") // IN_PROGRESS, SUBMITTED, TIMED_OUT
+  attemptNumber Int       @default(1)
+  score         Float?
+  answers       String?   // JSON string mapping questionId to user's answer
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

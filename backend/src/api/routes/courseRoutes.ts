@@ -17,6 +17,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/my-enrollments', getMyEnrollments);
+router.get('/user/enrollments', getMyEnrollments); // Alias used by TeacherDashboard
 
 router
     .route('/')
@@ -26,8 +27,8 @@ router
 router
     .route('/:id')
     .get(getCourse)
-    .patch(restrictTo('ADMIN', 'SUPERADMIN'), updateCourse)
-    .delete(restrictTo('ADMIN', 'SUPERADMIN'), deleteCourse);
+    .patch(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'SCHOOL_LEADER', 'MANAGEMENT'), updateCourse)
+    .delete(restrictTo('ADMIN', 'SUPERADMIN', 'LEADER', 'SCHOOL_LEADER', 'MANAGEMENT'), deleteCourse);
 
 router.post('/:id/enroll', enrollInCourse);
 router.patch('/:id/progress', updateProgress);

@@ -18,6 +18,9 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
                             }
                         }
                     }
+                },
+                _count: {
+                    select: { attendanceRecords: true }
                 }
             },
             orderBy: { date: 'asc' }
@@ -32,7 +35,8 @@ export const getAllTrainingEvents = async (req: AuthRequest, res: Response) => {
                 email: reg.user?.email || 'N/A',
                 role: reg.user?.role || 'TEACHER',
                 dateRegistered: reg.registrationDate ? new Date(reg.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'
-            }))
+            })),
+            attendanceCount: (event as any)._count?.attendanceRecords || 0
         }));
 
         res.status(200).json({
@@ -67,6 +71,9 @@ export const getTrainingEvent = async (req: AuthRequest, res: Response) => {
                             }
                         }
                     }
+                },
+                _count: {
+                    select: { attendanceRecords: true }
                 }
             }
         });
@@ -91,7 +98,8 @@ export const getTrainingEvent = async (req: AuthRequest, res: Response) => {
                 campusId: reg.user?.campusId || 'N/A',
                 department: reg.user?.department || 'N/A',
                 dateRegistered: reg.registrationDate ? new Date(reg.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'
-            }))
+            })),
+            attendanceCount: (event as any)._count?.attendanceRecords || 0
         };
 
         res.status(200).json({
