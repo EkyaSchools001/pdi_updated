@@ -33,7 +33,7 @@ export const getActiveSurvey = async (req: AuthRequest, res: Response, next: Nex
 
         // Check if user has already submitted (for Teacher/Leader)
         // Admin/Mgmt can see survey regardless
-        let myResponse = null;
+        let myResponse: any = null;
         if (req.user) {
             myResponse = await prisma.surveyResponse.findFirst({
                 where: {
