@@ -1,10 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './infrastructure/database/prisma';
+
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const prisma = new PrismaClient();
+// Use singleton prisma
+
 
 async function main() {
     console.log('Seeding database (preserving existing data)...');
@@ -143,21 +145,48 @@ async function main() {
     ];
 
     const templates = [
+        // --- OBSERVATIONS (12) ---
         { name: 'Walkthrough Observation', type: 'OBSERVATION', isDefault: true, structure: JSON.stringify(observationFields) },
         { name: 'Specialist Observation', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(specialistFields) },
-        { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
-        { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
+        { name: 'Formal Classroom Observation', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Peer Observation', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Quick Check Maintenance', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Learning Walk', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Instructional Focus Visit', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Deep Dive Observation', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Curriculum Alignment Check', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Student Engagement Scan', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Differentiation Spotlight', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+        { name: 'Assessment Integration Review', type: 'OBSERVATION', isDefault: false, structure: JSON.stringify(observationFields) },
+
+        // --- GOALS (2) ---
         { name: 'Professional Goal', type: 'GOAL', isDefault: true, structure: JSON.stringify(goalFields) },
-        { name: 'Attendance Submission', type: 'ATTENDANCE', isDefault: true, structure: JSON.stringify([]) }, // Added placeholder for the new flow if needed
+        { name: 'Annual Goal Setting', type: 'GOAL', isDefault: false, structure: JSON.stringify(goalFields) },
+
+        // --- MOOC (2) ---
+        { name: 'MOOC Evidence', type: 'MOOC', isDefault: true, structure: JSON.stringify(moocFields) },
+        { name: 'External Certifications Submission', type: 'MOOC', isDefault: false, structure: JSON.stringify(moocFields) },
+
+        // --- OTHERS ---
+        { name: 'Teacher Reflection', type: 'REFLECTION', isDefault: true, structure: JSON.stringify(reflectionFields) },
+        { name: 'Attendance Submission', type: 'ATTENDANCE', isDefault: true, structure: JSON.stringify([]) },
     ];
 
     for (const t of templates) {
-        const existing = await prisma.formTemplate.findFirst({ where: { name: t.name } });
-        if (!existing) {
+        const existing = await (prisma.formTemplate as any).findFirst({ where: { name: t.name } });
+
+        if (existing) {
+            await prisma.formTemplate.update({
+                where: { id: existing.id },
+                data: { type: t.type, structure: t.structure, isDefault: t.isDefault }
+            });
+        } else {
             await prisma.formTemplate.create({ data: t });
         }
     }
-    console.log('Seeded form templates');
+    console.log('Seeded 12 Observation forms, 2 Goal forms, and 2 MOOC forms.');
+
+
 
     // ── TRAINING EVENTS ───────────────────────────────────────────────────────
     // Seed training events only if they don't already exist (match by title)

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon --exec \"ts-node --transpile-only\" src/index.ts",
     "build": "tsc",
-    "start": "npx prisma db push --schema=../database/prisma/schema.prisma --accept-data-loss && npx prisma db seed && node dist/index.js",
+    "start": "npx prisma generate --schema=../database/prisma/schema.prisma && npx prisma db push --schema=../database/prisma/schema.prisma --accept-data-loss && npx prisma db seed && node dist/index.js",
+    "postinstall": "npx prisma generate --schema=../database/prisma/schema.prisma",
     "prisma:seed": "npx prisma db seed",
     "db:migrate": "npx prisma generate --schema=../database/prisma/schema.prisma && npx prisma migrate deploy --schema=../database/prisma/schema.prisma",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -17,7 +18,7 @@
   "type": "commonjs",
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
-    "@prisma/client": "^6.2.1",
+    "@prisma/client": "^6.19.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -37,7 +38,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
-    "prisma": "^6.2.1",
+    "prisma": "^6.19.2",
     "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
@@ -49,6 +50,6 @@
     "ts-node": "^10.9.2"
   },
   "prisma": {
-    "seed": "ts-node src/seed.ts"
+    "seed": "npx prisma generate --schema=../database/prisma/schema.prisma && node dist/seed.js"
   }
 }

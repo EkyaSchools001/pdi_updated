@@ -50,7 +50,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from the frontend dist directory
-const distPath = path.join(__dirname, '../../dist');
+const distPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(distPath));
 
 // Serve uploaded files
@@ -74,7 +74,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // API Routes
 app.use('/api/v1', routes);
 
-app.get('/api/health', (req: Request, res: Response) => {
+// Health Check
+app.get(['/api/health', '/health'], (req: Request, res: Response) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
@@ -86,7 +87,13 @@ app.use((req: Request, res: Response) => {
         return;
     }
     // Otherwise, serve the frontend index.html
-    res.sendFile(path.join(distPath, 'index.html'));
+    const indexPath = path.join(distPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error('Frontend index.html not found at:', indexPath);
+            res.status(500).send('Frontend application not built or not found. Backend API is running.');
+        }
+    });
 });
 
 // Global Error Handler

@@ -1,9 +1,9 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 
-const prisma = new PrismaClient();
+
 
 export const getPdHistory = async (req: AuthRequest, res: Response) => {
     try {

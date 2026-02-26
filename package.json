@@ -1,4 +1,13 @@
 {
+  "name": "pdi-updated-root",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install --include=dev && npm run build && cd ../backend && npm install && npx prisma generate --schema=../database/prisma/schema.prisma && npm run build",
+    "start": "cd backend && npm start"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.2"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.2"
   }
