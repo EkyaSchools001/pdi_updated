@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { GrowthLayout } from "@/components/growth/GrowthLayout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MessageSquare } from "lucide-react";
 
 const RATING_COLORS: Record<number, string> = {
     1: "bg-red-100 text-red-700",
@@ -47,8 +49,29 @@ const PEObsDashboard: React.FC = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const res = await api.get("/pe-obs");
-                setObservations(res.data?.data?.observations || []);
+                const params: any = { moduleType: 'PHYSICAL_EDUCATION' };
+                const res = await api.get("/growth/observations", { params });
+                
+                const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
+                    let formPayload = obs.formPayload;
+                    if (typeof formPayload === 'string') {
+                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                    }
+                    return {
+                        id: obs.id,
+                        observationDate: obs.observationDate,
+                        teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
+                        block: formPayload?.block || "",
+                        grade: formPayload?.grade || "",
+                        overallRating: obs.overallRating || formPayload?.overallRating || "",
+                        observerName: obs.observer?.fullName || formPayload?.observer || formPayload?.observerName || "Unknown Observer",
+                        hasReflection: obs.hasReflection || false,
+                        teacherReflection: obs.teacherReflection || "",
+                        detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
+                    };
+                });
+                
+                setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load PE observations");
             } finally {
@@ -70,9 +93,17 @@ const PEObsDashboard: React.FC = () => {
         );
     });
 
-    const newPath = teacherId
-        ? `/leader/pe-obs/new?teacherId=${teacherId}`
-        : "/leader/pe-obs/new";
+    const teacherName = searchParams.get("teacherName");
+    const teacherEmail = searchParams.get("teacherEmail");
+
+    let newPath = "/leader/pe-obs/new";
+    if (teacherId) {
+        const params = new URLSearchParams();
+        params.set("teacherId", teacherId);
+        if (teacherName) params.set("teacherName", teacherName);
+        if (teacherEmail) params.set("teacherEmail", teacherEmail);
+        newPath += `?${params.toString()}`;
+    }
 
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
@@ -136,7 +167,7 @@ const PEObsDashboard: React.FC = () => {
                                 <span>Block</span>
                                 <span>Grade</span>
                                 <span>Rating</span>
-                                <span>Discussed</span>
+                                <span>Reflection</span>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -163,7 +194,52 @@ const PEObsDashboard: React.FC = () => {
                                                 </span>
                                             ) : "—"}
                                         </span>
-                                        <span><Badge variant={obs.discussedWithTeacher ? "default" : "secondary"} className="text-xs">{obs.discussedWithTeacher ? "Yes" : "No"}</Badge></span>
+                                        <span onClick={(e) => e.stopPropagation()}>
+                                            {obs.hasReflection ? (
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800">
+                                                            <MessageSquare className="w-3 h-3" /> View Reflection
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="sm:max-w-[500px]">
+                                                        <DialogHeader>
+                                                            <DialogTitle>Teacher Reflection</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="space-y-4 py-4">
+                                                            {obs.detailedReflection?.strengths && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Identified Strengths</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.strengths}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.detailedReflection?.improvements && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Areas for Growth</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.improvements}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.detailedReflection?.goal && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Action Goal</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.goal}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.teacherReflection && !obs.detailedReflection?.strengths && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">General Comments</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.teacherReflection}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            ) : (
+                                                <Badge variant="secondary" className="text-xs text-muted-foreground font-normal bg-slate-100">
+                                                    Pending
+                                                </Badge>
+                                            )}
+                                        </span>
                                     </div>
                                 ))
                             )}

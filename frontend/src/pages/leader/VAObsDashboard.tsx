@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { GrowthLayout } from "@/components/growth/GrowthLayout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MessageSquare } from "lucide-react";
 
 const RATING_COLORS: Record<string, string> = {
     "Highly Effective": "bg-green-100 text-green-700",
@@ -44,8 +46,29 @@ const VAObsDashboard: React.FC = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const res = await api.get("/va-obs");
-                setObservations(res.data?.data?.observations || []);
+                const params: any = { moduleType: 'VISUAL_ARTS' };
+                const res = await api.get("/growth/observations", { params });
+                
+                const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
+                    let formPayload = obs.formPayload;
+                    if (typeof formPayload === 'string') {
+                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                    }
+                    return {
+                        id: obs.id,
+                        observationDate: obs.observationDate,
+                        teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
+                        block: formPayload?.block || "",
+                        grade: formPayload?.grade || "",
+                        overallRating: obs.overallRating || formPayload?.overallRating || "",
+                        observerName: obs.observer?.fullName || formPayload?.observer || formPayload?.observerName || "Unknown Observer",
+                        hasReflection: obs.hasReflection || false,
+                        teacherReflection: obs.teacherReflection || "",
+                        detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
+                    };
+                });
+                
+                setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load Visual Arts observations");
             } finally {
@@ -67,7 +90,17 @@ const VAObsDashboard: React.FC = () => {
         );
     });
 
-    const newPath = teacherId ? `/leader/va-obs/new?teacherId=${teacherId}` : "/leader/va-obs/new";
+    const teacherName = searchParams.get("teacherName");
+    const teacherEmail = searchParams.get("teacherEmail");
+
+    let newPath = "/leader/va-obs/new";
+    if (teacherId) {
+        const params = new URLSearchParams();
+        params.set("teacherId", teacherId);
+        if (teacherName) params.set("teacherName", teacherName);
+        if (teacherEmail) params.set("teacherEmail", teacherEmail);
+        newPath += `?${params.toString()}`;
+    }
 
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
@@ -125,9 +158,8 @@ const VAObsDashboard: React.FC = () => {
                             <div className="grid grid-cols-7 gap-2 text-xs font-semibold text-white uppercase tracking-wider">
                                 <span>Date</span>
                                 <span className="col-span-2">Teacher</span>
-                                <span>Block</span>
-                                <span>Grade</span>
                                 <span className="col-span-2">Rating</span>
+                                <span>Reflection</span>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -145,14 +177,61 @@ const VAObsDashboard: React.FC = () => {
                                         onClick={() => navigate(`/leader/va-obs/new`)}>
                                         <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{obs.observationDate}</span>
                                         <span className="col-span-2 font-medium text-slate-800">{obs.teacherName}</span>
-                                        <span>{obs.block || "—"}</span>
-                                        <span>{obs.grade || "—"}</span>
                                         <span className="col-span-2">
                                             {obs.overallRating ? (
                                                 <Badge className={`text-xs ${RATING_COLORS[obs.overallRating] || "bg-slate-100 text-slate-700"}`}>
                                                     <Star className="w-3 h-3 mr-1" />{obs.overallRating}
                                                 </Badge>
                                             ) : "—"}
+                                        </span>
+                                        <span onClick={(e) => e.stopPropagation()}>
+                                            {obs.hasReflection ? (
+                                                <Dialog>
+                                                    <DialogTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800">
+                                                            <MessageSquare className="w-3 h-3" /> View Reflection
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="sm:max-w-[500px]">
+                                                        <DialogHeader>
+                                                            <DialogTitle>Teacher Reflection</DialogTitle>
+                                                            <DialogDescription>
+                                                                Insights and goals from the teacher's self-reflection.
+                                                            </DialogDescription>
+                                                        </DialogHeader>
+                                                        <div className="space-y-4 py-4">
+                                                            {obs.detailedReflection?.strengths && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Identified Strengths</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.strengths}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.detailedReflection?.improvements && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Areas for Growth</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.improvements}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.detailedReflection?.goal && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">Action Goal</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.detailedReflection.goal}</p>
+                                                                </div>
+                                                            )}
+                                                            {obs.teacherReflection && !obs.detailedReflection?.strengths && (
+                                                                <div>
+                                                                    <h4 className="font-semibold text-sm mb-1">General Comments</h4>
+                                                                    <p className="text-sm text-muted-foreground">{obs.teacherReflection}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            ) : (
+                                                <Badge variant="secondary" className="text-xs text-muted-foreground font-normal bg-slate-100">
+                                                    Pending
+                                                </Badge>
+                                            )}
                                         </span>
                                     </div>
                                 ))

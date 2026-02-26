@@ -88,17 +88,17 @@ const DanielsonFrameworkPage = () => {
                             onCancel={() => navigate(teacherId ? `/leader/danielson-framework?teacherId=${teacherId}` : "/leader/danielson-framework")}
                             onSubmit={async (data) => {
                                 try {
-                                    const newObs = {
-                                        ...data,
-                                        date: data.date || new Date().toISOString().split('T')[0],
-                                        hasReflection: false,
-                                        reflection: "",
-                                        status: "Submitted"
-                                    } as Observation;
+                                    const payload = {
+                                        teacherId: data.teacherId,
+                                        moduleType: "DANIELSON",
+                                        academicYear: "AY 25-26",
+                                        formPayload: data,
+                                        status: "SUBMITTED"
+                                    };
 
-                                    await api.post('/observations', newObs);
-                                    toast.success(`Observation for ${newObs.teacher} recorded successfully!`);
-                                    navigate(teacherId ? `/leader/danielson-framework?teacherId=${teacherId}` : "/leader/danielson-framework");
+                                    await api.post('/growth/observations', payload);
+                                    toast.success(`Observation for ${data.teacher} recorded successfully!`);
+                                    navigate(`/leader/growth/${data.teacherId}`);
                                 } catch (error) {
                                     console.error("Failed to save observation:", error);
                                     toast.error("Failed to save observation");

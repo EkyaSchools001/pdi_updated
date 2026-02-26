@@ -12,6 +12,20 @@ enum AcademicType {
   NON_CORE
 }
 
+enum GrowthModuleType {
+  DANIELSON
+  QUICK_FEEDBACK
+  PERFORMING_ARTS
+  LIFE_SKILLS
+  PHYSICAL_EDUCATION
+  VISUAL_ARTS
+}
+
+enum GrowthObservationStatus {
+  SUBMITTED
+  DRAFT
+}
+
 model User {
   id             String    @id @default(uuid())
   email          String    @unique
@@ -72,6 +86,10 @@ model User {
   assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
   assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
   assessmentAttempts    AssessmentAttempt[]
+
+  // New Growth Observation Relations
+  sentGrowthObs     GrowthObservation[] @relation("GrowthObserver")
+  receivedGrowthObs GrowthObservation[] @relation("GrowthTeacher")
 
   @@index([academics])
 }
@@ -206,6 +224,38 @@ model Observation {
   teacher       User                @relation("Teacher", fields: [teacherId], references: [id])
   observer      User                @relation("Observer", fields: [observerId], references: [id])
   domainRatings ObservationDomain[]
+}
+
+model GrowthObservation {
+  id              String                  @id @default(uuid())
+  teacherId       String
+  observerId      String
+  campusId        String?
+  academicYear    String                  // e.g., AY 25-26
+  moduleType      GrowthModuleType
+  subject         String?
+  block           String?
+  grade           String?
+  section         String?
+  observationDate DateTime?
+  overallRating   Float?
+  hasReflection   Boolean                 @default(false)
+  teacherReflection String?
+  detailedReflection String?              // JSON string of full reflection data
+  status          GrowthObservationStatus @default(DRAFT)
+  formPayload     String?                 // JSON string of full structured response
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  // Relations
+  teacher  User @relation("GrowthTeacher", fields: [teacherId], references: [id])
+  observer User @relation("GrowthObserver", fields: [observerId], references: [id])
+
+  @@index([teacherId])
+  @@index([observerId])
+  @@index([campusId])
+  @@index([academicYear])
+  @@index([moduleType])
 }
 
 model ObservationDomain {

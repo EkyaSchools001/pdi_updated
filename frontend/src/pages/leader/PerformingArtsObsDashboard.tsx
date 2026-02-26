@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { GrowthLayout } from "@/components/growth/GrowthLayout";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { MessageSquare } from "lucide-react";
 
 interface PAObs {
     id: string;
@@ -20,8 +22,9 @@ interface PAObs {
     grade: string;
     overallRating: number;
     observerName: string;
-    discussedWithTeacher: boolean;
-    status: string;
+    hasReflection: boolean;
+    teacherReflection: string;
+    detailedReflection: any;
 }
 
 const RATING_LABELS: Record<number, { label: string; color: string }> = {
@@ -56,12 +59,33 @@ const PerformingArtsObsDashboard: React.FC = () => {
         const fetch = async () => {
             try {
                 setLoading(true);
-                const params: any = {};
+                const params: any = { moduleType: 'PERFORMING_ARTS' };
                 if (blockFilter) params.block = blockFilter;
                 if (gradeFilter) params.grade = gradeFilter;
                 if (ratingFilter) params.rating = ratingFilter;
-                const res = await api.get("/performing-arts-obs", { params });
-                setObservations(res.data?.data?.observations || []);
+                const res = await api.get("/growth/observations", { params });
+                
+                // Map the unified observation format to the old PAObs interface
+                const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
+                    let formPayload = obs.formPayload;
+                    if (typeof formPayload === 'string') {
+                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                    }
+                    return {
+                        id: obs.id,
+                        observationDate: obs.observationDate,
+                        teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
+                        block: formPayload?.block || "",
+                        grade: formPayload?.grade || "",
+                        overallRating: obs.overallRating || formPayload?.overallRating || 0,
+                        observerName: obs.observer?.fullName || formPayload?.observer || formPayload?.observerName || "Unknown Observer",
+                        hasReflection: obs.hasReflection || false,
+                        teacherReflection: obs.teacherReflection || "",
+                        detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
+                    };
+                });
+                
+                setObservations(mappedObservations);
             } catch (e) {
                 toast.error("Failed to load observations");
             } finally {
@@ -79,9 +103,17 @@ const PerformingArtsObsDashboard: React.FC = () => {
         o.observerName.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    const newFormPath = teacherId
-        ? `/leader/performing-arts-obs/new?teacherId=${teacherId}`
-        : "/leader/performing-arts-obs/new";
+    const teacherName = searchParams.get("teacherName");
+    const teacherEmail = searchParams.get("teacherEmail");
+
+    let newFormPath = "/leader/performing-arts-obs/new";
+    if (teacherId) {
+        const params = new URLSearchParams();
+        params.set("teacherId", teacherId);
+        if (teacherName) params.set("teacherName", teacherName);
+        if (teacherEmail) params.set("teacherEmail", teacherEmail);
+        newFormPath += `?${params.toString()}`;
+    }
 
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
@@ -162,7 +194,7 @@ const PerformingArtsObsDashboard: React.FC = () => {
                                 <span>Block</span>
                                 <span>Grade</span>
                                 <span>Rating</span>
-                                <span>Status</span>
+                                <span>Reflection</span>
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -200,10 +232,51 @@ const PerformingArtsObsDashboard: React.FC = () => {
                                                     </span>
                                                 ) : obs.overallRating}
                                             </span>
-                                            <span>
-                                                <Badge variant={obs.discussedWithTeacher ? "default" : "secondary"} className="text-xs">
-                                                    {obs.discussedWithTeacher ? "Discussed" : "Pending"}
-                                                </Badge>
+                                            <span onClick={(e) => e.stopPropagation()}>
+                                                {obs.hasReflection ? (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800">
+                                                                <MessageSquare className="w-3 h-3" /> View Reflection
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="sm:max-w-[500px]">
+                                                            <DialogHeader>
+                                                                <DialogTitle>Teacher Reflection</DialogTitle>
+                                                            </DialogHeader>
+                                                            <div className="space-y-4 py-4">
+                                                                {obs.detailedReflection?.strengths && (
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-sm mb-1">Identified Strengths</h4>
+                                                                        <p className="text-sm text-muted-foreground">{obs.detailedReflection.strengths}</p>
+                                                                    </div>
+                                                                )}
+                                                                {obs.detailedReflection?.improvements && (
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-sm mb-1">Areas for Growth</h4>
+                                                                        <p className="text-sm text-muted-foreground">{obs.detailedReflection.improvements}</p>
+                                                                    </div>
+                                                                )}
+                                                                {obs.detailedReflection?.goal && (
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-sm mb-1">Action Goal</h4>
+                                                                        <p className="text-sm text-muted-foreground">{obs.detailedReflection.goal}</p>
+                                                                    </div>
+                                                                )}
+                                                                {obs.teacherReflection && !obs.detailedReflection?.strengths && (
+                                                                    <div>
+                                                                        <h4 className="font-semibold text-sm mb-1">General Comments</h4>
+                                                                        <p className="text-sm text-muted-foreground">{obs.teacherReflection}</p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-xs text-muted-foreground font-normal bg-slate-100">
+                                                        Pending
+                                                    </Badge>
+                                                )}
                                             </span>
                                         </div>
                                     );

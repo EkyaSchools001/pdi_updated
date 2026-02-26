@@ -263,7 +263,8 @@ const PerformingArtsObsPage: React.FC = () => {
         if (!validate()) return;
         setSubmitting(true);
         try {
-            await api.post("/performing-arts-obs", {
+            await api.post("/growth/observations", {
+                teacherId,
                 observerEmail, teacherName, teacherEmail, observerName,
                 observerRole, observerRoleOther, observationDate,
                 block, grade, section,
@@ -272,9 +273,22 @@ const PerformingArtsObsPage: React.FC = () => {
                 sectionCResponses: secC, sectionCEvidence: secCEvidence,
                 overallRating, cultureTools, routinesObserved, instructionalTools,
                 discussedWithTeacher, feedback, teacherReflection, actionStep, metaTags,
+                moduleType: "PERFORMING_ARTS",
+                academicYear: "AY 25-26",
+                formPayload: {
+                    observerEmail, teacherName, teacherEmail, observerName,
+                    observerRole, observerRoleOther, observationDate,
+                    block, grade, section,
+                    sectionAResponses: secA, sectionAEvidence: secAEvidence,
+                    sectionBResponses: secB, sectionBEvidence: secBEvidence,
+                    sectionCResponses: secC, sectionCEvidence: secCEvidence,
+                    overallRating, cultureTools, routinesObserved, instructionalTools,
+                    discussedWithTeacher, feedback, teacherReflection, actionStep, metaTags,
+                },
+                status: "SUBMITTED"
             });
             toast.success("Observation submitted successfully!");
-            navigate(teacherId ? `/leader/performing-arts-obs?teacherId=${teacherId}` : "/leader/performing-arts-obs");
+            navigate(`/leader/growth/${teacherId}`);
         } catch (e) {
             toast.error("Failed to submit observation");
         } finally {

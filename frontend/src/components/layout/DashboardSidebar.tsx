@@ -43,9 +43,9 @@ interface DashboardSidebarProps {
 
 const teacherNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/teacher" },
-  { title: "My Growth", icon: TrendingUp, path: "/growth" },
+  { title: "My Growth", icon: TrendingUp, path: "/teacher/observations" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
-  { title: "Observations", icon: Eye, path: "/growth" },
+  { title: "Observations", icon: Eye, path: "/teacher/dummy-observations" },
   { title: "Goals", icon: Target, path: "/teacher/goals" },
   { title: "Meetings", icon: Video, path: "/meetings" },
   { title: "Training & PD Calendar", icon: Calendar, path: "/teacher/calendar" },

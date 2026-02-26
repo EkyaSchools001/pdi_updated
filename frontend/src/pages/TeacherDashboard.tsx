@@ -203,10 +203,10 @@ const DashboardOverview = ({
         )}
         {isModuleEnabled('/teacher/observations', role) && (
           <StatCard
-            title="Observations"
+            title="My Growth"
             value={observations.length}
             subtitle={`${reflectionsCount} with reflections`}
-            icon={Eye}
+            icon={TrendingUp}
 
             onClick={() => navigate("/teacher/observations")}
           />
@@ -267,7 +267,10 @@ const DashboardOverview = ({
               {observations.slice(0, 3).map((obs) => (
                 <ObservationCard
                   key={obs.id}
-                  observation={obs}
+                  observation={{
+                    ...obs,
+                    domain: (obs as any).moduleType ? String((obs as any).moduleType).replace('_', ' ') : obs.domain
+                  }}
                   onView={() => onView(obs.id)}
                   onReflect={() => onReflect(obs)}
                 />
@@ -326,26 +329,114 @@ function ObservationsView({
   onReflect: (obs: Observation) => void,
   onView: (id: string) => void
 }) {
+  const [moduleFilter, setModuleFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [ratingFilter, setRatingFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredObservations = observations.filter(obs => {
+    const matchesModule = moduleFilter === "all" || (obs as any).moduleType === moduleFilter;
+    const matchesYear = yearFilter === "all" || (obs as any).academicYear === yearFilter;
+    const matchesRating = ratingFilter === "all" ||
+      (ratingFilter === "highly-effective" && (obs.score || 0) >= 3.5) ||
+      (ratingFilter === "effective" && (obs.score || 0) >= 2.5 && (obs.score || 0) < 3.5) ||
+      (ratingFilter === "developing" && (obs.score || 0) >= 1.5 && (obs.score || 0) < 2.5) ||
+      (ratingFilter === "basic" && (obs.score || 0) < 1.5);
+    const matchesSearch = !searchQuery ||
+      (obs.learningArea || (obs as any).subject || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (obs.observerName || "").toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesModule && matchesYear && matchesRating && matchesSearch;
+  });
+
+  const modules = Array.from(new Set(observations.map(o => (o as any).moduleType).filter(Boolean)));
+  const years = Array.from(new Set(observations.map(o => (o as any).academicYear).filter(Boolean)));
+
   return (
     <div className="space-y-6">
-      <PageHeader title="My Observations" subtitle="Manage and reflect on your classroom observations" />
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <PageHeader title="My Growth" subtitle="Manage and reflect on your classroom observations" />
+        <div className="flex flex-wrap gap-2">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search Subject/Observer..."
+              className="pl-9 h-10 rounded-xl"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-10 gap-2 rounded-xl">
+                <Filter className="w-4 h-4" />
+                Filters
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Module Type</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setModuleFilter("all")} className={moduleFilter === "all" ? "bg-muted" : ""}>All Modules</DropdownMenuItem>
+              {modules.map(m => (
+                <DropdownMenuItem key={String(m)} onClick={() => setModuleFilter(m as string)} className={moduleFilter === m ? "bg-muted" : ""}>
+                  {String(m).replace('_', ' ')}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Academic Year</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setYearFilter("all")} className={yearFilter === "all" ? "bg-muted" : ""}>All Years</DropdownMenuItem>
+              {years.map(y => (
+                <DropdownMenuItem key={String(y)} onClick={() => setYearFilter(y as string)} className={yearFilter === y ? "bg-muted" : ""}>
+                  {String(y)}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Rating</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setRatingFilter("all")} className={ratingFilter === "all" ? "bg-muted" : ""}>Any Rating</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRatingFilter("highly-effective")} className={ratingFilter === "highly-effective" ? "bg-muted" : ""}>Highly Effective (3.5+)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRatingFilter("effective")} className={ratingFilter === "effective" ? "bg-muted" : ""}>Effective (2.5 - 3.4)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRatingFilter("developing")} className={ratingFilter === "developing" ? "bg-muted" : ""}>Developing (1.5 - 2.4)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRatingFilter("basic")} className={ratingFilter === "basic" ? "bg-muted" : ""}>Basic (&lt; 1.5)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
       <div className="grid gap-4">
-        {observations.map((obs) => (
+        {filteredObservations.map((obs) => (
           <ObservationCard
             key={obs.id}
-            observation={obs}
+            observation={{
+              ...obs,
+              domain: (obs as any).moduleType ? String((obs as any).moduleType).replace('_', ' ') : obs.domain
+            }}
             onReflect={() => onReflect(obs)}
             onView={() => onView(obs.id)}
           />
         ))}
-        {observations.length === 0 && (
-          <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/20 rounded-2xl border border-dashed">
-            <Eye className="w-12 h-12 text-muted-foreground opacity-20 mb-4" />
-            <p className="text-muted-foreground">No observations recorded yet.</p>
+        {filteredObservations.length === 0 && (
+          <div className="flex flex-col items-center justify-center p-12 text-center bg-muted/10 rounded-3xl border border-dashed border-muted-foreground/20">
+            <div className="p-4 bg-muted/20 rounded-full mb-4">
+              <Eye className="w-10 h-10 text-muted-foreground opacity-20" />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">No observations found</h3>
+            <p className="text-muted-foreground max-w-xs mx-auto">Try adjusting your filters or search query to find what you're looking for.</p>
+            {(moduleFilter !== "all" || yearFilter !== "all" || ratingFilter !== "all" || searchQuery) && (
+              <Button
+                variant="link"
+                className="mt-2 text-primary font-bold"
+                onClick={() => {
+                  setModuleFilter("all");
+                  setYearFilter("all");
+                  setRatingFilter("all");
+                  setSearchQuery("");
+                }}
+              >
+                Clear all filters
+              </Button>
+            )}
           </div>
         )}
       </div>
-
     </div>
   );
 }
@@ -1559,6 +1650,23 @@ function InsightsView() {
   return <PlaceholderView title="Identified Strengths" icon={ShieldCheck} />;
 }
 
+export function DummyObservationsView() {
+  return (
+    <div className="space-y-6">
+      <PageHeader title="My Observations" subtitle="Legacy Observations View" />
+      <Card className="border-none shadow-md bg-muted/20">
+        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+          <Eye className="w-12 h-12 text-muted-foreground opacity-20 mb-4" />
+          <h3 className="text-xl font-bold mb-2">No Legacy Observations</h3>
+          <p className="text-muted-foreground text-sm max-w-sm mx-auto">
+            Your recent observations and detailed feedback are now available in the new "My Growth" dashboard.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function PlaceholderView({ title, icon: Icon }: { title: string; icon: React.ComponentType<{ className?: string }> }) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
@@ -1627,9 +1735,18 @@ export default function TeacherDashboard() {
   useEffect(() => {
     const fetchObservations = async () => {
       try {
-        const response = await api.get('/observations');
+        const response = await api.get('/growth/observations');
         if (response.data?.status === 'success') {
           const apiObservations = (response.data?.data?.observations || []).map((obs: any) => {
+            let formPayload = obs.formPayload;
+            if (typeof formPayload === 'string') {
+              try {
+                formPayload = JSON.parse(formPayload);
+              } catch (e) {
+                formPayload = {};
+              }
+            }
+            
             let parsedReflection = obs.detailedReflection;
             if (typeof obs.detailedReflection === 'string') {
               try {
@@ -1638,19 +1755,27 @@ export default function TeacherDashboard() {
                 // ignore
               }
             }
+            
+            // Map unified observation fields to the expected Observation type
             return {
               ...obs,
-              teacher: obs.teacher?.fullName || obs.teacherEmail || 'Unknown Teacher',
+              ...formPayload, // Spread form payload to catch specialist-specific fields
+              id: obs.id,
+              teacher: obs.teacher?.fullName || formPayload?.teacherName || 'Teacher One',
+              date: format(new Date(obs.observationDate), "MMM d, yyyy"),
+              observerName: obs.observer?.fullName || formPayload?.observer || 'School Leader',
+              observerRole: obs.observer?.role || formPayload?.observerRole || 'Administrator',
+              domain: obs.moduleType ? obs.moduleType.replace('_', ' ') : (obs.subject || 'Observation'),
+              score: obs.overallRating || formPayload?.score || 0,
+              learningArea: obs.subject || obs.learningArea || formPayload?.learningArea,
+              teachingStrategies: formPayload?.teachingStrategies || [],
+              glows: obs.status === 'SUBMITTED' ? (obs.strengths || formPayload?.glows || formPayload?.strengths) : '',
+              grows: obs.status === 'SUBMITTED' ? (obs.areasOfGrowth || formPayload?.grows || formPayload?.areasOfGrowth) : '',
               detailedReflection: parsedReflection || {}
             };
           });
 
-          // Filter observations for the current teacher
-          const teacherObservations = apiObservations.filter(
-            (obs: Observation) => obs.teacherId === user?.id || obs.teacherEmail === userEmail || obs.teacher === userName
-          );
-
-          setObservations(teacherObservations);
+          setObservations(apiObservations);
         }
       } catch (error) {
         console.error("Failed to fetch observations:", error);
@@ -1877,11 +2002,11 @@ export default function TeacherDashboard() {
     if (!selectedReflectObs) return;
     try {
       // Patch observation with reflection status
-      await api.patch(`/observations/${selectedReflectObs.id}`, {
+      await api.patch(`/growth/observations/${selectedReflectObs.id}`, {
         hasReflection: true,
         teacherReflection: reflection.comments,
-        detailedReflection: reflection, // Store the full detailed reflection
-        status: "Submitted" // Mark as submitted after reflection
+        detailedReflection: JSON.stringify(reflection), // Stringify as expected by schema
+        status: "SUBMITTED" // Keep enum casing
       });
 
       setObservations(prev => prev.map(obs =>
@@ -1994,6 +2119,7 @@ export default function TeacherDashboard() {
           />
         } />
         <Route path="observations" element={<ModuleGuard modulePath="observations"><ObservationsView observations={userObservations} onReflect={setSelectedReflectObs} onView={handleViewReport} /></ModuleGuard>} />
+        <Route path="dummy-observations" element={<DummyObservationsView />} />
         <Route path="observations/:id" element={<ModuleGuard modulePath="observations"><ObservationDetailView observations={userObservations} /></ModuleGuard>} />
         <Route path="goals" element={<ModuleGuard modulePath="goals"><GoalsView goals={userGoals} onAddGoal={handleAddGoal} userName={userName} /></ModuleGuard>} />
         <Route path="calendar" element={<ModuleGuard modulePath="calendar"><CalendarView events={events} onRegister={handleRegister} /></ModuleGuard>} />
@@ -2154,7 +2280,7 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/growth")} className="print:hidden">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/teacher/observations")} className="print:hidden">
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex flex-col md:flex-row md:items-center justify-between flex-1 gap-4">

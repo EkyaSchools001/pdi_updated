@@ -145,6 +145,7 @@ const PEObsPage: React.FC = () => {
         Object.fromEntries(rows.map(r => [r, ""]));
 
     const [form, setForm] = useState({
+        teacherId: searchParams.get("teacherId") || "",
         observerEmail: user?.email || "",
         teacherName: searchParams.get("teacherName") || "",
         teacherEmail: searchParams.get("teacherEmail") || "",
@@ -170,6 +171,8 @@ const PEObsPage: React.FC = () => {
         teacherReflection: "",
         actionStep: "",
         metaTags: [] as string[],
+        moduleType: "PHYSICAL_EDUCATION",
+        academicYear: "AY 25-26",
     });
 
     const set = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }));
@@ -184,8 +187,13 @@ const PEObsPage: React.FC = () => {
         });
 
     const validateStep = () => {
-        if (step === 1 && (!form.teacherName.trim() || !form.teacherEmail.trim() || !form.observerName.trim() || !form.observerRole)) {
-            toast.error("Please fill in all required fields"); return false;
+        if (step === 1) {
+            if (!form.teacherId) {
+                toast.error("Teacher ID is missing. Please select a teacher again."); return false;
+            }
+            if (!form.teacherName.trim() || !form.teacherEmail.trim() || !form.observerName.trim() || !form.observerRole) {
+                toast.error("Please fill in all required fields"); return false;
+            }
         }
         if (step === 2 && (!form.block || !form.grade || !form.section.trim())) {
             toast.error("Please fill in all classroom details"); return false;
@@ -219,14 +227,15 @@ const PEObsPage: React.FC = () => {
     const handleSubmit = async () => {
         if (!validateStep()) return;
         try {
-            await api.post("/pe-obs", {
+            await api.post("/growth/observations", {
                 ...form,
-                observerEmail: form.observerEmail || user?.email,
+                formPayload: { ...form },
                 discussedWithTeacher: form.discussedWithTeacher === "Yes",
                 overallRating: Number(form.overallRating),
+                status: "SUBMITTED"
             });
             toast.success("PE Observation saved successfully!");
-            navigate("/leader/pe-obs");
+            navigate(`/leader/growth/${form.teacherId}`);
         } catch (err) {
             toast.error("Failed to save observation");
         }

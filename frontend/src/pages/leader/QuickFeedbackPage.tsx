@@ -85,17 +85,17 @@ const QuickFeedbackPage = () => {
                             onCancel={() => navigate(teacherId ? `/leader/quick-feedback?teacherId=${teacherId}` : "/leader/quick-feedback")}
                             onSubmit={async (data) => {
                                 try {
-                                    const newObs = {
-                                        ...data,
-                                        date: data.date || new Date().toISOString().split('T')[0],
-                                        status: "Submitted",
-                                        domain: "Quick Feedback",
-                                        type: "Quick Feedback"
-                                    } as Observation;
+                                    const payload = {
+                                        teacherId: data.teacherId,
+                                        moduleType: "QUICK_FEEDBACK",
+                                        academicYear: "AY 25-26",
+                                        formPayload: data,
+                                        status: "SUBMITTED"
+                                    };
 
-                                    await api.post('/observations', newObs);
-                                    toast.success(`Quick feedback for ${newObs.teacher} recorded successfully!`);
-                                    navigate(teacherId ? `/leader/quick-feedback?teacherId=${teacherId}` : "/leader/quick-feedback");
+                                    await api.post('/growth/observations', payload);
+                                    toast.success(`Quick feedback for ${data.teacher} recorded successfully!`);
+                                    navigate(`/leader/growth/${data.teacherId}`);
                                 } catch (error) {
                                     console.error("Failed to save observation:", error);
                                     toast.error("Failed to save observation");

@@ -186,6 +186,7 @@ const LifeSkillsObsPage: React.FC = () => {
 
     const [form, setForm] = useState({
         // Page 1
+        teacherId: searchParams.get("teacherId") || "",
         observerEmail: user?.email || "",
         teacherName: searchParams.get("teacherName") || "",
         teacherEmail: searchParams.get("teacherEmail") || "",
@@ -214,6 +215,8 @@ const LifeSkillsObsPage: React.FC = () => {
         teacherReflection: "",
         actionStep: "",
         metaTags: [] as string[],
+        moduleType: "LIFE_SKILLS",
+        academicYear: "AY 25-26",
     });
 
     const set = (key: string, val: any) => setForm(p => ({ ...p, [key]: val }));
@@ -229,6 +232,9 @@ const LifeSkillsObsPage: React.FC = () => {
 
     const validateStep = () => {
         if (step === 1) {
+            if (!form.teacherId) {
+                toast.error("Teacher ID is missing. Please select a teacher again."); return false;
+            }
             if (!form.teacherName.trim() || !form.teacherEmail.trim() || !form.observerName.trim() || !form.observerRole) {
                 toast.error("Please fill in all required fields"); return false;
             }
@@ -267,14 +273,15 @@ const LifeSkillsObsPage: React.FC = () => {
     const handleSubmit = async () => {
         if (!validateStep()) return;
         try {
-            await api.post("/life-skills-obs", {
+            await api.post("/growth/observations", {
                 ...form,
-                observerEmail: form.observerEmail || user?.email,
+                formPayload: { ...form },
                 discussedWithTeacher: form.discussedWithTeacher === "Yes",
                 overallRating: Number(form.overallRating),
+                status: "SUBMITTED"
             });
             toast.success("Life Skills Observation saved successfully!");
-            navigate("/leader/life-skills-obs");
+            navigate(`/leader/growth/${form.teacherId}`);
         } catch (err) {
             console.error(err);
             toast.error("Failed to save observation");

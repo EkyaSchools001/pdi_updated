@@ -167,6 +167,7 @@ const VAObsPage: React.FC = () => {
     const TOTAL = 4;
 
     const [form, setForm] = useState({
+        teacherId: searchParams.get("teacherId") || "",
         observerEmail: user?.email || "",
         teacherName: searchParams.get("teacherName") || "",
         teacherEmail: searchParams.get("teacherEmail") || "",
@@ -198,6 +199,8 @@ const VAObsPage: React.FC = () => {
         teacherReflection: "",
         actionStep: "",
         metaTags: [] as string[],
+        moduleType: "VISUAL_ARTS",
+        academicYear: "AY 25-26",
     });
 
     const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
@@ -211,6 +214,9 @@ const VAObsPage: React.FC = () => {
 
     const validateStep = () => {
         if (step === 1) {
+            if (!form.teacherId) {
+                toast.error("Teacher ID is missing. Please select a teacher again."); return false;
+            }
             if (!form.teacherName.trim() || !form.teacherEmail.trim() || !form.observerName.trim() || !form.observerRole) {
                 toast.error("Please fill in all required fields"); return false;
             }
@@ -253,12 +259,13 @@ const VAObsPage: React.FC = () => {
     const handleSubmit = async () => {
         if (!validateStep()) return;
         try {
-            await api.post("/va-obs", {
+            await api.post("/growth/observations", {
                 ...form,
-                observerEmail: form.observerEmail || user?.email,
+                formPayload: { ...form }, // Sending the entire form as payload for detailed view
+                status: "SUBMITTED"
             });
             toast.success("Visual Arts Observation submitted successfully!");
-            navigate("/leader/va-obs");
+            navigate(`/leader/growth/${form.teacherId}`);
         } catch {
             toast.error("Failed to save observation. Please try again.");
         }
@@ -302,7 +309,7 @@ const VAObsPage: React.FC = () => {
                                 </CardHeader>
                                 <CardContent className="p-6 space-y-5">
                                     <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
-                                        📧 Your email will be recorded when you submit this form. A copy will be sent to <strong>shashank.d@cmr.edu.in</strong>.
+                                        📧 Your email (<strong>{form.observerEmail}</strong>) will be recorded when you submit this form. A copy of your responses will be sent to this address.
                                     </div>
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Observer Email (Auto-captured)</Label>

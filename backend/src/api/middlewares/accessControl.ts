@@ -1,4 +1,4 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 
@@ -66,6 +66,7 @@ const API_MODULE_MAP: Record<string, string> = {
     'okr': 'goals',       // OKR = goals
     'pd': 'hours',       // PD hours tracking
     'templates': 'forms',       // Form templates = forms
+    'growth': 'observations', // Growth observations = observations
 };
 
 // ─── Paths that bypass access control entirely ───────────────────────────────
@@ -76,6 +77,7 @@ const BYPASS_PATHS = [
     '/settings/access_matrix_config',    // Every role needs to read the permission matrix
     '/notifications',                    // Every role needs notifications
     '/templates',                        // All roles read templates (for observations/reflections)
+    '/growth/observations',              // Handled by explicit route-level restrictTo middleware
 ];
 
 /**
