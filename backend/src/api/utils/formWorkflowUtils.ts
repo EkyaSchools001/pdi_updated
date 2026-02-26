@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 
-const prisma = new PrismaClient();
+
 
 const DASHBOARD_TO_ROUTE: Record<string, string> = {
     'Teacher Dashboard': '/teacher',
@@ -75,7 +75,8 @@ export async function getFormRouting(
             } else if (subject) {
                 // Check if specific subjects are listed
                 if (wf.specificSubjects) {
-                    const subjects = wf.specificSubjects.split(',').map(s => s.trim().toLowerCase());
+                    const subjects = wf.specificSubjects.split(',').map((s: string) => s.trim().toLowerCase());
+
                     if (subjects.includes(subject.toLowerCase())) {
                         score += 3;
                     } else {

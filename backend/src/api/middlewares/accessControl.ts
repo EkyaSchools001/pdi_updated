@@ -1,8 +1,8 @@
 ﻿import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+
 
 // ─── Cache Management ────────────────────────────────────────────────────────
 // Short-lived cache to avoid DB lookup on every request

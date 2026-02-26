@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 
-const prisma = new PrismaClient();
+
 
 export const getAllWorkflows = async (req: Request, res: Response) => {
     try {

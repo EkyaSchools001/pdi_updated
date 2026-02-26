@@ -2,6 +2,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -461,7 +462,8 @@ model SystemSettings {
 
 model FormTemplate {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
+
   type      String
   structure String
   isDefault Boolean  @default(false)
@@ -710,4 +712,15 @@ model FormWorkflow {
   updatedAt        DateTime @updatedAt
 
   formTemplate     FormTemplate @relation(fields: [formTemplateId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?  
+  actorName    String?  // Optional name snapshot purely for UI performance
+  action       String   // e.g. 'UPDATED_WORKFLOWS', 'CREATED_TEMPLATE'
+  targetEntity String   // e.g. 'FormWorkflow', 'SystemSettings'
+  previousData String?  // JSON snapshot pre-change
+  newData      String?  // JSON snapshot post-change
+  timestamp    DateTime @default(now())
 }

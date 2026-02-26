@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AuthRequest } from '../middlewares/auth'; // Corrected path
 
-const prisma = new PrismaClient();
+
 
 export const getAssessments = async (req: AuthRequest, res: Response) => {
     try {

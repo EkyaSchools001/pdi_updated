@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Shield, FileText, Workflow, Save, AlertCircle, Database, Layout, Smartphone, Key, Trash2 } from "lucide-react";
+import { Shield, FileText, Workflow, Save, AlertCircle, Database, Layout, Smartphone, Key, Trash2, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
+
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { defaultAccessMatrix } from "@/contexts/PermissionContext";
@@ -54,7 +57,21 @@ const FORM_NAME_OPTIONS = [
 const coreSubjects = ["Mathematics", "Science", "English", "Social Science", "Physics", "Chemistry", "Biology"];
 const nonCoreSubjects = ["Physical Education", "Computer Science", "Art", "Music", "Hindi", "Kannada", "Value Education"];
 
+
 export function SuperAdminView() {
+    const parseStructure = (structure: any) => {
+        if (!structure) return [];
+        if (typeof structure === 'string') {
+            try {
+                return JSON.parse(structure) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+        if (Array.isArray(structure)) return structure;
+        return [];
+    };
+
     const [isLoading, setIsLoading] = useState(true);
     const [accessMatrix, setAccessMatrix] = useState<PermissionSetting[]>(defaultAccessMatrix);
     const [formFlows, setFormFlows] = useState<FormFlowConfig[]>(defaultFormFlows);
@@ -103,8 +120,12 @@ export function SuperAdminView() {
             try {
                 const response = await api.get('/templates');
                 if (response.data?.status === 'success' && response.data?.data?.templates) {
-                    const names = response.data.data.templates.map((t: any) => ({ name: t.name, type: t.type || '' }));
-                    setFormTemplates(names);
+                    const templatesData = response.data.data.templates.map((t: any) => ({
+                        name: t.name,
+                        type: t.type || '',
+                        structure: t.structure || []
+                    }));
+                    setFormTemplates(templatesData);
                 }
             } catch (e) {
                 console.error("Failed to load form templates", e);
@@ -176,10 +197,46 @@ export function SuperAdminView() {
                             <span className="w-2 h-2 rounded-full bg-success"></span>
                             Live Sync Active
                         </div>
-                        <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 shadow-lg px-6 h-11">
-                            <Save className="w-4 h-4 mr-2" />
-                            Submit & Apply Configurations
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button className="bg-primary hover:bg-primary/90 shadow-lg px-6 h-11">
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Submit & Apply Configurations
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2 text-primary">
+                                        <AlertCircle className="w-5 h-5" /> Execute Ecosystem Build?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription asChild>
+                                        <div className="space-y-3 mt-2 text-slate-600">
+                                            <p>You are initiating a global system configuration change that will impact user sessions across the platform in real-time.</p>
+                                            <div className="bg-slate-50 p-3 rounded-md text-sm border border-slate-200">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span>Access Matrices updated:</span>
+                                                    <strong className="text-blue-600">{accessMatrix.length}</strong>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span>Workflows modified:</span>
+                                                    <strong className="text-blue-600">{formFlows.length}</strong>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-amber-600 bg-amber-50 p-2 rounded relative before:absolute before:inset-0 before:border-l-4 before:border-amber-500 before:rounded-l overflow-hidden">
+                                                If you proceed, this payload will immediately dispatch over WebSockets to all connected clients and force a silent background re-render of their visible UI metrics.
+                                                <br /><strong>This action is irreversible and recorded in the permanent audit ledger.</strong>
+                                            </p>
+                                        </div>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="mt-4">
+                                    <AlertDialogCancel>Abort Mission</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleSave} className="bg-primary text-white hover:bg-primary/90">
+                                        Proceed & Broadcast Sync
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 }
             />
@@ -314,16 +371,56 @@ export function SuperAdminView() {
                                                 <SelectTrigger className="h-9 font-semibold text-primary border-primary/20">
                                                     <SelectValue placeholder="Select form" />
                                                 </SelectTrigger>
-                                                <SelectContent>
-                                                    {Array.from(new Set([
-                                                        ...formTemplates.map(t => t.name),
-                                                        ...FORM_NAME_OPTIONS,
-                                                        flow.formName
-                                                    ]))
-                                                        .filter(Boolean).sort().map((name) => (
-                                                            <SelectItem key={name} value={name}>{name}</SelectItem>
-                                                        ))}
+                                                <SelectContent className="max-h-[400px]">
+                                                    {Object.entries(
+                                                        [...formTemplates, ...FORM_NAME_OPTIONS.map(name => ({ name, type: 'OTHER' }))]
+                                                            .reduce((acc, t) => {
+                                                                const type = t.type || 'OTHER';
+                                                                if (!acc[type]) acc[type] = [];
+                                                                if (!acc[type].find(existing => existing.name === t.name)) {
+                                                                    acc[type].push(t);
+                                                                }
+                                                                return acc;
+                                                            }, {} as Record<string, { name: string; type: string }[]>)
+                                                    ).map(([type, groupTemplates], groupIdx, arr) => (
+                                                        <SelectGroup key={type}>
+                                                            <SelectLabel className="text-blue-600 font-bold bg-blue-50/50 py-1 px-3 mb-1 rounded-sm text-xs uppercase tracking-wider">
+                                                                {type} ({groupTemplates.length})
+                                                            </SelectLabel>
+                                                            {groupTemplates.sort((a, b) => a.name.localeCompare(b.name)).map(t => {
+                                                                const fields = parseStructure((t as any).structure);
+                                                                return (
+                                                                    <HoverCard key={t.name} openDelay={200}>
+                                                                        <HoverCardTrigger asChild>
+                                                                            <SelectItem value={t.name} className="pl-4 pr-10 cursor-pointer relative data-[highlighted]:bg-primary/5">
+                                                                                <span className="flex-1 text-left block w-full pr-6 truncate">{t.name}</span>
+                                                                                <Info className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                                            </SelectItem>
+                                                                        </HoverCardTrigger>
+                                                                        <HoverCardContent side="right" align="start" sideOffset={10} className="w-[320px] max-w-[90vw] z-[100] max-h-[350px] overflow-y-auto pointer-events-none shadow-2xl border-slate-200 bg-white/95 backdrop-blur-sm">
+                                                                            <h4 className="font-semibold text-sm mb-3 pb-2 border-b text-slate-800 border-slate-200 flex items-center justify-between">
+                                                                                <span>{t.name} Fields</span>
+                                                                                <Badge variant="outline" className="text-[10px] bg-slate-50">{fields.length} item{fields.length !== 1 && 's'}</Badge>
+                                                                            </h4>
+                                                                            <ul className="text-xs text-slate-600 space-y-2.5">
+                                                                                {fields.map((f: any, idx: number) => (
+                                                                                    <li key={f.id || idx} className="flex gap-2 leading-tight items-start bg-slate-50/50 p-1.5 rounded-md border border-slate-100">
+                                                                                        <span className="text-red-500 w-[8px] shrink-0 font-bold mt-0.5">{f.required ? '*' : ''}</span>
+                                                                                        <span className="font-semibold text-slate-700 shrink-0 min-w-[65px] uppercase text-[10px] tracking-wider bg-slate-200/50 px-1 py-0.5 rounded text-center mt-0.5">{(f.type === 'header' ? 'Header' : f.type)}</span>
+                                                                                        <span className="break-words mt-0.5">{f.label || f.id || 'Unnamed field'}</span>
+                                                                                    </li>
+                                                                                ))}
+                                                                                {fields.length === 0 && <li className="text-slate-400 italic text-center py-4 bg-slate-50 rounded-md">No fields defined for this template.</li>}
+                                                                            </ul>
+                                                                        </HoverCardContent>
+                                                                    </HoverCard>
+                                                                );
+                                                            })}
+                                                            {groupIdx < arr.length - 1 && <SelectSeparator className="my-2" />}
+                                                        </SelectGroup>
+                                                    ))}
                                                 </SelectContent>
+
                                             </Select>
                                         </div>
                                         <div className="flex items-center gap-2">

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Workflow as WorkflowIcon, ArrowRight, Save, LayoutTemplate } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+
+import { Plus, Trash2, Workflow as WorkflowIcon, ArrowRight, Save, LayoutTemplate, Info } from "lucide-react";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 interface FormTemplate {
     id: string;
     name: string;
+    type: string;
+    structure?: string | any[];
 }
+
+
 
 export interface FormWorkflow {
     id: string;
@@ -26,6 +33,19 @@ export interface FormWorkflow {
 }
 
 export function FormWorkflowsConfig() {
+    const parseStructure = (structure: any) => {
+        if (!structure) return [];
+        if (typeof structure === 'string') {
+            try {
+                return JSON.parse(structure) || [];
+            } catch (e) {
+                return [];
+            }
+        }
+        if (Array.isArray(structure)) return structure;
+        return [];
+    };
+
     const [workflows, setWorkflows] = useState<FormWorkflow[]>([]);
     const [templates, setTemplates] = useState<FormTemplate[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,7 +71,8 @@ export function FormWorkflowsConfig() {
                 api.get('/templates')
             ]);
             setWorkflows(workflowsRes.data);
-            setTemplates(templatesRes.data);
+            setTemplates(templatesRes.data.data?.templates || templatesRes.data);
+
         } catch (error) {
             console.error("Error fetching workflows configuration", error);
             toast({
@@ -174,11 +195,53 @@ export function FormWorkflowsConfig() {
                                                 <SelectTrigger className="bg-white border-green-300">
                                                     <SelectValue placeholder="Select a template" />
                                                 </SelectTrigger>
-                                                <SelectContent>
-                                                    {templates.map(t => (
-                                                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                                <SelectContent className="max-h-[400px]">
+                                                    {Object.entries(
+                                                        templates.reduce((acc, t) => {
+                                                            const type = t.type || 'OTHER';
+                                                            if (!acc[type]) acc[type] = [];
+                                                            acc[type].push(t);
+                                                            return acc;
+                                                        }, {} as Record<string, FormTemplate[]>)
+                                                    ).map(([type, groupTemplates], groupIdx, arr) => (
+                                                        <SelectGroup key={type}>
+                                                            <SelectLabel className="text-blue-600 font-bold bg-blue-50/50 py-1 px-3 mb-1 rounded-sm text-xs uppercase tracking-wider">
+                                                                {type} ({groupTemplates.length})
+                                                            </SelectLabel>
+                                                            {groupTemplates.map(t => {
+                                                                const fields = parseStructure(t.structure);
+                                                                return (
+                                                                    <HoverCard key={t.id} openDelay={200}>
+                                                                        <HoverCardTrigger asChild>
+                                                                            <SelectItem value={t.id} className="pl-4 pr-10 cursor-pointer relative data-[highlighted]:bg-green-50">
+                                                                                <span className="flex-1 text-left block w-full pr-6 truncate">{t.name}</span>
+                                                                                <Info className="w-4 h-4 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                                            </SelectItem>
+                                                                        </HoverCardTrigger>
+                                                                        <HoverCardContent side="right" align="start" sideOffset={10} className="w-[320px] max-w-[90vw] z-[100] max-h-[350px] overflow-y-auto pointer-events-none shadow-2xl border-green-200 bg-white/95 backdrop-blur-sm">
+                                                                            <h4 className="font-semibold text-sm mb-3 pb-2 border-b text-slate-800 border-slate-200 flex items-center justify-between">
+                                                                                <span>{t.name} Fields</span>
+                                                                                <Badge variant="outline" className="text-[10px] bg-slate-50">{fields.length} item{fields.length !== 1 && 's'}</Badge>
+                                                                            </h4>
+                                                                            <ul className="text-xs text-slate-600 space-y-2.5">
+                                                                                {fields.map((f: any, idx: number) => (
+                                                                                    <li key={f.id || idx} className="flex gap-2 leading-tight items-start bg-slate-50/50 p-1.5 rounded-md border border-slate-100">
+                                                                                        <span className="text-red-500 w-[8px] shrink-0 font-bold mt-0.5">{f.required ? '*' : ''}</span>
+                                                                                        <span className="font-semibold text-slate-700 shrink-0 min-w-[65px] uppercase text-[10px] tracking-wider bg-slate-200/50 px-1 py-0.5 rounded text-center mt-0.5">{(f.type === 'header' ? 'Header' : f.type)}</span>
+                                                                                        <span className="break-words mt-0.5">{f.label || f.id || 'Unnamed field'}</span>
+                                                                                    </li>
+                                                                                ))}
+                                                                                {fields.length === 0 && <li className="text-slate-400 italic text-center py-4 bg-slate-50 rounded-md">No fields defined for this template.</li>}
+                                                                            </ul>
+                                                                        </HoverCardContent>
+                                                                    </HoverCard>
+                                                                );
+                                                            })}
+                                                            {groupIdx < arr.length - 1 && <SelectSeparator className="my-2" />}
+                                                        </SelectGroup>
                                                     ))}
                                                 </SelectContent>
+
                                             </Select>
                                         </div>
 

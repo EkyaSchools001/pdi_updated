@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 import { getIO } from '../../core/socket';
 import { createNotification } from './notificationController';
 
-const prisma = new PrismaClient();
+
 
 // Get active survey for the current term
 export const getActiveSurvey = async (req: AuthRequest, res: Response, next: NextFunction) => {

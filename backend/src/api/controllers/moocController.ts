@@ -1,12 +1,12 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 import { getIO } from '../../core/socket';
 import { createNotification } from './notificationController';
 import { getFormRouting } from '../utils/formWorkflowUtils';
 
-const prisma = new PrismaClient();
+
 
 export const submitMoocEvidence = async (req: AuthRequest, res: Response) => {
     try {
