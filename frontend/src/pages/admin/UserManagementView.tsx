@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate } from "react-router-dom";
 import { StatCard } from "@/components/StatCard";
 import api from "@/lib/api";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 
 
 interface User {
@@ -84,7 +85,8 @@ export function UserManagementView() {
         }
     };
 
-    const uniqueCampuses = Array.from(new Set(users.map(user => user.campusId).filter(Boolean)));
+    // Use global campus options instead of dynamically derived ones
+    const uniqueCampuses = CAMPUS_OPTIONS;
 
     const teacherCount = users.filter(u => u.role === "TEACHER").length;
     const leaderCount = users.filter(u => u.role === "LEADER" || u.role === "SCHOOL_LEADER").length;
@@ -260,9 +262,9 @@ export function UserManagementView() {
                                                     <SelectValue placeholder="Select campus" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="Main Campus">Main Campus</SelectItem>
-                                                    <SelectItem value="North Campus">North Campus</SelectItem>
-                                                    <SelectItem value="South Campus">South Campus</SelectItem>
+                                                    {CAMPUS_OPTIONS.map(c => (
+                                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -325,9 +327,9 @@ export function UserManagementView() {
                                                         <SelectValue placeholder="Select campus" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="Main Campus">Main Campus</SelectItem>
-                                                        <SelectItem value="North Campus">North Campus</SelectItem>
-                                                        <SelectItem value="South Campus">South Campus</SelectItem>
+                                                        {CAMPUS_OPTIONS.map(c => (
+                                                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                             </div>

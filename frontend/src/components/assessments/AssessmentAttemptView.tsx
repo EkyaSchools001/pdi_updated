@@ -125,7 +125,40 @@ export const AssessmentAttemptView: React.FC = () => {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1">
-                    {currentQuestion.type === 'MCQ' ? (
+                    {currentQuestion.type === 'MULTI_SELECT' ? (
+                        <div className="space-y-4">
+                            {(Array.isArray(currentQuestion.options) ? currentQuestion.options : JSON.parse((currentQuestion.options as any) || '[]')).map((option: string, idx: number) => {
+                                let selected: string[] = [];
+                                try {
+                                    selected = answers[currentQuestion.id] || [];
+                                    if (typeof selected === 'string') selected = JSON.parse(selected);
+                                    if (!Array.isArray(selected)) selected = [];
+                                } catch {
+                                    selected = [];
+                                }
+
+                                return (
+                                    <div key={idx} className="flex items-center space-x-3 p-4 rounded-xl border-2 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                                        <input
+                                            type="checkbox"
+                                            id={`q-${currentQuestion.id}-opt-${idx}`}
+                                            checked={selected.includes(option)}
+                                            onChange={(e) => {
+                                                const next = e.target.checked
+                                                    ? [...selected, option]
+                                                    : selected.filter(o => o !== option);
+                                                handleAnswerChange(currentQuestion.id, next);
+                                            }}
+                                            className="w-5 h-5 accent-primary cursor-pointer"
+                                        />
+                                        <Label htmlFor={`q-${currentQuestion.id}-opt-${idx}`} className="flex-1 cursor-pointer font-medium leading-none">
+                                            {option}
+                                        </Label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : currentQuestion.type === 'MCQ' ? (
                         <RadioGroup
                             value={answers[currentQuestion.id]}
                             onValueChange={(val) => handleAnswerChange(currentQuestion.id, val)}

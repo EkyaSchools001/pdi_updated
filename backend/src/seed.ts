@@ -11,14 +11,14 @@ async function main() {
 
     // ── USERS ─────────────────────────────────────────────────────────────────
     const userData = [
-        { name: 'Rohit', email: 'rohit.schoolleader@pdi.com', pass: 'Rohit@123', role: 'LEADER', campusId: 'BTM Layout', department: 'Leadership', academics: 'CORE' as const },
-        { name: 'Avani', email: 'avani.admin@pdi.com', pass: 'Avani@123', role: 'ADMIN', campusId: 'BTM Layout', department: 'Administration', academics: 'CORE' as const },
-        { name: 'Teacher One', email: 'teacher1.btmlayout@pdi.com', pass: 'Teacher1@123', role: 'TEACHER', campusId: 'BTM Layout', department: 'Science', academics: 'CORE' as const },
-        { name: 'Teacher Two', email: 'teacher2.jpnagar@pdi.com', pass: 'Teacher2@123', role: 'TEACHER', campusId: 'JP Nagar', department: 'Mathematics', academics: 'CORE' as const },
-        { name: 'Teacher Three', email: 'teacher3.itpl@pdi.com', pass: 'Teacher3@123', role: 'TEACHER', campusId: 'ITPL', department: 'English', academics: 'CORE' as const },
-        { name: 'Teacher Four', email: 'teacher4.art@pdi.com', pass: 'Teacher4@123', role: 'TEACHER', campusId: 'BTM Layout', department: 'Arts', academics: 'NON_CORE' as const },
-        { name: 'Teacher Five', email: 'teacher5.pt@pdi.com', pass: 'Teacher5@123', role: 'TEACHER', campusId: 'JP Nagar', department: 'Physical Education', academics: 'NON_CORE' as const },
-        { name: 'Teacher Six', email: 'teacher6.vart@pdi.com', pass: 'Teacher6@123', role: 'TEACHER', campusId: 'ITPL', department: 'Visual Arts', academics: 'NON_CORE' as const },
+        { name: 'Rohit', email: 'rohit.schoolleader@pdi.com', pass: 'Rohit@123', role: 'LEADER', campusId: 'EBTM', department: 'Leadership', academics: 'CORE' as const },
+        { name: 'Avani', email: 'avani.admin@pdi.com', pass: 'Avani@123', role: 'ADMIN', campusId: 'EBTM', department: 'Administration', academics: 'CORE' as const },
+        { name: 'Teacher One', email: 'teacher1.btmlayout@pdi.com', pass: 'Teacher1@123', role: 'TEACHER', campusId: 'EBTM', department: 'Science', academics: 'CORE' as const },
+        { name: 'Teacher Two', email: 'teacher2.jpnagar@pdi.com', pass: 'Teacher2@123', role: 'TEACHER', campusId: 'EJPN', department: 'Mathematics', academics: 'CORE' as const },
+        { name: 'Teacher Three', email: 'teacher3.itpl@pdi.com', pass: 'Teacher3@123', role: 'TEACHER', campusId: 'EITPL', department: 'English', academics: 'CORE' as const },
+        { name: 'Teacher Four', email: 'teacher4.art@pdi.com', pass: 'Teacher4@123', role: 'TEACHER', campusId: 'EBTM', department: 'Arts', academics: 'NON_CORE' as const },
+        { name: 'Teacher Five', email: 'teacher5.pt@pdi.com', pass: 'Teacher5@123', role: 'TEACHER', campusId: 'EJPN', department: 'Physical Education', academics: 'NON_CORE' as const },
+        { name: 'Teacher Six', email: 'teacher6.vart@pdi.com', pass: 'Teacher6@123', role: 'TEACHER', campusId: 'EITPL', department: 'Visual Arts', academics: 'NON_CORE' as const },
         { name: 'Indu', email: 'indu.management@pdi.com', pass: 'Indu@123', role: 'MANAGEMENT', campusId: 'Head Office', department: 'Management', academics: 'CORE' as const },
         { name: 'Bharath', email: 'bharath.superadmin@padi.com', pass: 'Bharath@123', role: 'SUPERADMIN', campusId: 'Head Office', department: 'Admin', academics: 'CORE' as const },
     ];
@@ -162,9 +162,9 @@ async function main() {
     // ── TRAINING EVENTS ───────────────────────────────────────────────────────
     // Seed training events only if they don't already exist (match by title)
     const seedEvents = [
-        { title: 'Effective Questioning Techniques', topic: 'Pedagogy', type: 'Workshop', date: 'Jan 25, 2026', time: '9:00 AM – 12:00 PM', location: 'BTM Layout Campus', capacity: 30, status: 'COMPLETED', attendanceEnabled: true, attendanceClosed: false, attendanceTriggeredAt: new Date(), description: 'Deep dive into Socratic questioning and formative discussion strategies.', createdById: leaderId },
-        { title: 'Google Workspace for Education', topic: 'Technology', type: 'Training', date: 'Feb 5, 2026', time: '10:00 AM – 1:00 PM', location: 'JP Nagar Campus', capacity: 25, status: 'COMPLETED', attendanceEnabled: false, attendanceClosed: true, description: 'Hands-on training for Docs, Slides, Meet and Classroom integration.', createdById: adminId },
-        { title: 'Building a Positive Class Culture', topic: 'Culture', type: 'Seminar', date: 'Feb 18, 2026', time: '2:00 PM – 5:00 PM', location: 'ITPL Campus', capacity: 40, status: 'APPROVED', description: 'Strategies for restorative practices and student wellbeing.', createdById: leaderId },
+        { title: 'Effective Questioning Techniques', topic: 'Pedagogy', type: 'Workshop', date: 'Jan 25, 2026', time: '9:00 AM – 12:00 PM', location: 'EBTM Campus', capacity: 30, status: 'COMPLETED', attendanceEnabled: true, attendanceClosed: false, attendanceTriggeredAt: new Date(), description: 'Deep dive into Socratic questioning and formative discussion strategies.', createdById: leaderId },
+        { title: 'Google Workspace for Education', topic: 'Technology', type: 'Training', date: 'Feb 5, 2026', time: '10:00 AM – 1:00 PM', location: 'EJPN Campus', capacity: 25, status: 'COMPLETED', attendanceEnabled: false, attendanceClosed: true, description: 'Hands-on training for Docs, Slides, Meet and Classroom integration.', createdById: adminId },
+        { title: 'Building a Positive Class Culture', topic: 'Culture', type: 'Seminar', date: 'Feb 18, 2026', time: '2:00 PM – 5:00 PM', location: 'EITPL Campus', capacity: 40, status: 'APPROVED', description: 'Strategies for restorative practices and student wellbeing.', createdById: leaderId },
         { title: 'Differentiated Instruction Masterclass', topic: 'Pedagogy', type: 'Workshop', date: 'Mar 10, 2026', time: '9:00 AM – 4:00 PM', location: 'Head Office', capacity: 20, status: 'APPROVED', description: 'Learn how to address diverse learning needs in one classroom.', createdById: adminId },
     ];
 
@@ -214,12 +214,12 @@ async function main() {
 
     // ── GOALS (2 per teacher) ─────────────────────────────────────────────────
     const goals = [
-        { teacherId: t1, teacherEmail: 'teacher1.btmlayout@pdi.com', title: 'Improve Inquiry-Based Learning', description: 'Implement at least 3 inquiry-based lesson cycles per term using the 5E model.', progress: 65, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Instruct to Inspire', campus: 'BTM Layout', actionStep: 'Complete online module on inquiry-based learning and trial one lesson per week.' },
-        { teacherId: t1, teacherEmail: 'teacher1.btmlayout@pdi.com', title: 'Formative Assessment Mastery', description: 'Use exit tickets and peer feedback consistently across all Science units.', progress: 40, dueDate: 'May 15, 2026', isSchoolAligned: false, category: 'Authentic Assessments', campus: 'BTM Layout', actionStep: 'Design a bank of 20 exit tickets aligned to curriculum standards.' },
-        { teacherId: t2, teacherEmail: 'teacher2.jpnagar@pdi.com', title: 'Real-World Maths Integration', description: 'Connect all Maths units to real-world scenarios through project-based tasks.', progress: 50, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Live the Lesson', campus: 'JP Nagar', actionStep: 'Design one real-world project per unit using financial literacy themes.' },
-        { teacherId: t2, teacherEmail: 'teacher2.jpnagar@pdi.com', title: 'Differentiated Instruction', description: 'Implement tiered tasks to support advanced and struggling learners simultaneously.', progress: 30, dueDate: 'Apr 30, 2026', isSchoolAligned: false, category: 'Engaging Environment', campus: 'JP Nagar', actionStep: 'Attend the Differentiated Instruction Masterclass in March 2026.' },
-        { teacherId: t3, teacherEmail: 'teacher3.itpl@pdi.com', title: 'Student Voice Through Writing', description: 'Build a student portfolio programme where learners publish one piece each term.', progress: 70, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Care about Culture', campus: 'ITPL', actionStep: 'Set up a classroom blog and establish a weekly writing workshop routine.' },
-        { teacherId: t3, teacherEmail: 'teacher3.itpl@pdi.com', title: 'Reading Comprehension Strategies', description: 'Explicitly teach 5 comprehension strategies and track student growth each term.', progress: 55, dueDate: 'May 31, 2026', isSchoolAligned: false, category: 'Instruct to Inspire', campus: 'ITPL', actionStep: 'Implement a reading log system and weekly comprehension strategy lesson.' },
+        { teacherId: t1, teacherEmail: 'teacher1.btmlayout@pdi.com', title: 'Improve Inquiry-Based Learning', description: 'Implement at least 3 inquiry-based lesson cycles per term using the 5E model.', progress: 65, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Instruct to Inspire', campus: 'EBTM', actionStep: 'Complete online module on inquiry-based learning and trial one lesson per week.' },
+        { teacherId: t1, teacherEmail: 'teacher1.btmlayout@pdi.com', title: 'Formative Assessment Mastery', description: 'Use exit tickets and peer feedback consistently across all Science units.', progress: 40, dueDate: 'May 15, 2026', isSchoolAligned: false, category: 'Authentic Assessments', campus: 'EBTM', actionStep: 'Design a bank of 20 exit tickets aligned to curriculum standards.' },
+        { teacherId: t2, teacherEmail: 'teacher2.jpnagar@pdi.com', title: 'Real-World Maths Integration', description: 'Connect all Maths units to real-world scenarios through project-based tasks.', progress: 50, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Live the Lesson', campus: 'EJPN', actionStep: 'Design one real-world project per unit using financial literacy themes.' },
+        { teacherId: t2, teacherEmail: 'teacher2.jpnagar@pdi.com', title: 'Differentiated Instruction', description: 'Implement tiered tasks to support advanced and struggling learners simultaneously.', progress: 30, dueDate: 'Apr 30, 2026', isSchoolAligned: false, category: 'Engaging Environment', campus: 'EJPN', actionStep: 'Attend the Differentiated Instruction Masterclass in March 2026.' },
+        { teacherId: t3, teacherEmail: 'teacher3.itpl@pdi.com', title: 'Student Voice Through Writing', description: 'Build a student portfolio programme where learners publish one piece each term.', progress: 70, dueDate: 'Jun 30, 2026', isSchoolAligned: true, category: 'Care about Culture', campus: 'EITPL', actionStep: 'Set up a classroom blog and establish a weekly writing workshop routine.' },
+        { teacherId: t3, teacherEmail: 'teacher3.itpl@pdi.com', title: 'Reading Comprehension Strategies', description: 'Explicitly teach 5 comprehension strategies and track student growth each term.', progress: 55, dueDate: 'May 31, 2026', isSchoolAligned: false, category: 'Instruct to Inspire', campus: 'EITPL', actionStep: 'Implement a reading log system and weekly comprehension strategy lesson.' },
     ];
 
     for (const g of goals) {
@@ -279,7 +279,7 @@ async function main() {
 
     // ── MEETINGS ──────────────────────────────────────────────────────────────
     const meetings = [
-        { title: 'Weekly Staff Briefing', description: 'Updates on upcoming events and student welfare.', meetingType: 'Staff', meetingDate: '2026-02-22', startTime: '08:30', endTime: '09:30', mode: 'Offline', createdById: leaderId, status: 'Scheduled', campusId: 'BTM Layout' },
+        { title: 'Weekly Staff Briefing', description: 'Updates on upcoming events and student welfare.', meetingType: 'Staff', meetingDate: '2026-02-22', startTime: '08:30', endTime: '09:30', mode: 'Offline', createdById: leaderId, status: 'Scheduled', campusId: 'EBTM' },
         { title: 'Science Dept Review', description: 'Reviewing Term 1 assessment data.', meetingType: 'Department', meetingDate: '2026-02-25', startTime: '14:00', endTime: '15:30', mode: 'Online', createdById: leaderId, status: 'Scheduled', departmentId: 'Science' },
         { title: 'Academic Standards', description: 'Quarterly review of academic standards.', meetingType: 'Management', meetingDate: '2026-03-01', startTime: '10:00', endTime: '12:00', mode: 'Online', createdById: adminId, status: 'Scheduled' },
         { title: 'Term 1 Retrospective', description: 'Discussing what went well and areas for improvement.', meetingType: 'Academic Review', meetingDate: '2026-01-15', startTime: '15:00', endTime: '16:30', mode: 'Offline', createdById: leaderId, status: 'Completed', momStatus: 'Published' },
@@ -332,8 +332,8 @@ async function main() {
     // ── EVENT ATTENDANCE ──────────────────────────────────────────────────────
     const event1 = events[0];
     const attendanceRecords = [
-        { eventId: event1.id, teacherId: t1, teacherName: 'Teacher One', teacherEmail: 'teacher1.btmlayout@pdi.com', status: true, schoolId: 'BTM Layout', department: 'Science' },
-        { eventId: event1.id, teacherId: t2, teacherName: 'Teacher Two', teacherEmail: 'teacher2.jpnagar@pdi.com', status: true, schoolId: 'JP Nagar', department: 'Mathematics' },
+        { eventId: event1.id, teacherId: t1, teacherName: 'Teacher One', teacherEmail: 'teacher1.btmlayout@pdi.com', status: true, schoolId: 'EBTM', department: 'Science' },
+        { eventId: event1.id, teacherId: t2, teacherName: 'Teacher Two', teacherEmail: 'teacher2.jpnagar@pdi.com', status: true, schoolId: 'EJPN', department: 'Mathematics' },
     ];
 
     for (const r of attendanceRecords) {
@@ -386,6 +386,43 @@ async function main() {
             }
         }
     });
+
+    // ── ASSESSMENTS ──────────────────────────────────────────────────────────
+    const assessmentTitle = 'Ekya Professional Standards & Pedagogy';
+    const existingAssessment = await prisma.assessment.findFirst({ where: { title: assessmentTitle } });
+
+    if (!existingAssessment) {
+        const assessment = await prisma.assessment.create({
+            data: {
+                title: assessmentTitle,
+                description: 'Baseline competency check for Ekya standards, pedagogy, and data-informed practice.',
+                type: 'POST_ORIENTATION',
+                isTimed: false,
+                maxAttempts: 2,
+                createdById: adminId,
+                questions: {
+                    create: [
+                        { prompt: 'What is the purpose of a Master Plan?', options: JSON.stringify(['To map long-term content standards', 'To share the collection of learning experiences in a Unit', 'To plan out the hour by hour instruction in the classroom', 'To design assessments for the Unit']), correctAnswer: 'To share the collection of learning experiences in a Unit', points: 2 },
+                        { prompt: 'How does a Microplan support lesson delivery?', options: JSON.stringify(['It gives scripted lesson scripts for teachers to follow', 'It offers day-wise instructional guidance', 'It shows daily assessments and worksheets in a lesson', 'It tracks student progress over the unit']), correctAnswer: 'It shows daily assessments and worksheets in a lesson', points: 2 },
+                        { prompt: 'What is the primary purpose of assessments at Ekya?', options: JSON.stringify(['To rank students', 'To support learning and growth', 'To assign punishments', 'To complete paperwork']), correctAnswer: 'To support learning and growth', points: 2 },
+                        { prompt: 'Which of the following would you categorize as an Authentic Task?', options: JSON.stringify(['Solving 10 algebra equations on a worksheet', 'Memorizing definitions of literary devices', 'Writing a persuasive letter to the local government about a community issue', 'Matching vocabulary words with their meanings in a quiz']), correctAnswer: 'Writing a persuasive letter to the local government about a community issue', points: 2 },
+                        { prompt: 'How should teachers identify which instructional tool/strategy to use?', options: JSON.stringify(['By choosing the one that is most popular among students', 'By selecting a tool that aligns with the learning objective and student needs', 'By using the same tool for all lessons to ensure consistency', 'By picking the tool that requires the least preparation time']), correctAnswer: 'By selecting a tool that aligns with the learning objective and student needs', points: 2 },
+                        { prompt: 'Which of the following scenarios effectively describe a flipped classroom?', options: JSON.stringify(['The teacher delivers a lecture on Newton’s Laws during class, and students are assigned textbook questions to complete as homework.', 'Students read an article and complete a short quiz on supply and demand at home. In class, they participate in a market simulation to apply the concepts and reflect on pricing strategies.']), correctAnswer: 'Students read an article and complete a short quiz on supply and demand at home. In class, they participate in a market simulation to apply the concepts and reflect on pricing strategies.', points: 2 },
+                        { prompt: 'Why should a teacher differentiate instruction? (Select all that apply)', options: JSON.stringify(['To address the diverse learning needs, interests, and readiness levels of students', 'To ensure all students have equal opportunities to access and engage with the content', 'To make lesson planning easier and faster for the teacher', 'To support students in progressing at their own pace and achieving mastery']), correctAnswer: JSON.stringify(['To address the diverse learning needs, interests, and readiness levels of students', 'To ensure all students have equal opportunities to access and engage with the content', 'To support students in progressing at their own pace and achieving mastery']), points: 3 },
+                        { prompt: 'Which of the following scenarios showcase an effective use of student data to make a classroom decision?', options: JSON.stringify(['A teacher gives the same homework to all students, regardless of their quiz performance.', 'After reviewing assessment results, a teacher forms small groups for reteaching specific concepts.', 'A teacher designs a lesson based only on the textbook sequence, without reviewing past student performance.', 'A teacher notices some students are struggling but decides to wait until the end-of-term exam to take action.']), correctAnswer: 'After reviewing assessment results, a teacher forms small groups for reteaching specific concepts.', points: 2 },
+                        { prompt: 'Which of the following would be considered data-informed instructional next steps for a quiz with mixed results? (Select all that apply)', options: JSON.stringify(['Pair high-scoring students with low-scoring students for peer tutoring next lesson', 'Identify question types that the lower-scoring students struggled with and reteach using a different strategy', 'Review the quiz with the entire class, focusing only on the questions most students got wrong', 'Create targeted small-group sessions for low-scoring students while tracking participation in the next lesson', 'Assume the low scores are due to poor effort and plan to move forward with the curriculum']), correctAnswer: JSON.stringify(['Pair high-scoring students with low-scoring students for peer tutoring next lesson', 'Identify question types that the lower-scoring students struggled with and reteach using a different strategy', 'Create targeted small-group sessions for low-scoring students while tracking participation in the next lesson']), points: 3 },
+                        { prompt: 'Which of the following would be considered qualitative or observational data that a teacher can use to inform instruction? (Select all that apply)', options: JSON.stringify(['Quiz scores', 'Exit ticket responses', 'Anecdotal notes about student behaviour during group work', 'A student’s attendance record', 'Peer feedback from a class activity']), correctAnswer: JSON.stringify(['Exit ticket responses', 'Anecdotal notes about student behaviour during group work', 'Peer feedback from a class activity']), points: 3 },
+                        { prompt: 'Why should teachers use graphic organizers in the classroom?', options: JSON.stringify(['To decorate classroom displays', 'To help students memorize large chunks of information', 'To support students in organizing and visualizing their thinking', 'To reduce the amount of content teachers need to cover']), correctAnswer: 'To support students in organizing and visualizing their thinking', points: 2 },
+                        { prompt: 'Which type of graphic organizer would best support student understanding of Water Cycle stages?', options: JSON.stringify(['Venn Diagram', 'Cause and Effect Chart', 'A Cycle Diagram', 'T-Chart']), correctAnswer: 'A Cycle Diagram', points: 2 },
+                        { prompt: 'Which graphic organizer would best help students analyze and compare characters?', options: JSON.stringify(['Concept Map', 'Flowchart', 'Timeline', 'Venn Diagram']), correctAnswer: 'Timeline', points: 2 },
+                        { prompt: 'Before starting a new unit, which strategy best understand students’ prior knowledge and identify misconceptions?', options: JSON.stringify(['See Think Wonder', 'Entry Ticket', 'Think-Pair-Share', 'Do Now']), correctAnswer: 'Entry Ticket', points: 2 },
+                        { prompt: 'Which strategy should be used to pose the question: “How do human activities contribute to global warming?”', options: JSON.stringify(['Think-Pair-Share', 'KWL Chart', 'Entry Ticket', 'I Used to Think / Now I Know']), correctAnswer: 'Think-Pair-Share', points: 2 }
+                    ]
+                }
+            }
+        });
+        console.log('Seeded Ekya Professional Standards Assessment');
+    }
 
     console.log('\n✅ Seed complete! All teachers now have equal data + Surveys, Meetings, and Attendance entries.');
 }

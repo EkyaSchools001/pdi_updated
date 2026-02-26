@@ -216,8 +216,11 @@ export default function LeaderDashboard() {
 
       const obsCount = teacherObs.length;
 
-      const lastObsDate = teacherObs.length > 0
-        ? new Date(Math.max(...teacherObs.map(o => new Date(o.date).getTime()))).toLocaleDateString()
+      const lastObsDate = teacherObs.length > 0 && teacherObs.some(o => o.date)
+        ? new Date(Math.max(...teacherObs
+          .map(o => new Date(o.date).getTime())
+          .filter(time => !isNaN(time))
+        )).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : 'N/A';
 
       const avgScore = teacherObs.length > 0
@@ -2278,7 +2281,11 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
                         </div>
                       </td>
                       <td className="p-6">
-                        <p className="text-sm text-foreground">{member.lastObserved}, 2026</p>
+                        <p className="text-sm text-foreground">
+                          {member.lastObserved === 'N/A' || member.lastObserved === 'Invalid Date'
+                            ? member.lastObserved
+                            : `${member.lastObserved}`}
+                        </p>
                       </td>
                       <td className="p-6 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -3165,8 +3172,8 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
     const matchesSearch = teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       domainName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const obsGrade = obs.classroom?.grade || obs.grade || "";
-    const obsLA = obs.classroom?.learningArea || obs.learningArea || "";
+    const obsGrade = obs.classroom?.grade || (obs as any).grade || "";
+    const obsLA = obs.classroom?.learningArea || (obs as any).learningArea || "";
 
     const matchesGrade = selectedGrade === "all" || obsGrade.split(' - ')[0] === selectedGrade;
     const matchesLA = selectedLA === "all" || obsLA === selectedLA;
@@ -3175,7 +3182,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
   });
 
   const grades = Array.from(new Set(observations.map(o => {
-    const g = o.classroom?.grade || o.grade || "";
+    const g = o.classroom?.grade || (o as any).grade || "";
     return g.split(' - ')[0];
   }))).filter(Boolean).sort((a, b) => {
     const numA = parseInt(a.replace(/\D/g, ''));
@@ -3183,7 +3190,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
     return numA - numB;
   });
 
-  const learningAreas = Array.from(new Set(observations.map(o => o.classroom?.learningArea || o.learningArea || ""))).filter(Boolean).sort();
+  const learningAreas = Array.from(new Set(observations.map(o => o.classroom?.learningArea || (o as any).learningArea || ""))).filter(Boolean).sort();
 
   const resetFilters = () => {
     setSelectedGrade("all");

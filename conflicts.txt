@@ -1,0 +1,5 @@
+frontend/src/pages/LeaderDashboard.tsx
+frontend/src/pages/LearningFestival/FestivalManagementDashboard.tsx
+frontend/src/pages/ManagementDashboard.tsx
+frontend/src/pages/TeacherDashboard.tsx
+frontend/src/pages/admin/AdminGoalsView.tsx

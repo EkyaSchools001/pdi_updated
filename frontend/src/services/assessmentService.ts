@@ -15,7 +15,7 @@ export interface AssessmentQuestion {
     id: string;
     assessmentId: string;
     prompt: string;
-    type: 'MCQ' | 'TEXT';
+    type: 'MCQ' | 'TEXT' | 'MULTI_SELECT';
     options?: any[]; // For MCQ choices
     points: number;
 }
@@ -91,5 +91,11 @@ export const assessmentService = {
     async deleteAssessment(id: string) {
         const response = await api.delete(`/assessments/${id}`);
         return response.data;
+    },
+
+    // AI: Generate questions
+    async generateAIQuestions(prompt: string, count: number = 5) {
+        const response = await api.post('/ai/generate-questions', { prompt, count });
+        return response.data.data.questions;
     }
 };

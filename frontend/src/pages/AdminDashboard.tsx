@@ -28,6 +28,7 @@ import { useAccessControl } from "@/hooks/useAccessControl";
 import { MeetingsDashboard } from './MeetingsDashboard';
 import { CreateMeetingForm } from './CreateMeetingForm';
 import { MeetingMoMForm } from './MeetingMoMForm';
+import { PDHoursAnalyticsView } from "@/pages/admin/PDHoursAnalyticsView";
 import SurveyPage from "@/pages/SurveyPage";
 import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
 
@@ -44,8 +45,6 @@ export default function AdminDashboard() {
 
   const userName = user.fullName;
   const role = user.role;
-
-
 
   const [observations, setObservations] = useState<Observation[]>([]);
   const [recentUsers, setRecentUsers] = useState<DashboardUser[]>([]);
@@ -154,6 +153,7 @@ export default function AdminDashboard() {
         <Route path="calendar" element={<AdminCalendarView />} />
         <Route path="attendance" element={<AttendanceRegister />} />
         <Route path="attendance/:id" element={<EventAttendanceView />} />
+        <Route path="hours" element={<PDHoursAnalyticsView />} />
         <Route path="documents" element={<AdminDocumentManagement />} />
         <Route path="reports" element={<AdminReportsView />} />
         <Route path="settings" element={<SystemSettingsView />} />

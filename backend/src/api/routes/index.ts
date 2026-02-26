@@ -25,6 +25,7 @@ import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
 import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
+import aiRoutes from './aiRoutes';
 const router = Router();
 
 // Apply dynamic access matrix configuration globally
@@ -53,5 +54,6 @@ router.use('/festivals', learningFestivalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/assessments', assessmentRoutes);
 router.use('/okr', okrRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

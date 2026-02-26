@@ -22,6 +22,7 @@ import { Observation, DanielsonRatingScale, DanielsonDomain } from "@/types/obse
 import { toast } from "sonner";
 import { useEffect } from "react";
 import { templateService } from "@/services/templateService";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 
 interface UnifiedObservationFormProps {
     onSubmit: (observation: Partial<Observation>) => void;
@@ -520,7 +521,7 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                 <div className="space-y-4">
                                     <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Campus *</Label>
                                     <div className="flex flex-wrap gap-2">
-                                        {["CMR NPS", "EJPN", "EITPL", "EBTM", "EBYR", "ENICE", "ENAVA", "PU BTM", "PU BYR", "PU HRBR", "PU ITPL"].map(c => (
+                                        {CAMPUS_OPTIONS.map(c => (
                                             <Badge
                                                 key={c}
                                                 variant={formData.campus === c ? "default" : "outline"}

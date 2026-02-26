@@ -23,13 +23,13 @@ export const createAssessment = async (req: AuthRequest, res: Response) => {
             return res.status(401).json({ status: 'error', message: 'Unauthorized' });
         }
 
-        const { title, description, type, isTimed, timeLimitMinutes, maxAttempts, questions } = req.body;
+        const { title, description, type, isTimed, timeLimitMinutes, maxAttempts, questions, selectedCampuses } = req.body;
 
         const assessment = await prisma.assessment.create({
             data: {
                 title: title as string,
                 description: description as string,
-                type: (type as string) || 'CUSTOM',
+                type: (type as string) || 'OTHER_ASSESSMENTS',
                 isTimed: Boolean(isTimed),
                 timeLimitMinutes: timeLimitMinutes ? Number(timeLimitMinutes) : null,
                 maxAttempts: maxAttempts ? Number(maxAttempts) : 1,
@@ -47,6 +47,19 @@ export const createAssessment = async (req: AuthRequest, res: Response) => {
             include: { questions: true }
         });
 
+        // Handle campus assignments if provided
+        if (selectedCampuses && Array.isArray(selectedCampuses) && selectedCampuses.length > 0) {
+            await Promise.all(selectedCampuses.map((campusId: string) => {
+                return prisma.assessmentAssignment.create({
+                    data: {
+                        assessmentId: assessment.id,
+                        assignedById: userId,
+                        assignedToCampusId: campusId
+                    }
+                });
+            }));
+        }
+
         res.status(201).json({ status: 'success', data: { assessment } });
     } catch (error: any) {
         console.error('Error creating assessment:', error);
@@ -57,7 +70,8 @@ export const createAssessment = async (req: AuthRequest, res: Response) => {
 export const updateAssessment = async (req: AuthRequest, res: Response) => {
     try {
         const assessmentId = req.params.assessmentId as string;
-        const { title, description, type, isTimed, timeLimitMinutes, maxAttempts, questions } = req.body;
+        const { title, description, type, isTimed, timeLimitMinutes, maxAttempts, questions, selectedCampuses } = req.body;
+        const userId = req.user?.id as string;
 
         const updatedAssessment = await prisma.$transaction(async (tx) => {
             // Update basic info
@@ -66,7 +80,7 @@ export const updateAssessment = async (req: AuthRequest, res: Response) => {
                 data: {
                     title: title as string,
                     description: description as string,
-                    type: (type as string) || 'CUSTOM',
+                    type: (type as string) || 'OTHER_ASSESSMENTS',
                     isTimed: Boolean(isTimed),
                     timeLimitMinutes: timeLimitMinutes ? Number(timeLimitMinutes) : null,
                     maxAttempts: maxAttempts ? Number(maxAttempts) : 1
@@ -91,6 +105,30 @@ export const updateAssessment = async (req: AuthRequest, res: Response) => {
                         points: q.points ? Number(q.points) : 1
                     }))
                 });
+            }
+
+            // Sync campus assignments if provided
+            if (selectedCampuses && Array.isArray(selectedCampuses)) {
+                // Delete existing campus assignments for this assessment
+                await tx.assessmentAssignment.deleteMany({
+                    where: {
+                        assessmentId: assessmentId,
+                        assignedToCampusId: { not: null }
+                    }
+                });
+
+                // Create new ones
+                if (selectedCampuses.length > 0) {
+                    await Promise.all(selectedCampuses.map((campusId: string) => {
+                        return tx.assessmentAssignment.create({
+                            data: {
+                                assessmentId: assessmentId,
+                                assignedById: userId,
+                                assignedToCampusId: campusId
+                            }
+                        });
+                    }));
+                }
             }
 
             return tx.assessment.findUnique({
@@ -172,6 +210,19 @@ export const startAttempt = async (req: AuthRequest, res: Response) => {
         const assessment = await prisma.assessment.findUnique({ where: { id: assessmentId } });
         if (!assessment) return res.status(404).json({ status: 'error', message: 'Assessment not found' });
 
+        // Check for existing IN_PROGRESS attempt (Idempotent behavior)
+        const activeAttempt = await prisma.assessmentAttempt.findFirst({
+            where: {
+                assessmentId: assessmentId,
+                userId: userId,
+                status: 'IN_PROGRESS'
+            }
+        });
+
+        if (activeAttempt) {
+            return res.status(200).json({ status: 'success', data: { attempt: activeAttempt } });
+        }
+
         const pastAttempts = await prisma.assessmentAttempt.count({
             where: {
                 assessmentId: assessmentId,
@@ -240,17 +291,40 @@ export const submitAttempt = async (req: AuthRequest, res: Response) => {
         const finalAnswers = answers || (attempt.answers ? JSON.parse(attempt.answers) : {});
         const questions = (attempt.assessment?.questions || []) as any[];
 
-        questions.forEach((q: any) => {
-            const userAnswer = String(finalAnswers[q.id] || "").trim();
-            const correctAnswer = String(q.correctAnswer || "").trim();
+        console.log(`Submitting attempt ${attemptId} for user ${userId}`);
 
-            if (q.type === 'MCQ' && userAnswer === correctAnswer && correctAnswer !== "") {
-                score += q.points;
+        questions.forEach((q: any) => {
+            const userAnswerRaw = finalAnswers[q.id];
+            const qPoints = Number(q.points || 0);
+
+            if (q.type === 'MULTI_SELECT') {
+                try {
+                    const userAnswers = Array.isArray(userAnswerRaw) ? userAnswerRaw : JSON.parse(String(userAnswerRaw || "[]"));
+                    const correctAnswers = JSON.parse(q.correctAnswer || "[]");
+
+                    if (Array.isArray(userAnswers) && Array.isArray(correctAnswers)) {
+                        const sortedUser = [...userAnswers].sort();
+                        const sortedCorrect = [...correctAnswers].sort();
+                        if (JSON.stringify(sortedUser) === JSON.stringify(sortedCorrect) && sortedCorrect.length > 0) {
+                            score += qPoints;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore parsing errors for individual questions
+                }
+            } else if (q.type === 'MCQ') {
+                const userAnswer = String(userAnswerRaw || "").trim();
+                const correctAnswer = String(q.correctAnswer || "").trim();
+                if (userAnswer === correctAnswer && correctAnswer !== "") {
+                    score += qPoints;
+                }
             }
         });
 
-        const totalPoints = questions.reduce((acc: number, q: any) => acc + (q.points || 0), 0);
+        const totalPoints = questions.reduce((acc: number, q: any) => acc + (Number(q.points) || 0), 0);
         const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+
+        console.log(`Score: ${score}/${totalPoints} (${percentage}%)`);
 
         const updatedAttempt = await prisma.assessmentAttempt.update({
             where: { id: attemptId },
@@ -259,13 +333,41 @@ export const submitAttempt = async (req: AuthRequest, res: Response) => {
                 status: 'SUBMITTED',
                 endTime: new Date(),
                 score: percentage
-            }
+            },
+            include: { user: true, assessment: true }
         });
 
+        // Sync to specialized tables based on assessment type
+        try {
+            if (updatedAttempt.assessment.type === 'POST_ORIENTATION') {
+                const currentSettings = await prisma.systemSettings.findMany();
+                const termSetting = currentSettings.find(s => s.key === 'current_term');
+                const academicYearSetting = currentSettings.find(s => s.key === 'current_academic_year');
+
+                const term = termSetting ? JSON.parse(termSetting.value) : "Term 1";
+                const academicYear = academicYearSetting ? JSON.parse(academicYearSetting.value) : new Date().getFullYear().toString();
+
+                await prisma.postOrientationAssessment.create({
+                    data: {
+                        userId: updatedAttempt.userId,
+                        campus: updatedAttempt.user.campusId,
+                        score: percentage,
+                        completed: true,
+                        term: term,
+                        academicYear: academicYear
+                    }
+                });
+                console.log(`[SYNC] Synced POST_ORIENTATION result for user ${userId}`);
+            }
+        } catch (syncError) {
+            console.error('[SYNC] Failed to sync assessment result to specialized table:', syncError);
+        }
+
         res.status(200).json({ status: 'success', data: { attempt: updatedAttempt } });
+
     } catch (error: any) {
         console.error('Error submitting attempt:', error);
-        res.status(500).json({ status: 'error', message: 'Internal server error' });
+        res.status(500).json({ status: 'error', message: error.message || 'Internal server error' });
     }
 };
 

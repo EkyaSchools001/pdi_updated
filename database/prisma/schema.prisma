@@ -72,6 +72,7 @@ model User {
   assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
   assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
   assessmentAttempts    AssessmentAttempt[]
+  trainingFeedbacks     TrainingFeedback[]
 
   @@index([academics])
 }
@@ -268,6 +269,7 @@ model TrainingEvent {
   proposedById          String?
   proposedBy            User?             @relation("ProposedEvents", fields: [proposedById], references: [id])
   createdBy             User?             @relation("CreatedEvents", fields: [createdById], references: [id])
+  feedbacks             TrainingFeedback[]
 }
 
 model Registration {
@@ -299,6 +301,20 @@ model EventAttendance {
   teacher User          @relation(fields: [teacherId], references: [id])
 
   @@unique([eventId, teacherEmail])
+}
+
+model TrainingFeedback {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  event TrainingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
 }
 
 

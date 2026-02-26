@@ -1,0 +1,86 @@
+{
+  "events": [
+    {
+      "id": "05223b2f-1fa7-49a0-a33b-86bed1bfa1cc",
+      "title": "Effective Questioning Techniques",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "ee06970a-09ed-4802-a796-04d2c4259032",
+      "title": "Google Workspace for Education",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "bd7c96c2-f685-4b64-abe1-478f81d741e2",
+      "title": "Building a Positive Class Culture",
+      "status": "APPROVED"
+    },
+    {
+      "id": "e1d2c81e-d0ca-43df-91fe-7846bfb8b54a",
+      "title": "Differentiated Instruction Masterclass",
+      "status": "APPROVED"
+    }
+  ],
+  "users": [
+    {
+      "id": "575f421d-e281-485b-91e2-4edd311a5e21",
+      "fullName": "Rohit",
+      "role": "LEADER",
+      "email": "rohit.schoolleader@pdi.com"
+    },
+    {
+      "id": "f7e70d9e-839d-4ae4-aae2-0bfaebc97606",
+      "fullName": "Avani",
+      "role": "ADMIN",
+      "email": "avani.admin@pdi.com"
+    },
+    {
+      "id": "423b48e6-bdfc-4f58-81aa-f35fc5d19300",
+      "fullName": "Teacher One",
+      "role": "TEACHER",
+      "email": "teacher1.btmlayout@pdi.com"
+    },
+    {
+      "id": "c8695966-e3b2-4a43-97c4-915f163d4fd9",
+      "fullName": "Teacher Two",
+      "role": "TEACHER",
+      "email": "teacher2.jpnagar@pdi.com"
+    },
+    {
+      "id": "cb6cce0d-0fa3-467a-af7d-ffab7ae732a9",
+      "fullName": "Teacher Three",
+      "role": "TEACHER",
+      "email": "teacher3.itpl@pdi.com"
+    },
+    {
+      "id": "51ee393f-96a1-4400-abc8-8a76bf2fddcd",
+      "fullName": "Teacher Four",
+      "role": "TEACHER",
+      "email": "teacher4.art@pdi.com"
+    },
+    {
+      "id": "67a22fd4-f735-4324-a49c-4ccfcec7809d",
+      "fullName": "Teacher Five",
+      "role": "TEACHER",
+      "email": "teacher5.pt@pdi.com"
+    },
+    {
+      "id": "fa97d8d1-cfb1-4299-b341-b2027a8a8c18",
+      "fullName": "Teacher Six",
+      "role": "TEACHER",
+      "email": "teacher6.vart@pdi.com"
+    },
+    {
+      "id": "6438a191-e281-476f-81af-cd7c2c128b11",
+      "fullName": "Indu",
+      "role": "MANAGEMENT",
+      "email": "indu.management@pdi.com"
+    },
+    {
+      "id": "9cfc5c09-7868-40cb-8f5d-91d43e72a331",
+      "fullName": "Bharath",
+      "role": "SUPERADMIN",
+      "email": "bharath.superadmin@padi.com"
+    }
+  ]
+}

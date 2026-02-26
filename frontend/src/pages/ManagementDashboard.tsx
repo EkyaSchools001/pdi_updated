@@ -50,6 +50,7 @@ import { format } from 'date-fns';
 import SurveyPage from "@/pages/SurveyPage";
 import { ManagementInsightsView } from './management/ManagementInsightsView';
 import { FestivalManagementDashboard } from './LearningFestival/FestivalManagementDashboard';
+import { analyticsService } from "@/services/analyticsService";
 
 // --- Mock Data ---
 
@@ -79,10 +80,10 @@ const pillarHealthData = [
 ];
 
 const campusBenchmarking = [
-    { campus: 'JP Nagar', completion: 78, interventionNeeded: 5, growth: 12 },
-    { campus: 'Kanakapura', completion: 64, interventionNeeded: 12, growth: 8 },
-    { campus: 'ITPL', completion: 82, interventionNeeded: 3, growth: 15 },
-    { campus: 'CKC', completion: 55, interventionNeeded: 18, growth: 4 },
+    { campus: 'EJPN', completion: 78, interventionNeeded: 5, growth: 12 },
+    { campus: 'EBTM', completion: 64, interventionNeeded: 12, growth: 8 },
+    { campus: 'EITPL', completion: 82, interventionNeeded: 3, growth: 15 },
+    { campus: 'CMR NPS', completion: 55, interventionNeeded: 18, growth: 4 },
 ];
 
 const impactCorrelation = [
@@ -621,71 +622,116 @@ function Pillars() {
 }
 
 function PDImpact() {
+    const [loading, setLoading] = useState(true);
+    const [feedbackAvg, setFeedbackAvg] = useState(0);
+    const [attendanceData, setAttendanceData] = useState<any[]>([]);
+    const [cutoffData, setCutoffData] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchPDMetrics = async () => {
+            try {
+                const [feedbackRes, attendanceRes, cutoffRes] = await Promise.all([
+                    analyticsService.getFeedbackAnalytics(),
+                    analyticsService.getCampusAttendance(),
+                    analyticsService.getCutoffStats(20) // Defaulting to 20 hours cutoff
+                ]);
+
+                if (feedbackRes?.data?.globalAverage) {
+                    setFeedbackAvg(feedbackRes.data.globalAverage);
+                }
+
+                if (attendanceRes?.data?.results) {
+                    setAttendanceData(attendanceRes.data.results);
+                }
+
+                if (cutoffRes?.data?.results) {
+                    setCutoffData(cutoffRes.data.results);
+                }
+            } catch (error) {
+                console.error("Failed to fetch PD Impact metrics", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPDMetrics();
+    }, []);
+
+    if (loading) return <div className="h-[400px] animate-pulse bg-muted rounded-xl" />;
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <PageHeader
                 title="PD Impact Analysis"
-                subtitle="Correlating professional development hours with goal improvement"
+                subtitle="Tracking training attendance, feedback, and compliance across campuses"
             />
 
             <div className="grid md:grid-cols-3 gap-4">
-                <StatCard title="Avg Goal Improvement" value="+18%" subtitle="Across all teachers" icon={TrendingUp} />
-                <StatCard title="% Teachers Showing Growth" value="82%" subtitle="Positive growth trajectory" icon={Users} />
-                <StatCard title="High-Impact PD Sessions" value="24" subtitle="Top 10% effectiveness" icon={Zap} />
+                <StatCard
+                    title="Avg PDI Training Feedback"
+                    value={feedbackAvg > 0 ? `${feedbackAvg} / 5.0` : "N/A"}
+                    subtitle="System-wide all time average"
+                    icon={Target}
+                />
+                <StatCard
+                    title="Avg Goal Improvement"
+                    value="+18%"
+                    subtitle="Across all teachers (Projected)"
+                    icon={TrendingUp}
+                />
+                <StatCard
+                    title="% Teachers Showing Growth"
+                    value="82%"
+                    subtitle="Positive growth trajectory (Projected)"
+                    icon={Users}
+                />
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
                 <Card className="border-none shadow-xl bg-background/50 backdrop-blur-md">
                     <CardHeader>
-                        <CardTitle className="text-lg">PD Hours vs. Goal Growth</CardTitle>
-                        <CardDescription>Correlation between training attendance and classroom improvement</CardDescription>
+                        <CardTitle className="text-lg">Attendance % by Campus</CardTitle>
+                        <CardDescription>Overall attendance rate for all scheduled trainings till date</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                <CartesianGrid />
-                                <XAxis type="number" dataKey="x" name="PD Hours" unit="h" />
-                                <YAxis type="number" dataKey="y" name="Growth" unit="%" />
-                                <ZAxis type="number" range={[100, 1000]} />
-                                <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} />
-                                <Scatter name="Impact Data" data={impactCorrelation} fill="#6366f1" />
-                            </ScatterChart>
+                            <BarChart data={attendanceData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="campus" />
+                                <YAxis domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+                                <RechartsTooltip
+                                    formatter={(value: number) => [`${value}%`, 'Attendance Rate']}
+                                    cursor={{ fill: 'transparent' }}
+                                />
+                                <Legend />
+                                <Bar dataKey="attendancePercent" name="Attendance Rate" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
                 <Card className="border-none shadow-xl bg-background/50 backdrop-blur-md">
                     <CardHeader>
-                        <CardTitle className="text-lg">PD Effectiveness by Pillar</CardTitle>
-                        <CardDescription>Training efficiency mapped to focus areas</CardDescription>
+                        <CardTitle className="text-lg">20-Hour Mandatory Cutoff</CardTitle>
+                        <CardDescription>% of teachers above and below the mandatory PD hours</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={[
-                                { pillar: 'Pedagogy', efficiency: 85 },
-                                { pillar: 'Environment', efficiency: 62 },
-                                { pillar: 'Leadership', efficiency: 45 },
-                                { pillar: 'ICT', efficiency: 92 },
-                            ]}>
+                            <BarChart data={cutoffData} stackOffset="expand" margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="pillar" />
-                                <YAxis />
-                                <RechartsTooltip />
-                                <Bar dataKey="efficiency" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                                <XAxis dataKey="campus" />
+                                <YAxis tickFormatter={(tick) => `${tick * 100}%`} />
+                                <RechartsTooltip
+                                    formatter={(value: number, name: string) => [`${(value * 100).toFixed(1)}%`, name]}
+                                    cursor={{ fill: 'transparent' }}
+                                />
+                                <Legend />
+                                <Bar dataKey="abovePercent" name="Met Required Hours" stackId="a" fill="#10b981" />
+                                <Bar dataKey="belowPercent" name="Below Cutoff" stackId="a" fill="#f43f5e" />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-6 shadow-sm">
-                <h4 className="font-bold mb-4 flex items-center gap-2">
-                    <ArrowUpRight className="w-5 h-5 text-success" />
-                    Key Insight: Premium Content Impact
-                </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                    Data shows a strong correlation (+0.82) between teachers attending more than 50 hours of "Inquiry-Based Learning" PD and achieving their goals 1.5x faster than the organizational average. Recommended focus: scale this module to ITPL and Kanakapura campuses next quarter.
-                </p>
             </div>
         </div>
     );
@@ -747,9 +793,9 @@ function Leadership() {
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={[
-                                { campus: 'JP Nagar', followUp: 90, progress: 85 },
-                                { campus: 'ITPL', followUp: 85, progress: 82 },
-                                { campus: 'Kanakapura', followUp: 60, progress: 55 },
+                                { campus: 'EJPN', followUp: 90, progress: 85 },
+                                { campus: 'EITPL', followUp: 85, progress: 82 },
+                                { campus: 'EBTM', followUp: 60, progress: 55 },
                             ]}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="campus" />
@@ -772,7 +818,7 @@ function Leadership() {
                             Leadership Insight
                         </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            A direct correlation of 0.9 exists between leader coaching follow-up and teacher goal progress. Leaders at the Kanakapura campus currently have a follow-up index of 60%, reflecting a slower teacher growth trajectory.
+                            A direct correlation of 0.9 exists between leader coaching follow-up and teacher goal progress. Leaders at the EBTM campus currently have a follow-up index of 60%, reflecting a slower teacher growth trajectory.
                         </p>
                     </div>
                 </div>
@@ -790,7 +836,7 @@ function Risk() {
             />
 
             <div className="grid md:grid-cols-4 gap-4">
-                <StatCard title="Critical Campuses" value="1" subtitle="CKC High Alert" icon={AlertTriangle} className="border-destructive/20 bg-destructive/5" />
+                <StatCard title="Critical Campuses" value="1" subtitle="CMR NPS High Alert" icon={AlertTriangle} className="border-destructive/20 bg-destructive/5" />
                 <StatCard title="Stagnant Goals" value="18" subtitle="No movement in 30 days" icon={Clock} />
                 <StatCard title="Observ. Deficit" value="12%" subtitle="Below monthly target" icon={AlertCircle} />
                 <StatCard title="Interventions Logged" value="5" subtitle="This Quarter" icon={ShieldCheck} />
@@ -805,10 +851,10 @@ function Risk() {
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={[
-                                { name: 'JP Nagar', low: 80, med: 15, high: 5 },
-                                { name: 'ITPL', low: 85, med: 12, high: 3 },
-                                { name: 'Kanakapura', low: 60, med: 30, high: 10 },
-                                { name: 'CKC', low: 45, med: 35, high: 20 },
+                                { name: 'EJPN', low: 80, med: 15, high: 5 },
+                                { name: 'EITPL', low: 85, med: 12, high: 3 },
+                                { name: 'EBTM', low: 60, med: 30, high: 10 },
+                                { name: 'CMR NPS', low: 45, med: 35, high: 20 },
                             ]} layout="vertical">
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="name" type="category" width={100} />
@@ -831,12 +877,12 @@ function Risk() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="p-3 bg-destructive/5 border border-destructive/10 rounded-lg">
-                                <p className="text-sm font-bold">Incomplete Peer Reviews: CKC Campus</p>
+                                <p className="text-sm font-bold">Incomplete Peer Reviews: CMR NPS Campus</p>
                                 <p className="text-xs text-muted-foreground">Peer feedback is 3 weeks overdue for 12 faculty members.</p>
                             </div>
                             <div className="p-3 bg-warning/5 border border-warning/10 rounded-lg">
                                 <p className="text-sm font-bold">Goal Stagnation Detected</p>
-                                <p className="text-xs text-muted-foreground">15 goals at Kanakapura haven't had an evidence update in 45 days.</p>
+                                <p className="text-xs text-muted-foreground">15 goals at EBTM haven't had an evidence update in 45 days.</p>
                             </div>
                         </CardContent>
                     </Card>

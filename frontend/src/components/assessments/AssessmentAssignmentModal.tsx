@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { assessmentService } from "@/services/assessmentService";
 import { userService, User } from "@/services/userService";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 import { toast } from "sonner";
 import { X, Users, School, Shield, User as UserIcon, Loader2 } from 'lucide-react';
 
@@ -21,10 +22,7 @@ interface AssessmentAssignmentModalProps {
 
 type AssignType = 'ROLE' | 'CAMPUS' | 'USER';
 
-const CAMPUSES = [
-    "CMR NPS", "EITPL", "EBYR", "EJPN", "EBTM", "ENICE", "ENAVA",
-    "PU BTM", "PU BYR", "PU HRBR", "PU ITPL", "PU NICE", "HO"
-];
+const CAMPUSES = CAMPUS_OPTIONS;
 
 const ROLES = [
     { label: "Teachers", value: "TEACHER" },

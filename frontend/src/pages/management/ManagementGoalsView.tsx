@@ -7,8 +7,28 @@ import { Target, Search, FileText } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import api from '@/lib/api';
 
+interface Goal {
+    id: string;
+    teacher: string;
+    campus?: string;
+    title: string;
+    status: string;
+    selfReflectionForm?: any;
+    goalSettingForm?: any;
+}
+
+interface CampusStats {
+    campus: string;
+    totalGoals: number;
+    reflectionFilled: number;
+    settingFilled: number;
+    completed: number;
+    reflectionPct: number;
+    settingPct: number;
+}
+
 export function ManagementGoalsView() {
-    const [goals, setGoals] = useState<any[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -30,7 +50,7 @@ export function ManagementGoalsView() {
     };
 
     // Group goals by campus (or fallback)
-    const campusStats = React.useMemo(() => {
+    const campusStats = React.useMemo<CampusStats[]>(() => {
         const grouped = goals.reduce((acc, goal) => {
             const campus = goal.campus || "Unassigned";
             if (!acc[campus]) {
@@ -44,7 +64,7 @@ export function ManagementGoalsView() {
         }, {} as Record<string, { totalGoals: number; reflectionFilled: number; settingFilled: number; completed: number }>);
 
         return Object.entries(grouped).map(([campus, value]) => {
-            const stats = value as { totalGoals: number; reflectionFilled: number; settingFilled: number; completed: number };
+            const stats = value;
             return {
                 campus,
                 ...stats,
@@ -111,7 +131,7 @@ export function ManagementGoalsView() {
                             placeholder="Search teacher, title, campus..."
                             className="pl-9 h-9 border-muted bg-background/50"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                         />
                     </div>
                 </CardHeader>

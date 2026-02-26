@@ -37,10 +37,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 
-const DEFAULT_CAMPUSES = [
-    "CMR NPS", "EJPN", "EITPL", "EBTM", "EBYR", "ENICE", "ENAVA", "PU BTM", "PU BYR", "PU HRBR", "PU ITPL",
-];
+const DEFAULT_CAMPUSES = CAMPUS_OPTIONS;
 
 const DEFAULT_PILLARS = [
     "Live the Lesson", "Authentic Assessments", "Instruct to Inspire", "Care about Culture", "Engaging Environment", "Professional Practice",
@@ -63,7 +62,7 @@ const formSchema = z.object({
     }),
     reflectionCompleted: z.enum(["yes", "no"], {
         required_error: "This question is mandatory",
-    }).refine((val) => val === "yes", {
+    }).refine((val: string) => val === "yes", {
         message: "Educator self-reflection must be completed before setting goals",
     }),
     evidenceProvided: z.enum(["yes", "no"], {
@@ -98,7 +97,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
         const loadTemplate = async () => {
             try {
                 const templates = await templateService.getAllTemplates('GOAL');
-                const defaultTemplate = templates.find(t => t.isDefault) || templates[0];
+                const defaultTemplate = templates.find((t: any) => t.isDefault) || templates[0];
                 if (defaultTemplate && defaultTemplate.structure) {
                     const campusField = defaultTemplate.structure.find((f: any) => f.id === 'campus');
                     const pillarField = defaultTemplate.structure.find((f: any) => f.id === 'pillarTag');
@@ -112,7 +111,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
         loadTemplate();
     }, []);
 
-    const form = useForm<any>({
+    const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             coachName: defaultCoachName,
@@ -158,9 +157,9 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                         <FormItem>
                                             <FormLabel>Name of the Educator *</FormLabel>
                                             <Select
-                                                onValueChange={(value) => {
+                                                onValueChange={(value: string) => {
                                                     field.onChange(value);
-                                                    const selectedTeacher = teachers.find(t => t.name === value);
+                                                    const selectedTeacher = teachers.find((t: any) => t.name === value);
                                                     if (selectedTeacher?.email) {
                                                         form.setValue("teacherEmail", selectedTeacher.email);
                                                     }
@@ -228,7 +227,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {campuses.map((campus) => (
+                                                    {campuses.map((campus: string) => (
                                                         <SelectItem key={campus} value={campus}>
                                                             {campus}
                                                         </SelectItem>
@@ -270,7 +269,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                         mode="single"
                                                         selected={field.value}
                                                         onSelect={field.onChange}
-                                                        disabled={(date) =>
+                                                        disabled={(date: Date) =>
                                                             date > new Date() || date < new Date("1900-01-01")
                                                         }
                                                         initialFocus
@@ -313,7 +312,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                         mode="single"
                                                         selected={field.value}
                                                         onSelect={field.onChange}
-                                                        disabled={(date) =>
+                                                        disabled={(date: Date) =>
                                                             date < new Date()
                                                         }
                                                         initialFocus
@@ -542,7 +541,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {pillars.map((pillar) => (
+                                                    {pillars.map((pillar: string) => (
                                                         <SelectItem key={pillar} value={pillar}>
                                                             {pillar}
                                                         </SelectItem>
