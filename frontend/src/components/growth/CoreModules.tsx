@@ -6,24 +6,35 @@ import { useNavigate } from "react-router-dom";
 
 interface CoreModulesProps {
     teacherId?: string;
+    teacherName?: string;
+    teacherEmail?: string;
 }
 
-const CoreModules: React.FC<CoreModulesProps> = ({ teacherId }) => {
+const CoreModules: React.FC<CoreModulesProps> = ({ teacherId, teacherName, teacherEmail }) => {
     const navigate = useNavigate();
+
+    const getPath = (basePath: string) => {
+        const params = new URLSearchParams();
+        if (teacherId) params.set("teacherId", teacherId);
+        if (teacherName) params.set("teacherName", teacherName);
+        if (teacherEmail) params.set("teacherEmail", teacherEmail);
+        const queryString = params.toString();
+        return queryString ? `${basePath}?${queryString}` : basePath;
+    };
 
     const modules = [
         {
             title: "Ekya Danielson Framework. Unified Observation, Feedback & Improvement Form",
             description: "Standard Danielson-based academic observation framework.",
             icon: Eye,
-            path: teacherId ? `/leader/danielson-framework/${teacherId}` : "/teacher/observations",
+            path: getPath("/leader/danielson-framework"),
             color: "bg-blue-500",
         },
         {
             title: "Quick Feedback Master",
             description: "Fast, actionable feedback loops for core academic subjects.",
             icon: MessageSquare,
-            path: teacherId ? `/leader/quick-feedback/${teacherId}` : "/leader/quick-feedback",
+            path: getPath("/leader/quick-feedback"),
             color: "bg-indigo-500",
         },
     ];

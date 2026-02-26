@@ -179,10 +179,11 @@ export function QuickFeedbackForm({ onSubmit, onCancel, initialData = {}, teache
                                         <Button
                                             variant="outline"
                                             role="combobox"
-                                            className="w-full h-12 justify-between border-muted-foreground/20 rounded-xl text-base"
+                                            disabled={!!initialData.teacherId}
+                                            className={cn("w-full h-12 justify-between border-muted-foreground/20 rounded-xl text-base", !!initialData.teacherId && "bg-slate-50 text-muted-foreground")}
                                         >
                                             {formData.teacher || "Select Teacher"}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            {!initialData.teacherId && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -218,7 +219,8 @@ export function QuickFeedbackForm({ onSubmit, onCancel, initialData = {}, teache
                                 <Input
                                     value={formData.teacherEmail}
                                     onChange={(e) => updateField("teacherEmail", e.target.value)}
-                                    className="h-12 text-base rounded-xl border-muted-foreground/20"
+                                    readOnly={!!initialData.teacherEmail}
+                                    className={cn("h-12 text-base rounded-xl border-muted-foreground/20", !!initialData.teacherEmail && "bg-slate-50 text-muted-foreground")}
                                     placeholder="Enter email"
                                 />
                             </div>

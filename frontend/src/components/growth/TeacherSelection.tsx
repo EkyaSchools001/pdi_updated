@@ -10,8 +10,19 @@ interface TeacherSelectionProps {
     onSelect: (teacher: User) => void;
 }
 
+import { useSearchParams } from "react-router-dom";
+
 const TeacherSelection: React.FC<TeacherSelectionProps> = ({ teachers, onSelect }) => {
-    const [searchTerm, setSearchTerm] = React.useState("");
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchTerm, setSearchTerm] = React.useState(searchParams.get("q") || "");
+
+    // Sync state to URL
+    React.useEffect(() => {
+        const params = new URLSearchParams(searchParams);
+        if (searchTerm) params.set("q", searchTerm);
+        else params.delete("q");
+        setSearchParams(params, { replace: true });
+    }, [searchTerm]);
 
     const filteredTeachers = teachers.filter(t =>
         t.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||

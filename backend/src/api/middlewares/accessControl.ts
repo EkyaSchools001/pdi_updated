@@ -165,6 +165,7 @@ export const roleModuleAuth = async (req: Request, res: Response, next: NextFunc
         }
 
         // 8. Check if this role has access
+        console.log(`[ACCESS-MATRIX-DEBUG] roleKey="${roleKey}" moduleId="${moduleId}" roles=${JSON.stringify(moduleEntry.roles)} result=${moduleEntry.roles[roleKey]}`);
         if (moduleEntry.roles[roleKey] === true) {
             return next();
         }

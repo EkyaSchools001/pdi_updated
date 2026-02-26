@@ -6,55 +6,76 @@ import { useNavigate } from "react-router-dom";
 
 interface NonCoreModulesProps {
     teacherId?: string;
+    teacherName?: string;
+    teacherEmail?: string;
 }
 
-const NonCoreModules: React.FC<NonCoreModulesProps> = ({ teacherId }) => {
+const NonCoreModules: React.FC<NonCoreModulesProps> = ({ teacherId, teacherName, teacherEmail }) => {
     const navigate = useNavigate();
+
+    const getPath = (basePath: string) => {
+        const params = new URLSearchParams();
+        if (teacherId) params.set("teacherId", teacherId);
+        if (teacherName) params.set("teacherName", teacherName);
+        if (teacherEmail) params.set("teacherEmail", teacherEmail);
+        const queryString = params.toString();
+        return queryString ? `${basePath}?${queryString}` : basePath;
+    };
 
     const modules = [
         {
             title: "Quick Feedback Master",
             description: "Fast, actionable feedback loops for non-core subjects.",
             icon: MessageSquare,
-            path: teacherId ? `/leader/quick-feedback/${teacherId}` : "/leader/quick-feedback",
+            path: getPath("/leader/quick-feedback"),
             color: "bg-indigo-500",
+            disabled: false,
         },
         {
             title: "Performing Arts Observation",
             description: "Music, Dance, and Drama specialized observation master.",
             icon: Music,
-            path: teacherId ? `/leader/observe?teacherId=${teacherId}&template=performing-arts` : "/teacher/observations",
+            path: getPath("/leader/performing-arts-obs"),
             color: "bg-purple-500",
+            disabled: false,
         },
         {
             title: "Life Skills Observation",
             description: "Evaluating soft skills and student wellbeing facilitators.",
             icon: Heart,
-            path: teacherId ? `/leader/observe?teacherId=${teacherId}&template=life-skills` : "/teacher/observations",
+            path: getPath("/leader/life-skills-obs"),
             color: "bg-rose-500",
+            disabled: false,
         },
         {
             title: "Physical Education Observation",
             description: "Sports and physical health instruction framework.",
             icon: Activity,
-            path: teacherId ? `/leader/observe?teacherId=${teacherId}&template=pe` : "/teacher/observations",
+            path: getPath("/leader/pe-obs"),
             color: "bg-green-500",
+            disabled: false,
         },
         {
             title: "Visual Arts Observation",
             description: "Fine arts, craftsmanship, and visual literacy assessment.",
             icon: Palette,
-            path: teacherId ? `/leader/observe?teacherId=${teacherId}&template=visual-arts` : "/teacher/observations",
+            path: getPath("/leader/va-obs"),
             color: "bg-orange-500",
+            disabled: false,
         },
     ];
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {modules.map((module) => (
-                <Card key={module.title} className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary group">
+                <Card
+                    key={module.title}
+                    className={`transition-all duration-300 border-l-4 border-l-primary hover:shadow-lg group`}
+                >
                     <CardHeader className="flex flex-row items-center gap-4">
-                        <div className={`p-3 rounded-xl ${module.color} text-white group-hover:scale-110 transition-transform`}>
+                        <div
+                            className={`p-3 rounded-xl text-white ${module.color} group-hover:scale-110 transition-transform`}
+                        >
                             <module.icon className="w-6 h-6" />
                         </div>
                         <div>
@@ -68,9 +89,10 @@ const NonCoreModules: React.FC<NonCoreModulesProps> = ({ teacherId }) => {
                         <Button
                             className="w-full justify-between"
                             variant="outline"
-                            onClick={() => navigate(module.path)}
+                            disabled={module.disabled}
+                            onClick={module.disabled ? undefined : () => navigate(module.path)}
                         >
-                            Access Module
+                            {module.disabled ? "Coming Soon" : "Access Module"}
                             <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                     </CardContent>

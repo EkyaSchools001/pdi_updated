@@ -8,7 +8,7 @@ import { useAccessControl } from "@/hooks/useAccessControl";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/StatCard";
-import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock, FileCheck } from "lucide-react";
+import { Users, Eye, TrendingUp, Calendar, FileText, Target, Plus, ChevronLeft, ChevronRight, Save, Star, Search, Filter, Mail, Phone, MapPin, Award, CheckCircle, Download, Printer, Share2, Rocket, Clock, CheckCircle2, Map, Users as Users2, History as HistoryIcon, MessageSquare, Book, Link as LinkIcon, Brain, Paperclip, Sparkles, ClipboardCheck, Tag, Edit, ClipboardList, Trash2, Lock, FileCheck, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Link, useNavigate, Routes, Route, useParams, useLocation } from "react-router-dom";
+import { Link, useNavigate, Routes, Route, useParams, useLocation, useSearchParams } from "react-router-dom";
 
 
 
@@ -35,6 +35,7 @@ import { LeaderPerformanceAnalytics } from "@/components/LeaderPerformanceAnalyt
 import { AIAnalysisModal } from "@/components/AIAnalysisModal";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { GrowthLayout } from "@/components/growth/GrowthLayout";
 
 import { DynamicForm } from "@/components/DynamicForm";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -350,32 +351,34 @@ export default function LeaderDashboard() {
 
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
-      <Routes>
-        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} role={role} />} />
-        <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
-        <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
-        <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
-        <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
-        <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
-        <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
-        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
-        <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
-        <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
-        <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
-        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeachers} />} />
-        <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
-        <Route path="attendance" element={<AttendanceRegister />} />
-        <Route path="attendance/:id" element={<EventAttendanceView />} />
-        <Route path="insights" element={<LearningInsightsView />} />
-        <Route path="participation" element={<PDParticipationView team={team} training={training} />} />
-        <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
-        <Route path="users" element={<UserManagementView />} />
-        <Route path="forms" element={<FormTemplatesView />} />
-        <Route path="courses/*" element={<LeaderCoursesModule />} />
-        <Route path="documents" element={<AdminDocumentManagement />} />
-        <Route path="survey" element={<SurveyPage />} />
-        <Route path="settings" element={<SystemSettingsView />} />
-      </Routes>
+      <GrowthLayout allowedRoles={["LEADER", "SCHOOL_LEADER", "ADMIN", "SUPERADMIN"]}>
+        <Routes>
+          <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} role={role} />} />
+          <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
+          <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
+          <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
+          <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
+          <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
+          <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
+          <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
+          <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
+          <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
+          <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
+          <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeachers} />} />
+          <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
+          <Route path="attendance" element={<AttendanceRegister />} />
+          <Route path="attendance/:id" element={<EventAttendanceView />} />
+          <Route path="insights" element={<LearningInsightsView />} />
+          <Route path="participation" element={<PDParticipationView team={team} training={training} />} />
+          <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
+          <Route path="users" element={<UserManagementView />} />
+          <Route path="forms" element={<FormTemplatesView />} />
+          <Route path="courses/*" element={<LeaderCoursesModule />} />
+          <Route path="documents" element={<AdminDocumentManagement />} />
+          <Route path="survey" element={<SurveyPage />} />
+          <Route path="settings" element={<SystemSettingsView />} />
+        </Routes>
+      </GrowthLayout>
     </DashboardLayout>
   );
 }
@@ -636,7 +639,16 @@ function DashboardOverview({
 
 function TeamManagementView({ team, observations, goals, systemAvgScore }: { team: any[], observations: Observation[], goals: any[], systemAvgScore: string }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+    setSearchParams(params, { replace: true });
+  }, [searchQuery]);
 
   const filteredTeam = team.filter(member =>
     member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1135,8 +1147,23 @@ function PDParticipationView({ team, training }: { team: any[], training: any[] 
 
 function PDCalendarView({ training, setTraining }: { training: any[], setTraining: React.Dispatch<React.SetStateAction<any[]>> }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [date, setDate] = useState<Date | undefined>(new Date(2026, 1, 15)); // Default to Feb 15, 2026
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [date, setDate] = useState<Date | undefined>(
+    searchParams.get("date") ? new Date(searchParams.get("date")!) : undefined
+  );
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
+    if (date) params.set("date", date.toISOString().split('T')[0]);
+    else params.delete("date");
+
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, date]);
 
   // Edit & Creation State
   const [editingEvent, setEditingEvent] = useState<any | null>(null);
@@ -2077,15 +2104,32 @@ function ProposeCourseView({ setTraining }: { setTraining: React.Dispatch<React.
 }
 
 function ReportsView({ team, observations }: { team: any[], observations: Observation[] }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [selectedTeacher, setSelectedTeacher] = useState<any | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   // Filter State
-  const [selectedRole, setSelectedRole] = useState("all");
-  const [performanceFilter, setPerformanceFilter] = useState("all");
+  const [selectedRole, setSelectedRole] = useState(searchParams.get("role") || "all");
+  const [performanceFilter, setPerformanceFilter] = useState(searchParams.get("perf") || "all");
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
+    if (selectedRole !== "all") params.set("role", selectedRole);
+    else params.delete("role");
+
+    if (performanceFilter !== "all") params.set("perf", performanceFilter);
+    else params.delete("perf");
+
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, selectedRole, performanceFilter]);
 
   const roles = Array.from(new Set(team.map(t => t.role)));
 
@@ -2297,18 +2341,18 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
                           <Button
                             size="sm"
                             className="h-9 gap-2 min-w-[100px]"
-                            disabled={sendingId === member.id}
                             onClick={() => handleEmailReport(member)}
+                            disabled={sendingId === member.id}
                           >
                             {sendingId === member.id ? (
                               <>
-                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                Sending
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                Sending...
                               </>
                             ) : (
                               <>
                                 <Mail className="w-4 h-4" />
-                                Email
+                                Send Report
                               </>
                             )}
                           </Button>
@@ -2318,8 +2362,14 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                      No teachers found matching your filters.
+                    <td colSpan={5} className="p-20 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-4 grayscale opacity-40">
+                        <FileText className="w-16 h-16" />
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold">No reports found</p>
+                          <p className="text-muted-foreground">Try adjusting your filters</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -2328,7 +2378,7 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
           </div>
         </CardContent>
       </Card>
-
+      {/* Report Preview Dialog */}
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
         <DialogContent className="max-w-5xl h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-xl border-none shadow-2xl">
           {selectedTeacher && (
@@ -2342,17 +2392,42 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
 
 function TeacherGoalsView({ goals }: { goals: any[] }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [selectedGoal, setSelectedGoal] = useState<any | null>(null);
 
   const [settingText, setSettingText] = useState("");
   const [completionText, setCompletionText] = useState("");
-  const [activeTab, setActiveTab] = useState("setting");
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "setting");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [teacherFilter, setTeacherFilter] = useState("All");
-  const [progressFilter, setProgressFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get("cat") || "All");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "All");
+  const [teacherFilter, setTeacherFilter] = useState(searchParams.get("teacher") || "All");
+  const [progressFilter, setProgressFilter] = useState(searchParams.get("prog") || "All");
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
+    if (activeTab !== "setting") params.set("tab", activeTab);
+    else params.delete("tab");
+
+    if (categoryFilter !== "All") params.set("cat", categoryFilter);
+    else params.delete("cat");
+
+    if (statusFilter !== "All") params.set("status", statusFilter);
+    else params.delete("status");
+
+    if (teacherFilter !== "All") params.set("teacher", teacherFilter);
+    else params.delete("teacher");
+
+    if (progressFilter !== "All") params.set("prog", progressFilter);
+    else params.delete("prog");
+
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, activeTab, categoryFilter, statusFilter, teacherFilter, progressFilter]);
 
   // Ensure goals is an array and filter out invalid entries to prevent crashes
   const safeGoals = Array.isArray(goals) ? goals.filter(g => g && typeof g.teacher === 'string' && typeof g.title === 'string') : [];
@@ -3155,9 +3230,25 @@ function ObservationReportView({ observations, team }: { observations: Observati
 
 function ObservationsManagementView({ observations, systemAvgScore }: { observations: Observation[], systemAvgScore: string }) {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGrade, setSelectedGrade] = useState("all");
-  const [selectedLA, setSelectedLA] = useState("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [selectedGrade, setSelectedGrade] = useState(searchParams.get("grade") || "all");
+  const [selectedLA, setSelectedLA] = useState(searchParams.get("la") || "all");
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (searchQuery) params.set("q", searchQuery);
+    else params.delete("q");
+
+    if (selectedGrade !== "all") params.set("grade", selectedGrade);
+    else params.delete("grade");
+
+    if (selectedLA !== "all") params.set("la", selectedLA);
+    else params.delete("la");
+
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, selectedGrade, selectedLA]);
 
   const filteredObservations = observations.filter(obs => {
     const teacherName = obs.teacher || obs.teacherEmail || 'Unknown Teacher';
@@ -3165,7 +3256,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
     const matchesSearch = teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       domainName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const obsGrade = obs.classroom?.grade || obs.grade || "";
+    const obsGrade = obs.classroom?.grade || "";
     const obsLA = obs.classroom?.learningArea || obs.learningArea || "";
 
     const matchesGrade = selectedGrade === "all" || obsGrade.split(' - ')[0] === selectedGrade;
@@ -3175,7 +3266,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
   });
 
   const grades = Array.from(new Set(observations.map(o => {
-    const g = o.classroom?.grade || o.grade || "";
+    const g = o.classroom?.grade || "";
     return g.split(' - ')[0];
   }))).filter(Boolean).sort((a, b) => {
     const numA = parseInt(a.replace(/\D/g, ''));

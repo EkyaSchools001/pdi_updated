@@ -19,6 +19,16 @@ import LeaderGrowthPage from "./pages/leader/LeaderGrowthPage";
 import AdminGrowthAnalyticsPage from "./pages/admin/AdminGrowthAnalyticsPage";
 import DanielsonFrameworkPage from "./pages/leader/DanielsonFrameworkPage";
 import QuickFeedbackPage from "./pages/leader/QuickFeedbackPage";
+import PerformingArtsObsDashboard from "./pages/leader/PerformingArtsObsDashboard";
+import PerformingArtsObsPage from "./pages/leader/PerformingArtsObsPage";
+import QuickFeedbackDashboard from "./pages/leader/QuickFeedbackDashboard";
+import DanielsonDashboard from "./pages/leader/DanielsonDashboard";
+import LifeSkillsObsDashboard from "./pages/leader/LifeSkillsObsDashboard";
+import LifeSkillsObsPage from "./pages/leader/LifeSkillsObsPage";
+import PEObsDashboard from "./pages/leader/PEObsDashboard";
+import PEObsPage from "./pages/leader/PEObsPage";
+import VAObsDashboard from "./pages/leader/VAObsDashboard";
+import VAObsPage from "./pages/leader/VAObsPage";
 import OKRDashboard from "./pages/OKRDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -154,6 +164,14 @@ const App = () => (
                   path="/leader/danielson-framework"
                   element={
                     <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <DanielsonDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/danielson-framework/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
                       <DanielsonFrameworkPage />
                     </ProtectedRoute>
                   }
@@ -170,6 +188,14 @@ const App = () => (
                   path="/leader/quick-feedback"
                   element={
                     <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <QuickFeedbackDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/quick-feedback/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
                       <QuickFeedbackPage />
                     </ProtectedRoute>
                   }
@@ -179,6 +205,70 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
                       <QuickFeedbackPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/performing-arts-obs"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <PerformingArtsObsDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/performing-arts-obs/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <PerformingArtsObsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/life-skills-obs"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LifeSkillsObsDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/life-skills-obs/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <LifeSkillsObsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/pe-obs"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <PEObsDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/pe-obs/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <PEObsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/va-obs"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <VAObsDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leader/va-obs/new"
+                  element={
+                    <ProtectedRoute allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                      <VAObsPage />
                     </ProtectedRoute>
                   }
                 />

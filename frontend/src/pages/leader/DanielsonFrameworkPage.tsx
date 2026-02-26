@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { UnifiedObservationForm } from "@/components/UnifiedObservationForm";
 import { useAuth } from "@/hooks/useAuth";
+import { GrowthLayout } from "@/components/growth/GrowthLayout";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { Observation } from "@/types/observation";
@@ -17,6 +18,7 @@ const DanielsonFrameworkPage = () => {
     const { teacherId: paramTeacherId } = useParams();
     const [searchParams] = useSearchParams();
     const teacherId = paramTeacherId || searchParams.get("teacherId");
+
 
     const [teachers, setTeachers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -70,47 +72,42 @@ const DanielsonFrameworkPage = () => {
 
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
-            <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="flex items-center gap-4 mb-8">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth")}
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                    <PageHeader
-                        title="Ekya Danielson Framework"
-                        subtitle="Unified Observation, Feedback & Improvement Form"
-                    />
-                </div>
+            <GrowthLayout allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    <div className="flex items-center gap-4 mb-8">
+                        <PageHeader
+                            title="Ekya Danielson Framework"
+                            subtitle="Unified Observation, Feedback & Improvement Form"
+                        />
+                    </div>
 
-                <div className="max-w-5xl mx-auto">
-                    <UnifiedObservationForm
-                        teachers={formattedTeachers}
-                        initialData={initialData}
-                        onCancel={() => navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth")}
-                        onSubmit={async (data) => {
-                            try {
-                                const newObs = {
-                                    ...data,
-                                    date: data.date || new Date().toISOString().split('T')[0],
-                                    hasReflection: false,
-                                    reflection: "",
-                                    status: "Submitted"
-                                } as Observation;
+                    <div className="max-w-5xl mx-auto">
+                        <UnifiedObservationForm
+                            teachers={formattedTeachers}
+                            initialData={initialData}
+                            onCancel={() => navigate(teacherId ? `/leader/danielson-framework?teacherId=${teacherId}` : "/leader/danielson-framework")}
+                            onSubmit={async (data) => {
+                                try {
+                                    const newObs = {
+                                        ...data,
+                                        date: data.date || new Date().toISOString().split('T')[0],
+                                        hasReflection: false,
+                                        reflection: "",
+                                        status: "Submitted"
+                                    } as Observation;
 
-                                await api.post('/observations', newObs);
-                                toast.success(`Observation for ${newObs.teacher} recorded successfully!`);
-                                navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth");
-                            } catch (error) {
-                                console.error("Failed to save observation:", error);
-                                toast.error("Failed to save observation");
-                            }
-                        }}
-                    />
+                                    await api.post('/observations', newObs);
+                                    toast.success(`Observation for ${newObs.teacher} recorded successfully!`);
+                                    navigate(teacherId ? `/leader/danielson-framework?teacherId=${teacherId}` : "/leader/danielson-framework");
+                                } catch (error) {
+                                    console.error("Failed to save observation:", error);
+                                    toast.error("Failed to save observation");
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
-            </div>
+            </GrowthLayout>
         </DashboardLayout>
     );
 };

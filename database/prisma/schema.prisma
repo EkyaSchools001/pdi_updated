@@ -198,6 +198,7 @@ model Observation {
   metaTags           String?   // JSON string
   tools              String?   // JSON string
   routines           String?   // JSON string
+  studioHabits       String?   // JSON string
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
@@ -691,4 +692,140 @@ model AssessmentAttempt {
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PerformingArtsObservation {
+  id                   String   @id @default(uuid())
+  observerEmail        String
+  teacherName          String
+  teacherEmail         String
+  observerName         String
+  observerRole         String
+  observerRoleOther    String?
+  observationDate      String
+  block                String
+  grade                String
+  section              String
+  sectionAResponses    String   // JSON: { [statement]: "Yes"|"No"|"NA" }
+  sectionAEvidence     String
+  sectionBResponses    String   // JSON
+  sectionBEvidence     String
+  sectionCResponses    String   // JSON
+  sectionCEvidence     String
+  overallRating        Int      // 1-4
+  cultureTools         String   // JSON array of strings
+  routinesObserved     String   // JSON array of strings
+  instructionalTools   String   // JSON array of strings
+  discussedWithTeacher Boolean  @default(false)
+  feedback             String
+  teacherReflection    String
+  actionStep           String
+  metaTags             String   // JSON array of strings
+  status               String   @default("Submitted")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+
+model LifeSkillsObservation {
+  id                   String   @id @default(uuid())
+  observerEmail        String
+  teacherName          String
+  teacherEmail         String
+  observerName         String
+  observerRole         String
+  observerRoleOther    String?
+  observationDate      String
+  block                String
+  grade                String
+  section              String
+  sectionAResponses    String   // JSON: { [statement]: "Yes"|"No"|"NA" }
+  sectionAEvidence     String
+  sectionBResponses    String   // JSON
+  sectionBEvidence     String
+  sectionCResponses    String   // JSON
+  sectionCEvidence     String
+  overallRating        Int      // 1-4
+  cultureTools         String   // JSON array
+  routinesObserved     String   // JSON array
+  instructionalTools   String   // JSON array
+  discussedWithTeacher Boolean  @default(false)
+  feedback             String
+  teacherReflection    String
+  actionStep           String
+  metaTags             String   // JSON array
+  status               String   @default("Submitted")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model PhysicalEducationObservation {
+  id                   String   @id @default(uuid())
+  observerEmail        String
+  teacherName          String
+  teacherEmail         String
+  observerName         String
+  observerRole         String
+  observerRoleOther    String?
+  observationDate      String
+  block                String
+  grade                String
+  section              String
+  sectionAResponses    String
+  sectionAEvidence     String
+  sectionBResponses    String
+  sectionBEvidence     String
+  sectionCResponses    String
+  sectionCEvidence     String
+  overallRating        Int
+  cultureTools         String
+  routinesObserved     String
+  instructionalTools   String
+  discussedWithTeacher Boolean  @default(false)
+  feedback             String
+  teacherReflection    String
+  actionStep           String
+  metaTags             String
+  status               String   @default("Submitted")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model VisualArtsObservation {
+  id                   String   @id @default(uuid())
+  academicYear         String   @default("AY 25-26")
+  observerEmail        String
+  teacherName          String
+  teacherEmail         String
+  observerName         String
+  observerRole         String
+  observerRoleOther    String?
+  observationDate      String
+  block                String
+  grade                String
+  section              String
+  sectionA             String
+  sectionAEvidence     String
+  sectionB1            String
+  sectionB1Evidence    String
+  sectionB2            String
+  sectionB2Evidence    String
+  sectionB3            String
+  sectionB3Evidence    String
+  sectionB4            String
+  sectionB4Evidence    String
+  sectionC             String
+  sectionCEvidence     String
+  overallRating        String
+  cultureTools         String
+  routinesObserved     String
+  studioHabits         String
+  instructionalTools   String
+  feedback             String
+  teacherReflection    String
+  actionStep           String
+  metaTags             String
+  status               String   @default("Submitted")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }

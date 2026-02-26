@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2, MessageSquare } from "lucide-react";
 import { QuickFeedbackForm } from "@/components/QuickFeedbackForm";
 import { useAuth } from "@/hooks/useAuth";
+import { GrowthLayout } from "@/components/growth/GrowthLayout";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { Observation } from "@/types/observation";
@@ -68,47 +69,42 @@ const QuickFeedbackPage = () => {
 
     return (
         <DashboardLayout role={user.role.toLowerCase() as any} userName={user.fullName}>
-            <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="flex items-center gap-4 mb-8">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth")}
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                    <PageHeader
-                        title="Quick Feedback Master"
-                        subtitle="Fast, actionable feedback loops for academic subjects"
-                    />
-                </div>
+            <GrowthLayout allowedRoles={['LEADER', 'SCHOOL_LEADER', 'ADMIN', 'SUPERADMIN']}>
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    <div className="flex items-center gap-4 mb-8">
+                        <PageHeader
+                            title="Quick Feedback Master"
+                            subtitle="Fast, actionable feedback loops for academic subjects"
+                        />
+                    </div>
 
-                <div className="max-w-5xl mx-auto">
-                    <QuickFeedbackForm
-                        teachers={formattedTeachers}
-                        initialData={initialData}
-                        onCancel={() => navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth")}
-                        onSubmit={async (data) => {
-                            try {
-                                const newObs = {
-                                    ...data,
-                                    date: data.date || new Date().toISOString().split('T')[0],
-                                    status: "Submitted",
-                                    domain: "Quick Feedback",
-                                    type: "Quick Feedback"
-                                } as Observation;
+                    <div className="max-w-5xl mx-auto">
+                        <QuickFeedbackForm
+                            teachers={formattedTeachers}
+                            initialData={initialData}
+                            onCancel={() => navigate(teacherId ? `/leader/quick-feedback?teacherId=${teacherId}` : "/leader/quick-feedback")}
+                            onSubmit={async (data) => {
+                                try {
+                                    const newObs = {
+                                        ...data,
+                                        date: data.date || new Date().toISOString().split('T')[0],
+                                        status: "Submitted",
+                                        domain: "Quick Feedback",
+                                        type: "Quick Feedback"
+                                    } as Observation;
 
-                                await api.post('/observations', newObs);
-                                toast.success(`Quick feedback for ${newObs.teacher} recorded successfully!`);
-                                navigate(teacherId ? `/leader/growth/${teacherId}` : "/leader/growth");
-                            } catch (error) {
-                                console.error("Failed to save observation:", error);
-                                toast.error("Failed to save observation");
-                            }
-                        }}
-                    />
+                                    await api.post('/observations', newObs);
+                                    toast.success(`Quick feedback for ${newObs.teacher} recorded successfully!`);
+                                    navigate(teacherId ? `/leader/quick-feedback?teacherId=${teacherId}` : "/leader/quick-feedback");
+                                } catch (error) {
+                                    console.error("Failed to save observation:", error);
+                                    toast.error("Failed to save observation");
+                                }
+                            }}
+                        />
+                    </div>
                 </div>
-            </div>
+            </GrowthLayout>
         </DashboardLayout>
     );
 };

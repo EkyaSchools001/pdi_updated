@@ -27,7 +27,7 @@ interface UnifiedObservationFormProps {
     onSubmit: (observation: Partial<Observation>) => void;
     onCancel: () => void;
     initialData?: Partial<Observation>;
-    teachers?: { id: string; name: string; role?: string; email?: string; academics?: string }[];
+    teachers?: { id: string; name: string; role?: string; email?: string; academics?: string; campus?: string }[];
 }
 
 const RATING_SCALE: DanielsonRatingScale[] = ["Basic", "Developing", "Effective", "Highly Effective", "Not Observed"];
@@ -182,7 +182,10 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                 const currentTemplate = templates.find(t => t.name === templateName) || templates.find(t => t.isDefault) || templates[0];
 
                 if (currentTemplate && currentTemplate.structure) {
-                    const fields = JSON.parse(currentTemplate.structure);
+                    const fields = typeof currentTemplate.structure === 'string'
+                        ? JSON.parse(currentTemplate.structure)
+                        : currentTemplate.structure;
+
 
                     // Reconstruct DOMAINS from fields if possible
                     const newDomains = [...DOMAINS];
@@ -470,9 +473,18 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                         <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Name of the Teacher *</Label>
                                         <Select
                                             value={formData.teacherId || ""}
-                                            onValueChange={handleTeacherSelect}
+                                            onValueChange={(val) => {
+                                                const teacher = teachers?.find(t => t.id === val);
+                                                if (teacher) {
+                                                    updateField("teacherId", teacher.id);
+                                                    updateField("teacher", teacher.name);
+                                                    updateField("teacherEmail", teacher.email || "");
+                                                    updateField("campus", teacher.campus || "");
+                                                }
+                                            }}
+                                            disabled={!!initialData.teacherId}
                                         >
-                                            <SelectTrigger className="h-12 text-base rounded-xl border-muted-foreground/20">
+                                            <SelectTrigger className={cn("h-12 text-base rounded-xl border-muted-foreground/20", !!initialData.teacherId && "bg-slate-50 text-muted-foreground")}>
                                                 <SelectValue placeholder="Search or Select Teacher" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -492,7 +504,8 @@ export function UnifiedObservationForm({ onSubmit, onCancel, initialData = {}, t
                                             placeholder="teacher@ekya.in"
                                             value={formData.teacherEmail || ""}
                                             onChange={(e) => updateField("teacherEmail", e.target.value)}
-                                            className="h-12 text-base rounded-xl border-muted-foreground/20"
+                                            readOnly={!!initialData.teacherEmail}
+                                            className={cn("h-12 text-base rounded-xl border-muted-foreground/20", !!initialData.teacherEmail && "bg-slate-50 text-muted-foreground")}
                                         />
                                     </div>
                                 </div>
