@@ -23,9 +23,7 @@ import surveyRoutes from './surveyRoutes';
 import learningFestivalRoutes from './learningFestivalRoutes';
 import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
-import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
-import aiRoutes from './aiRoutes';
 import formWorkflowRoutes from './formWorkflowRoutes';
 
 const router = Router();
@@ -35,7 +33,6 @@ router.use(roleModuleAuth);
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
-router.use('/growth', growthRoutes);
 router.use('/goals', goalRoutes);
 router.use('/observations', observationRoutes);
 router.use('/documents', documentRoutes);
@@ -55,8 +52,6 @@ router.use('/surveys', surveyRoutes);
 router.use('/festivals', learningFestivalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/assessments', assessmentRoutes);
-router.use('/okr', okrRoutes);
-router.use('/ai', aiRoutes);
 router.use('/form-workflows', formWorkflowRoutes);
 
 export default router;
