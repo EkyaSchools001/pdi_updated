@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../backend/node_modules/.prisma/client"
 }
 
 datasource db {
@@ -435,14 +436,25 @@ model SystemSettings {
   updatedAt DateTime @updatedAt
 }
 
+model DashboardLayout {
+  id        String   @id @default(uuid())
+  role      String   @unique
+  layout    String   // JSON string containing layout configurations
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model FormTemplate {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   type      String
   structure String
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  workflows FormWorkflow[]
 }
 
 model Notification {
@@ -697,3 +709,32 @@ model GrowthObservation {
   teacher         User                    @relation("GrowthTeacher", fields: [teacherId], references: [id])
   observer        User                    @relation("GrowthObserver", fields: [observerId], references: [id])
 }
+
+model FormWorkflow {
+  id               String   @id @default(uuid())
+  formTemplateId   String
+  subjectType      String?  // CORE, NON_CORE, ALL
+  specificSubjects String?
+  targetSchool     String?  @default("ALL")
+  sentByRole       String   // e.g., Leader, Teacher, Admin
+  redirectTo       String   // e.g., Teacher Dashboard, Admin Dashboard
+  displayLocation  String   // e.g., Growth Reports, Pending Approvals
+  logicDescription String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  formTemplate     FormTemplate @relation(fields: [formTemplateId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?  
+  actorName    String?  // Optional name snapshot purely for UI performance
+  action       String   // e.g. 'UPDATED_WORKFLOWS', 'CREATED_TEMPLATE'
+  targetEntity String   // e.g. 'FormWorkflow', 'SystemSettings'
+  previousData String?  // JSON snapshot pre-change
+  newData      String?  // JSON snapshot post-change
+  timestamp    DateTime @default(now())
+}
+
