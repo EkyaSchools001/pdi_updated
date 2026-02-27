@@ -1,6 +1,8 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../backend/node_modules/.prisma/client"
 }
+
 
 datasource db {
   provider = "sqlite"
@@ -86,6 +88,7 @@ model User {
   assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
   assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
   assessmentAttempts    AssessmentAttempt[]
+  trainingFeedbacks     TrainingFeedback[]
 
   // New Growth Observation Relations
   sentGrowthObs     GrowthObservation[] @relation("GrowthObserver")
@@ -319,6 +322,7 @@ model TrainingEvent {
   proposedById          String?
   proposedBy            User?             @relation("ProposedEvents", fields: [proposedById], references: [id])
   createdBy             User?             @relation("CreatedEvents", fields: [createdById], references: [id])
+  feedbacks             TrainingFeedback[]
 }
 
 model Registration {
@@ -350,6 +354,20 @@ model EventAttendance {
   teacher User          @relation(fields: [teacherId], references: [id])
 
   @@unique([eventId, teacherEmail])
+}
+
+model TrainingFeedback {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  event TrainingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
 }
 
 
@@ -512,12 +530,15 @@ model SystemSettings {
 
 model FormTemplate {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
+
   type      String
   structure String
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  workflows FormWorkflow[]
 }
 
 model Notification {
@@ -744,138 +765,30 @@ model AssessmentAttempt {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model PerformingArtsObservation {
-  id                   String   @id @default(uuid())
-  observerEmail        String
-  teacherName          String
-  teacherEmail         String
-  observerName         String
-  observerRole         String
-  observerRoleOther    String?
-  observationDate      String
-  block                String
-  grade                String
-  section              String
-  sectionAResponses    String   // JSON: { [statement]: "Yes"|"No"|"NA" }
-  sectionAEvidence     String
-  sectionBResponses    String   // JSON
-  sectionBEvidence     String
-  sectionCResponses    String   // JSON
-  sectionCEvidence     String
-  overallRating        Int      // 1-4
-  cultureTools         String   // JSON array of strings
-  routinesObserved     String   // JSON array of strings
-  instructionalTools   String   // JSON array of strings
-  discussedWithTeacher Boolean  @default(false)
-  feedback             String
-  teacherReflection    String
-  actionStep           String
-  metaTags             String   // JSON array of strings
-  status               String   @default("Submitted")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+model FormWorkflow {
+  id               String   @id @default(uuid())
+  formTemplateId   String
+  subjectType      String?  // CORE, NON_CORE, ALL
+  specificSubjects String?
+  targetSchool     String?  @default("ALL")
+  sentByRole       String   // e.g., Leader, Teacher, Admin
+  redirectTo       String   // e.g., Teacher Dashboard, Admin Dashboard
+  displayLocation  String   // e.g., Growth Reports, Pending Approvals
+  logicDescription String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  formTemplate     FormTemplate @relation(fields: [formTemplateId], references: [id], onDelete: Cascade)
 }
 
-
-model LifeSkillsObservation {
-  id                   String   @id @default(uuid())
-  observerEmail        String
-  teacherName          String
-  teacherEmail         String
-  observerName         String
-  observerRole         String
-  observerRoleOther    String?
-  observationDate      String
-  block                String
-  grade                String
-  section              String
-  sectionAResponses    String   // JSON: { [statement]: "Yes"|"No"|"NA" }
-  sectionAEvidence     String
-  sectionBResponses    String   // JSON
-  sectionBEvidence     String
-  sectionCResponses    String   // JSON
-  sectionCEvidence     String
-  overallRating        Int      // 1-4
-  cultureTools         String   // JSON array
-  routinesObserved     String   // JSON array
-  instructionalTools   String   // JSON array
-  discussedWithTeacher Boolean  @default(false)
-  feedback             String
-  teacherReflection    String
-  actionStep           String
-  metaTags             String   // JSON array
-  status               String   @default("Submitted")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-}
-
-model PhysicalEducationObservation {
-  id                   String   @id @default(uuid())
-  observerEmail        String
-  teacherName          String
-  teacherEmail         String
-  observerName         String
-  observerRole         String
-  observerRoleOther    String?
-  observationDate      String
-  block                String
-  grade                String
-  section              String
-  sectionAResponses    String
-  sectionAEvidence     String
-  sectionBResponses    String
-  sectionBEvidence     String
-  sectionCResponses    String
-  sectionCEvidence     String
-  overallRating        Int
-  cultureTools         String
-  routinesObserved     String
-  instructionalTools   String
-  discussedWithTeacher Boolean  @default(false)
-  feedback             String
-  teacherReflection    String
-  actionStep           String
-  metaTags             String
-  status               String   @default("Submitted")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-}
-
-model VisualArtsObservation {
-  id                   String   @id @default(uuid())
-  academicYear         String   @default("AY 25-26")
-  observerEmail        String
-  teacherName          String
-  teacherEmail         String
-  observerName         String
-  observerRole         String
-  observerRoleOther    String?
-  observationDate      String
-  block                String
-  grade                String
-  section              String
-  sectionA             String
-  sectionAEvidence     String
-  sectionB1            String
-  sectionB1Evidence    String
-  sectionB2            String
-  sectionB2Evidence    String
-  sectionB3            String
-  sectionB3Evidence    String
-  sectionB4            String
-  sectionB4Evidence    String
-  sectionC             String
-  sectionCEvidence     String
-  overallRating        String
-  cultureTools         String
-  routinesObserved     String
-  studioHabits         String
-  instructionalTools   String
-  feedback             String
-  teacherReflection    String
-  actionStep           String
-  metaTags             String
-  status               String   @default("Submitted")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+model AuditLog {
+  id           String   @id @default(uuid())
+  actorId      String?  
+  actorName    String?  // Optional name snapshot purely for UI performance
+  action       String   // e.g. 'UPDATED_WORKFLOWS', 'CREATED_TEMPLATE'
+  targetEntity String   // e.g. 'FormWorkflow', 'SystemSettings'
+  previousData String?  // JSON snapshot pre-change
+  newData      String?  // JSON snapshot post-change
+  timestamp    DateTime @default(now())
 }

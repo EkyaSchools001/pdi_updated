@@ -25,10 +25,9 @@ import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
 import growthRoutes from './growthRoutes';
 import okrRoutes from './okrRoutes';
-import performingArtsObsRoutes from './performingArtsObsRoutes';
-import lifeSkillsObsRoutes from './lifeSkillsObsRoutes';
-import peObsRoutes from './peObsRoutes';
-import vaObsRoutes from './vaObsRoutes';
+import aiRoutes from './aiRoutes';
+import formWorkflowRoutes from './formWorkflowRoutes';
+
 const router = Router();
 
 // Apply dynamic access matrix configuration globally
@@ -57,9 +56,7 @@ router.use('/festivals', learningFestivalRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/assessments', assessmentRoutes);
 router.use('/okr', okrRoutes);
-router.use('/performing-arts-obs', performingArtsObsRoutes);
-router.use('/life-skills-obs', lifeSkillsObsRoutes);
-router.use('/pe-obs', peObsRoutes);
-router.use('/va-obs', vaObsRoutes);
+router.use('/ai', aiRoutes);
+router.use('/form-workflows', formWorkflowRoutes);
 
 export default router;

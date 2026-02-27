@@ -1,0 +1,7 @@
+﻿src/api/controllers/announcementController.ts(128,58): error TS2345: Argument of type '{ role: { in: any; }; }' is not assignable to parameter of type 'never'.
+src/api/controllers/announcementController.ts(129,96): error TS2345: Argument of type '{ campusId: { in: any; }; }' is not assignable to parameter of type 'never'.
+src/api/controllers/announcementController.ts(130,90): error TS2345: Argument of type '{ department: { in: any; }; }' is not assignable to parameter of type 'never'.
+src/api/controllers/documentController.ts(90,34): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/api/utils/formWorkflowUtils.ts(107,39): error TS2339: Property 'redirectTo' does not exist on type 'never'.
+src/api/utils/formWorkflowUtils.ts(108,44): error TS2339: Property 'displayLocation' does not exist on type 'never'.
+src/api/utils/formWorkflowUtils.ts(109,53): error TS2339: Property 'redirectTo' does not exist on type 'never'.

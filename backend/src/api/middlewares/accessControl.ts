@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+﻿import { Request, Response, NextFunction } from 'express';
+import prisma from '../../infrastructure/database/prisma';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+
 
 // ─── Cache Management ────────────────────────────────────────────────────────
 // Short-lived cache to avoid DB lookup on every request
@@ -83,15 +83,22 @@ const BYPASS_PATHS = [
 /**
  * Check if a request path should bypass access control.
  */
-function shouldBypass(path: string): boolean {
-    return BYPASS_PATHS.some(bp => path.startsWith(bp));
+function shouldBypass(req: Request): boolean {
+    if (BYPASS_PATHS.some(bp => req.path.startsWith(bp))) {
+        return true;
+    }
+    // Allow everyone (Authenticated) to view users for directory/search
+    if (req.method === 'GET' && req.path === '/users') {
+        return true;
+    }
+    return false;
 }
 
 // ─── Main Middleware ─────────────────────────────────────────────────────────
 export const roleModuleAuth = async (req: Request, res: Response, next: NextFunction) => {
     try {
         // 1. Bypass paths that every role needs
-        if (shouldBypass(req.path)) {
+        if (shouldBypass(req)) {
             return next();
         }
 

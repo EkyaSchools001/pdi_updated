@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { getIO } from '../../core/socket';
 
-const prisma = new PrismaClient();
+
 
 // Get all courses (with optional filters)
 export const getAllCourses = async (req: Request, res: Response, next: NextFunction) => {

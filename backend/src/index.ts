@@ -11,10 +11,10 @@ if (!process.env.JWT_SECRET) {
 }
 console.log('-------------------------');
 
-const server = app.listen(PORT, () => {
+const server = app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`\n🚀 Server is running on port ${PORT}`);
-    console.log(`🔗 Local: http://localhost:${PORT}`);
-    console.log(`💉 Health: http://localhost:${PORT}/health\n`);
+    console.log(`🔗 Local: http://0.0.0.0:${PORT}`);
+    console.log(`💉 Health: http://0.0.0.0:${PORT}/api/health\n`);
 });
 
 console.log("DEBUG: Initializing socket...");
@@ -25,3 +25,4 @@ console.log("DEBUG: Socket initialized.");
 setInterval(() => {
     // console.log("DEBUG: Keep-alive tick");
 }, 10000);
+

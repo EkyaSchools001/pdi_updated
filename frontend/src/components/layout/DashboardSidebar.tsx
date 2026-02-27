@@ -96,6 +96,7 @@ const adminNav = [
   { title: "Training & PD Calendar", icon: Calendar, path: "/admin/calendar" },
   { title: "Attendance Register", icon: ClipboardList, path: "/admin/attendance" },
   { title: "Documents", icon: FileCheck, path: "/admin/documents" },
+  { title: "PD Hours", icon: Clock, path: "/admin/hours" },
   { title: "Reports", icon: FileText, path: "/admin/reports" },
   { title: "Survey", icon: ClipboardList, path: "/admin/survey" },
   { title: "Settings", icon: Settings, path: "/admin/settings" },

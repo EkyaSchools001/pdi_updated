@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { getIO } from '../../core/socket';
 import { invalidateAccessMatrixCache } from '../middlewares/accessControl';
 
-const prisma = new PrismaClient();
+
 
 // Get all settings
 export const getAllSettings = async (req: Request, res: Response, next: NextFunction) => {
@@ -33,6 +33,18 @@ export const getSetting = async (req: Request, res: Response, next: NextFunction
         });
 
         if (!setting) {
+            // Provide a default access_matrix_config if not yet initialized
+            if (key === 'access_matrix_config') {
+                return res.status(200).json({
+                    status: 'success',
+                    data: {
+                        setting: {
+                            key: 'access_matrix_config',
+                            value: JSON.stringify({ accessMatrix: [], formFlows: [] })
+                        }
+                    }
+                });
+            }
             return next(new AppError('Setting not found', 404));
         }
 
@@ -52,6 +64,8 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
 
         console.log(`[SETTINGS] Upserting key: ${key}`);
 
+        const previousSetting = await prisma.systemSettings.findUnique({ where: { key } });
+
         const setting = await prisma.systemSettings.upsert({
             where: { key },
             update: {
@@ -62,6 +76,21 @@ export const upsertSetting = async (req: Request, res: Response, next: NextFunct
                 value: JSON.stringify(value)
             }
         });
+
+        // Write to Action Audit Log
+        if ((req as any).user) {
+            await prisma.auditLog.create({
+                data: {
+                    actorId: (req as any).user.id || 'system',
+                    actorName: (req as any).user.fullName || (req as any).user.role || 'SuperAdmin',
+                    action: previousSetting ? 'UPDATED_SETTING' : 'CREATED_SETTING',
+                    targetEntity: 'SystemSettings',
+                    previousData: previousSetting ? previousSetting.value : null,
+                    newData: setting.value,
+                }
+            });
+            console.log(`[AUDIT] Action logged: ${key} by ${(req as any).user.id}`);
+        }
 
         // Broadcast the update via Socket.io
         try {

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Search, MapPin, CheckCircle2, XCircle, TrendingUp, Users, ArrowRight, Clock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/hooks/useAuth';
+import { CAMPUS_OPTIONS } from '@/lib/constants';
 
 interface EnhancedAnalyticsViewProps {
     data: {
@@ -25,15 +26,15 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
     const isAdmin = user?.role === 'ADMIN' || user?.role === 'SUPERADMIN';
 
     const campusMetrics = useMemo(() => {
-        // Get unique campuses from both users and assignments
-        const uniqueCampuses = Array.from(new Set([
-            ...data.users.map(u => u.campusId).filter(Boolean),
-            ...data.assignments.map(asm => asm.assignedToCampusId).filter(Boolean)
-        ]));
+        // Use standard CAMPUS_OPTIONS as the base list
+        const uniqueCampuses = CAMPUS_OPTIONS;
 
         return uniqueCampuses.map(campus => {
             const campusUsers = data.users.filter(u => u.campusId === campus);
-            if (campusUsers.length === 0) return null;
+            // Even if no users, we might still want to show the campus in the list if the user expects it
+            // but the original logic filtered out empty campuses. 
+            // I'll keep them but show empty metrics if the user wants to see "all" campuses.
+            // If the user said "campus options are not reflected here", they probably want to see the new ones.
 
             const campusAttempts = data.attempts.filter(a => a.user?.campusId === campus);
 
@@ -53,9 +54,17 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                 ? preparednessScores.reduce((a, b) => a + b, 0) / preparednessScores.length
                 : null;
 
+            // Academic Orientation Avg
+            const academicOrientationScores = campusAttempts
+                .filter(a => a.assessment?.type === 'ACADEMIC_ORIENTATION' && a.status === 'SUBMITTED' && a.score !== null)
+                .map(a => a.score);
+            const academicOrientationAvg = academicOrientationScores.length > 0
+                ? academicOrientationScores.reduce((a, b) => a + b, 0) / academicOrientationScores.length
+                : null;
+
             // Other Assessments Avg
             const otherScores = campusAttempts
-                .filter(a => !['POST_ORIENTATION', 'PREPAREDNESS'].includes(a.assessment?.type) && a.status === 'SUBMITTED' && a.score !== null)
+                .filter(a => !['POST_ORIENTATION', 'PREPAREDNESS', 'ACADEMIC_ORIENTATION'].includes(a.assessment?.type) && a.status === 'SUBMITTED' && a.score !== null)
                 .map(a => a.score);
             const otherAvg = otherScores.length > 0
                 ? otherScores.reduce((acc, b) => acc + b, 0) / otherScores.length
@@ -91,6 +100,7 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                 totalUsers: campusUsers.length,
                 postOrientationAvg,
                 preparednessAvg,
+                academicOrientationAvg,
                 otherAvg,
                 completionRate,
                 totalExpected,
@@ -113,6 +123,7 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                         <TableRow className="hover:bg-transparent border-zinc-100">
                             <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Teacher</TableHead>
                             <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Post-Orientation</TableHead>
+                            <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Academic Orientation</TableHead>
                             <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Preparedness</TableHead>
                             <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Others Avg</TableHead>
                             <TableHead className="text-zinc-500 font-bold uppercase text-[10px]">Total Completion</TableHead>
@@ -127,9 +138,10 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                             const userAttempts = data.attempts.filter(a => a.userId === u.id);
 
                             const poAttempt = userAttempts.find(a => a.assessment?.type === 'POST_ORIENTATION' && a.status === 'SUBMITTED');
+                            const aoAttempt = userAttempts.find(a => a.assessment?.type === 'ACADEMIC_ORIENTATION' && a.status === 'SUBMITTED');
                             const prAttempt = userAttempts.find(a => a.assessment?.type === 'PREPAREDNESS' && a.status === 'SUBMITTED');
 
-                            const otherAttempts = userAttempts.filter(a => !['POST_ORIENTATION', 'PREPAREDNESS'].includes(a.assessment?.type) && a.status === 'SUBMITTED');
+                            const otherAttempts = userAttempts.filter(a => !['POST_ORIENTATION', 'PREPAREDNESS', 'ACADEMIC_ORIENTATION'].includes(a.assessment?.type) && a.status === 'SUBMITTED');
                             const otherAvg = otherAttempts.length > 0
                                 ? otherAttempts.reduce((acc, a) => acc + (a.score || 0), 0) / otherAttempts.length
                                 : null;
@@ -162,6 +174,15 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                                         {poAttempt ? (
                                             <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
                                                 {Math.round(poAttempt.score)}%
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-zinc-300 border-dashed bg-transparent border-zinc-200 uppercase text-[9px] font-bold">Pending</Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        {aoAttempt ? (
+                                            <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100 font-bold">
+                                                {Math.round(aoAttempt.score)}%
                                             </Badge>
                                         ) : (
                                             <Badge variant="outline" className="text-zinc-300 border-dashed bg-transparent border-zinc-200 uppercase text-[9px] font-bold">Pending</Badge>
@@ -232,6 +253,18 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                             <h3 className="text-3xl font-black text-emerald-700 mt-1">
                                 {myCampusMetric && myCampusMetric.postOrientationAvg !== null
                                     ? `${Math.round(myCampusMetric.postOrientationAvg)}%`
+                                    : '--'}
+                            </h3>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-xl shadow-purple-500/5 bg-purple-50/30">
+                        <CardContent className="pt-6">
+                            <TrendingUp className="w-5 h-5 text-purple-500 mb-2" />
+                            <p className="text-xs font-bold text-purple-600/60 uppercase tracking-wider">Academic Orientation Avg</p>
+                            <h3 className="text-3xl font-black text-purple-700 mt-1">
+                                {myCampusMetric && myCampusMetric.academicOrientationAvg !== null
+                                    ? `${Math.round(myCampusMetric.academicOrientationAvg)}%`
                                     : '--'}
                             </h3>
                         </CardContent>
@@ -314,6 +347,7 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                             <TableRow>
                                 <TableHead className="w-[200px] font-bold text-zinc-500 uppercase text-[10px] tracking-wider">Campus</TableHead>
                                 <TableHead className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider text-center">Post-Orientation Avg</TableHead>
+                                <TableHead className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider text-center">Acad. Orientation Avg</TableHead>
                                 <TableHead className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider text-center">Acad. Preparedness Avg</TableHead>
                                 <TableHead className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider text-center">Other Assessments Avg</TableHead>
                                 <TableHead className="font-bold text-zinc-500 uppercase text-[10px] tracking-wider">Completion Rate</TableHead>
@@ -339,6 +373,16 @@ export const EnhancedAnalyticsView: React.FC<EnhancedAnalyticsViewProps> = ({ da
                                         {campus.postOrientationAvg !== null ? (
                                             <div className="flex flex-col items-center">
                                                 <span className="text-lg font-bold text-emerald-600">{Math.round(campus.postOrientationAvg)}%</span>
+                                                <span className="text-[10px] text-zinc-400">Average Score</span>
+                                            </div>
+                                        ) : (
+                                            <span className="text-zinc-300">--</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        {campus.academicOrientationAvg !== null ? (
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-lg font-bold text-purple-600">{Math.round(campus.academicOrientationAvg)}%</span>
                                                 <span className="text-[10px] text-zinc-400">Average Score</span>
                                             </div>
                                         ) : (

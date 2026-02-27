@@ -39,11 +39,9 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 
-const DEFAULT_CAMPUSES = [
-    "CMR NPS", "EITPL", "EBYR", "EJPN", "EBTM", "ENICE", "ENAVA",
-    "PU BTM", "PU BYR", "PU HRBR", "PU ITPL", "PU NICE", "HO"
-];
+const DEFAULT_CAMPUSES = CAMPUS_OPTIONS;
 
 const DEFAULT_PLATFORMS = [
     "Coursera", "FutureLearn", "Khan Academy", "edX", "Alison", "Class Central", "Schoology", "Other"

@@ -113,7 +113,7 @@ export function FestivalManagementDashboard() {
 
     // Self-paced learning filtering
     const [roleFilter, setRoleFilter] = useState('all');
-    const filteredTeachers = teachersStats.filter(t => {
+    const filteredTeachers = (teachersStats || []).filter(t => {
         const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || (t.email || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchRole = roleFilter === 'all' || t.role === roleFilter;
         return matchSearch && matchRole;

@@ -1,22 +1,31 @@
-const http = require('http');
+async function testFetch() {
+    try {
+        // 1. Log in to get token
+        const loginRes = await fetch('http://localhost:4000/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'bharath.superadmin@padi.com',
+                password: 'Bharath@123'
+            })
+        });
 
-const options = {
-  hostname: 'localhost',
-  port: 4000,
-  path: '/api/v1/settings/access_matrix_config',
-  method: 'GET',
-};
+        const loginData = await loginRes.json();
+        const token = loginData.token;
+        console.log("Got token.");
 
-const req = http.request(options, (res) => {
-  console.log(`STATUS: ${res.statusCode}`);
-  res.setEncoding('utf8');
-  res.on('data', (chunk) => {
-    console.log(`BODY: ${chunk}`);
-  });
-});
+        // 2. Fetch templates
+        const templatesRes = await fetch('http://localhost:4000/api/v1/templates', {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
 
-req.on('error', (e) => {
-  console.error(`problem with request: ${e.message}`);
-});
+        const templatesData = await templatesRes.json();
+        console.log("Full data:", JSON.stringify(templatesData).substring(0, 1000));
+    } catch (err) {
+        console.error("API Error:", err);
+    }
+}
 
-req.end();
+testFetch();

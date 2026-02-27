@@ -162,7 +162,7 @@ export const updateGoal = async (req: Request, res: Response, next: NextFunction
 
         // NOTIFICATIONS
         // 1. Goal Setting Form Filled -> Notify Teacher
-        if (goalSettingForm && !existing.goalSettingForm) {
+        if (goalSettingForm && !(existing as any).goalSettingForm) {
             await createNotification({
                 userId: updated.teacherId,
                 title: 'Goal Setting Added',
@@ -173,7 +173,7 @@ export const updateGoal = async (req: Request, res: Response, next: NextFunction
         }
 
         // 2. Goal Completion Form Filled -> Notify Teacher
-        if (goalCompletionForm && !existing.goalCompletionForm) {
+        if (goalCompletionForm && !(existing as any).goalCompletionForm) {
             await createNotification({
                 userId: updated.teacherId,
                 title: 'Goal Completed',
@@ -184,7 +184,7 @@ export const updateGoal = async (req: Request, res: Response, next: NextFunction
         }
 
         // 3. Self Reflection Filled -> Notify HOS
-        if (selfReflectionForm && !existing.selfReflectionForm) {
+        if (selfReflectionForm && !(existing as any).selfReflectionForm) {
             // Find leader to notify - try to find leader of same campus or assignedBy
             let notifyLeaderId = existing.assignedBy;
             if (!notifyLeaderId) {

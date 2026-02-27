@@ -93,20 +93,20 @@ export function LearningInsightsView() {
     };
 
     // Filter Logic
-    const filteredTeachers = teachersStats.filter(t => {
+    const filteredTeachers = (teachersStats || []).filter(t => {
         const matchSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.email.toLowerCase().includes(searchQuery.toLowerCase());
         const matchRole = roleFilter === 'all' || t.role === roleFilter;
         return matchSearch && matchRole;
     }).sort((a, b) => b.engagementPercent - a.engagementPercent);
 
-    const filteredApps = festivalApps.filter(a => {
+    const filteredApps = (festivalApps || []).filter(a => {
         const matchSearch = String(a.user?.fullName).toLowerCase().includes(searchQuery.toLowerCase());
         const matchStatus = statusFilter === 'all' || a.status === statusFilter;
         // The AC/HOS roles only see their campus anyway due to backend filtering
         return matchSearch && matchStatus;
     });
 
-    const shortlistedApps = festivalApps.filter(a => a.status === 'Shortlisted' || a.status === 'Confirmed');
+    const shortlistedApps = (festivalApps || []).filter(a => a.status === 'Shortlisted' || a.status === 'Confirmed');
 
     if (loading) {
         return (

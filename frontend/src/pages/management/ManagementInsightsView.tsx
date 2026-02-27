@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { analyticsService } from '@/services/analyticsService';
 import { learningFestivalService, LearningFestivalApplication } from '@/services/learningFestivalService';
+import { CAMPUS_OPTIONS } from '@/lib/constants';
 
 export function ManagementInsightsView() {
     const { user } = useAuth();
@@ -303,8 +304,8 @@ export function ManagementInsightsView() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Campuses</SelectItem>
-                                    {campusEngagementData.map(c => (
-                                        <SelectItem key={c.campusId} value={c.campusId}>{c.campusId}</SelectItem>
+                                    {CAMPUS_OPTIONS.map(c => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -425,8 +426,8 @@ export function ManagementInsightsView() {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Campuses</SelectItem>
-                                {campusApplicationData.map(c => (
-                                    <SelectItem key={c.campusId} value={c.campusId}>{c.campusId}</SelectItem>
+                                {CAMPUS_OPTIONS.map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>

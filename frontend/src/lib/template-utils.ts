@@ -1,4 +1,5 @@
 import { FormField } from "@/pages/admin/FormTemplatesView";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
 
 export interface FormTemplate {
     id: number;
@@ -27,7 +28,7 @@ export const initialTemplates: FormTemplate[] = [{
     fields: [
         { id: "g1", label: "Name of the Educator", type: "text", required: true },
         { id: "g2", label: "Name of the Coach", type: "text", required: true },
-        { id: "g3", label: "Campus", type: "select", required: true, options: ["CMR NPS", "EJPN", "EITPL", "EBTM", "EBYR", "ENICE", "ENAVA", "PU BTM", "PU BYR", "PU HRBR", "PU ITPL"] },
+        { id: "g3", label: "Campus", type: "select", required: true, options: CAMPUS_OPTIONS },
         { id: "g4", label: "Date of Goal Setting Conversation", type: "date", required: true },
         { id: "g_end_date", label: "Goal Target End Date", type: "date", required: true },
         { id: "g5", label: "Was the teacher informed and aware of the goal setting process?", type: "radio", required: true, options: ["Yes", "No"] },
@@ -131,7 +132,7 @@ export const initialTemplates: FormTemplate[] = [{
     fields: [
         { id: "m1", label: "Email Address", type: "text", required: true },
         { id: "m2", label: "Full Name", type: "text", required: true },
-        { id: "m3", label: "Campus", type: "select", required: true, options: ["CMR NPS", "EITPL", "EBYR", "EJPN", "EBTM", "ENICE", "ENAVA", "PU BTM", "PU BYR", "PU HRBR", "PU ITPL", "PU NICE", "HO"] },
+        { id: "m3", label: "Campus", type: "select", required: true, options: CAMPUS_OPTIONS },
         { id: "m4", label: "Name of Course", type: "text", required: true },
         { id: "m5", label: "Number of Hours", type: "text", required: true },
         { id: "m_start", label: "Date of Start", type: "date", required: true },

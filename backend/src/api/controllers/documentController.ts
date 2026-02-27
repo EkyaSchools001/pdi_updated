@@ -71,7 +71,7 @@ export const assignDocument = async (req: Request, res: Response, next: NextFunc
             return next(new AppError('documentId and teacherIds array are required', 400));
         }
 
-        const createdAcks = [];
+        const createdAcks: any[] = [];
         for (const teacherId of teacherIds) {
             const existing = await prisma.documentAcknowledgement.findFirst({
                 where: { documentId, teacherId }

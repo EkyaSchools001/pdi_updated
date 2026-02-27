@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 
-const prisma = new PrismaClient();
+
 
 // Get all form templates
 export const getAllTemplates = async (req: Request, res: Response, next: NextFunction) => {
@@ -22,6 +22,7 @@ export const getAllTemplates = async (req: Request, res: Response, next: NextFun
             results: templates.length,
             data: { templates }
         });
+
     } catch (err) {
         next(err);
     }

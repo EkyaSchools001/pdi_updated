@@ -19,11 +19,12 @@ const getApiUrl = () => {
 
     // 3. Cloudflare Pages/Netlify/Production backend routing
     if (import.meta.env.PROD) {
-        return 'https://bountiful-endurance-production-d25a.up.railway.app/api/v1';
+        return '/api/v1';
     }
 
     // 4. Localhost fallback
-    return 'http://localhost:4000/api/v1';
+    const url = 'http://localhost:4000/api/v1';
+    return url.endsWith('/') ? url : `${url}/`;
 };
 
 const API_URL = getApiUrl();
@@ -41,6 +42,11 @@ const api: AxiosInstance = axios.create({
 // Request Interceptor
 api.interceptors.request.use(
     (config) => {
+        // Strip leading slash if present to avoid Axios replacing the path part of baseURL
+        if (config.url && config.url.startsWith('/')) {
+            config.url = config.url.substring(1);
+        }
+
         const token = sessionStorage.getItem('auth_token');
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;

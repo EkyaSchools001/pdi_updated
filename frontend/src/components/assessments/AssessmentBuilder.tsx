@@ -8,12 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { assessmentService } from "@/services/assessmentService";
-import { Plus, Trash2, X, Save, GripVertical } from 'lucide-react';
+import { Plus, Trash2, X, Save, GripVertical, Check, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from "sonner";
+import { CAMPUS_OPTIONS } from "@/lib/constants";
+import { Badge } from "@/components/ui/badge";
 
 interface Question {
     prompt: string;
-    type: 'MCQ' | 'TEXT';
+    type: 'MCQ' | 'TEXT' | 'MULTI_SELECT';
     options: string[];
     correctAnswer: string;
     points: number;
@@ -26,6 +28,10 @@ export const AssessmentBuilder: React.FC<{
 }> = ({ onClose, onSave, editingAssessment }) => {
     const [title, setTitle] = useState(editingAssessment?.title || "");
     const [description, setDescription] = useState(editingAssessment?.description || "");
+    const [type, setType] = useState(editingAssessment?.type || "OTHER_ASSESSMENTS");
+    const [selectedCampuses, setSelectedCampuses] = useState<string[]>(
+        editingAssessment?.assignments?.filter((a: any) => a.assignedToCampusId).map((a: any) => a.assignedToCampusId) || []
+    );
     const [isTimed, setIsTimed] = useState(editingAssessment?.isTimed || false);
     const [timeLimit, setTimeLimit] = useState(editingAssessment?.timeLimitMinutes || 30);
     const [maxAttempts, setMaxAttempts] = useState(editingAssessment?.maxAttempts || 1);
@@ -37,6 +43,42 @@ export const AssessmentBuilder: React.FC<{
             { prompt: "", type: "MCQ", options: ["", "", "", ""], correctAnswer: "", points: 1 }
         ]
     );
+    const [aiPrompt, setAiPrompt] = useState("");
+    const [aiQuestionCount, setAiQuestionCount] = useState(5);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const isMultiCorrect = (index: number, option: string) => {
+        const q = questions[index];
+        if (q.type !== 'MULTI_SELECT') return q.correctAnswer === option && option !== "";
+        try {
+            const correctOnes = JSON.parse(q.correctAnswer || "[]");
+            return Array.isArray(correctOnes) && correctOnes.includes(option);
+        } catch {
+            return false;
+        }
+    };
+
+    const toggleMultiCorrect = (index: number, option: string) => {
+        const q = questions[index];
+        if (q.type === 'MCQ') {
+            updateQuestion(index, 'correctAnswer', option);
+            return;
+        }
+
+        let current: string[] = [];
+        try {
+            current = JSON.parse(q.correctAnswer || "[]");
+            if (!Array.isArray(current)) current = [];
+        } catch {
+            current = [];
+        }
+
+        const next = current.includes(option)
+            ? current.filter(o => o !== option)
+            : [...current, option];
+
+        updateQuestion(index, 'correctAnswer', JSON.stringify(next));
+    };
 
     const addQuestion = () => {
         setQuestions([...questions, { prompt: "", type: "MCQ", options: ["", "", "", ""], correctAnswer: "", points: 1 }]);
@@ -58,7 +100,8 @@ export const AssessmentBuilder: React.FC<{
             const data = {
                 title,
                 description,
-                type: editingAssessment?.type || 'CUSTOM',
+                type: type,
+                selectedCampuses,
                 isTimed,
                 timeLimitMinutes: isTimed ? Number(timeLimit) : null,
                 maxAttempts: Number(maxAttempts),
@@ -79,7 +122,31 @@ export const AssessmentBuilder: React.FC<{
             }
             onSave();
         } catch (error) {
-            toast.error(editingAssessment?.id ? "Failed to update assessment" : "Failed to create assessment");
+            toast.error("Failed to save assessment template");
+        }
+    };
+
+    const handleAIGenerate = async () => {
+        if (!aiPrompt.trim()) {
+            toast.error("Please enter a topic or context for AI generation");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const generated = await assessmentService.generateAIQuestions(aiPrompt, aiQuestionCount);
+            if (generated && generated.length > 0) {
+                // If the first question is empty, remove it
+                const currentQuestions = questions.length === 1 && questions[0].prompt === "" ? [] : questions;
+                setQuestions([...currentQuestions, ...generated]);
+                toast.success(`Generated ${generated.length} questions!`);
+                setAiPrompt("");
+            }
+        } catch (error: any) {
+            console.error("AI Generation failed:", error);
+            toast.error(error.response?.data?.message || "AI Generation failed. Check your API key.");
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -101,6 +168,20 @@ export const AssessmentBuilder: React.FC<{
                             <div className="space-y-2">
                                 <Label htmlFor="atitle" className="font-bold">Assessment Title</Label>
                                 <Input id="atitle" placeholder="e.g., Annual Pedagogy Reflection" value={title} onChange={(e) => setTitle(e.target.value)} className="h-12 rounded-xl" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="font-bold">Assessment Type</Label>
+                                <Select value={type} onValueChange={setType}>
+                                    <SelectTrigger className="h-12 rounded-xl">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[110]">
+                                        <SelectItem value="POST_ORIENTATION">Post Orientation</SelectItem>
+                                        <SelectItem value="ACADEMIC_ORIENTATION">Academic Orientation</SelectItem>
+                                        <SelectItem value="PREPAREDNESS">Academic Preparedness</SelectItem>
+                                        <SelectItem value="OTHER_ASSESSMENTS">Other Assessments</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="adesc" className="font-bold">Description</Label>
@@ -125,6 +206,34 @@ export const AssessmentBuilder: React.FC<{
                                 <Label className="text-xs font-bold uppercase tracking-wider">Maximum Attempts</Label>
                                 <Input type="number" value={maxAttempts} onChange={(e) => setMaxAttempts(Number(e.target.value))} className="h-10 rounded-lg" />
                             </div>
+
+                            <div className="space-y-3 pt-4 border-t border-zinc-200">
+                                <Label className="font-bold">Assigned Campuses</Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {CAMPUS_OPTIONS.map(campus => (
+                                        <Badge
+                                            key={campus}
+                                            variant={selectedCampuses.includes(campus) ? "default" : "outline"}
+                                            className={cn(
+                                                "cursor-pointer px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1",
+                                                selectedCampuses.includes(campus)
+                                                    ? "bg-primary text-white border-primary"
+                                                    : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300"
+                                            )}
+                                            onClick={() => {
+                                                setSelectedCampuses(prev =>
+                                                    prev.includes(campus)
+                                                        ? prev.filter(c => c !== campus)
+                                                        : [...prev, campus]
+                                                );
+                                            }}
+                                        >
+                                            {campus}
+                                            {selectedCampuses.includes(campus) && <Check className="w-3 h-3" />}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -136,6 +245,54 @@ export const AssessmentBuilder: React.FC<{
                             </h3>
                             <Button onClick={addQuestion} variant="outline" size="sm" className="gap-2 border-primary/20 text-primary">
                                 <Plus className="w-4 h-4" /> Add Question
+                            </Button>
+                        </div>
+
+                        {/* AI Generator Section */}
+                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-2xl border border-indigo-100 flex flex-col md:flex-row gap-6 items-start">
+                            <div className="flex-1 space-y-2 w-full">
+                                <Label className="flex items-center gap-2 text-indigo-900 font-bold">
+                                    <Sparkles className="w-4 h-4 text-indigo-600" />
+                                    Magic Question Generator
+                                </Label>
+                                <div className="flex flex-col md:flex-row gap-4 items-end">
+                                    <div className="flex-1 w-full">
+                                        <Textarea
+                                            placeholder="Paste a topic, chapter summary, or learning objectives here... (e.g., 'Student engagement strategies')"
+                                            value={aiPrompt}
+                                            onChange={(e) => setAiPrompt(e.target.value)}
+                                            className="bg-white border-indigo-200 focus:border-indigo-500 rounded-xl min-h-[80px]"
+                                        />
+                                    </div>
+                                    <div className="w-full md:w-32 space-y-1">
+                                        <Label className="text-[10px] text-indigo-400 uppercase tracking-wider font-bold">Count</Label>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={20}
+                                            value={aiQuestionCount}
+                                            onChange={(e) => setAiQuestionCount(parseInt(e.target.value) || 5)}
+                                            className="bg-white border-indigo-200 focus:border-indigo-500 rounded-xl h-12"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <Button
+                                className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-12 px-6 flex items-center gap-2 shrink-0 self-end md:self-auto"
+                                onClick={handleAIGenerate}
+                                disabled={isGenerating}
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4" />
+                                        Generate Questions
+                                    </>
+                                )}
                             </Button>
                         </div>
 
@@ -159,8 +316,9 @@ export const AssessmentBuilder: React.FC<{
                                                 <SelectTrigger className="h-8 w-[140px] bg-white">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="z-[110]">
                                                     <SelectItem value="MCQ">Multiple Choice</SelectItem>
+                                                    <SelectItem value="MULTI_SELECT">Multi-Select MCQ</SelectItem>
                                                     <SelectItem value="TEXT">Short Answer</SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -172,22 +330,22 @@ export const AssessmentBuilder: React.FC<{
                                     <CardContent className="p-6 space-y-4">
                                         <Input placeholder="Enter question prompt..." value={q.prompt} onChange={(e) => updateQuestion(qIdx, 'prompt', e.target.value)} className="text-lg font-medium border-none p-0 focus-visible:ring-0 placeholder:text-zinc-300" />
 
-                                        {q.type === 'MCQ' && (
+                                        {(q.type === 'MCQ' || q.type === 'MULTI_SELECT') && (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                                 {q.options.map((opt, optIdx) => (
                                                     <div key={optIdx} className={cn(
                                                         "flex gap-3 items-center p-3 rounded-xl border-2 transition-all group",
-                                                        q.correctAnswer === opt && opt !== ""
+                                                        isMultiCorrect(qIdx, opt)
                                                             ? "border-emerald-500 bg-emerald-50/50"
                                                             : "border-zinc-100 hover:border-zinc-200"
                                                     )}>
                                                         <div className="flex flex-col items-center gap-1">
                                                             <input
-                                                                type="radio"
+                                                                type={q.type === 'MULTI_SELECT' ? "checkbox" : "radio"}
                                                                 id={`correct-${qIdx}-${optIdx}`}
                                                                 name={`correct-${qIdx}`}
-                                                                checked={q.correctAnswer === opt && opt !== ""}
-                                                                onChange={() => updateQuestion(qIdx, 'correctAnswer', opt)}
+                                                                checked={isMultiCorrect(qIdx, opt)}
+                                                                onChange={() => toggleMultiCorrect(qIdx, opt)}
                                                                 className="w-5 h-5 accent-emerald-600 cursor-pointer"
                                                             />
                                                             <Label
@@ -207,12 +365,24 @@ export const AssessmentBuilder: React.FC<{
                                                                 newOpts[optIdx] = newVal;
 
                                                                 // Update correctly if this was the correct answer
-                                                                if (q.correctAnswer === oldVal && oldVal !== "") {
+                                                                const isCorrect = isMultiCorrect(qIdx, oldVal);
+                                                                if (isCorrect && oldVal !== "") {
                                                                     const newQuestions = [...questions];
+                                                                    let newCorrect = newVal;
+
+                                                                    if (q.type === 'MULTI_SELECT') {
+                                                                        try {
+                                                                            const current = JSON.parse(q.correctAnswer || "[]");
+                                                                            newCorrect = JSON.stringify(current.map((c: string) => c === oldVal ? newVal : c));
+                                                                        } catch {
+                                                                            newCorrect = JSON.stringify([newVal]);
+                                                                        }
+                                                                    }
+
                                                                     newQuestions[qIdx] = {
                                                                         ...newQuestions[qIdx],
                                                                         options: newOpts,
-                                                                        correctAnswer: newVal
+                                                                        correctAnswer: newCorrect
                                                                     };
                                                                     setQuestions(newQuestions);
                                                                 } else {

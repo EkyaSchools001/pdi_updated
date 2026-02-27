@@ -217,8 +217,11 @@ export default function LeaderDashboard() {
 
       const obsCount = teacherObs.length;
 
-      const lastObsDate = teacherObs.length > 0
-        ? new Date(Math.max(...teacherObs.map(o => new Date(o.date).getTime()))).toLocaleDateString()
+      const lastObsDate = teacherObs.length > 0 && teacherObs.some(o => o.date)
+        ? new Date(Math.max(...teacherObs
+          .map(o => new Date(o.date).getTime())
+          .filter(time => !isNaN(time))
+        )).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         : 'N/A';
 
       const avgScore = teacherObs.length > 0
@@ -351,34 +354,36 @@ export default function LeaderDashboard() {
 
   return (
     <DashboardLayout role={role.toLowerCase() as any} userName={userName}>
-      <GrowthLayout allowedRoles={["LEADER", "SCHOOL_LEADER", "ADMIN", "SUPERADMIN"]}>
-        <Routes>
-          <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} role={role} />} />
-          <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
-          <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
-          <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
-          <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
-          <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
-          <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
-          <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
-          <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
-          <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
-          <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
-          <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchTeachers} />} />
-          <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
-          <Route path="attendance" element={<AttendanceRegister />} />
-          <Route path="attendance/:id" element={<EventAttendanceView />} />
-          <Route path="insights" element={<LearningInsightsView />} />
-          <Route path="participation" element={<PDParticipationView team={team} training={training} />} />
-          <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
-          <Route path="users" element={<UserManagementView />} />
-          <Route path="forms" element={<FormTemplatesView />} />
-          <Route path="courses/*" element={<LeaderCoursesModule />} />
-          <Route path="documents" element={<AdminDocumentManagement />} />
-          <Route path="survey" element={<SurveyPage />} />
-          <Route path="settings" element={<SystemSettingsView />} />
-        </Routes>
-      </GrowthLayout>
+      <Routes>
+        <Route index element={<DashboardOverview team={team} observations={observations} userName={userName} systemAvgScore={systemAvgScore} domainAverages={domainAverages} role={role} />} />
+        <Route path="team" element={<TeamManagementView team={team} observations={observations} goals={goals} systemAvgScore={systemAvgScore} />} />
+        <Route path="team/:teacherId" element={<TeacherDetailsView team={team} observations={observations} goals={goals} />} />
+        <Route path="observations" element={<ObservationsManagementView observations={observations} systemAvgScore={systemAvgScore} />} />
+        <Route path="observations/:obsId" element={<ObservationReportView observations={observations} team={team} />} />
+        <Route path="observe" element={<ObserveView setObservations={setObservations} setTeam={setTeam} team={team} observations={observations} />} />
+        <Route path="goals" element={<TeacherGoalsView goals={goals} />} />
+        <Route path="goals/assign" element={<AssignGoalView setGoals={setGoals} team={team} />} />
+        <Route path="performance" element={<LeaderPerformanceAnalytics team={team} observations={observations} />} />
+        <Route path="calendar" element={<PDCalendarView training={training} setTraining={setTraining} />} />
+        <Route path="calendar/propose" element={<ProposeCourseView setTraining={setTraining} />} />
+        <Route path="calendar/responses" element={<MoocResponsesView refreshTeam={fetchMoocSubmissions} />} />
+        <Route path="meetings" element={<MeetingsDashboard />} />
+        <Route path="meetings/create" element={<CreateMeetingForm />} />
+        <Route path="meetings/:meetingId/mom" element={<MeetingMoMForm />} />
+        <Route path="meetings/:meetingId" element={<MeetingMoMForm />} />
+        <Route path="calendar/events/:eventId" element={<PlaceholderView title="PD Event Details" icon={Book} />} />
+        <Route path="attendance" element={<AttendanceRegister />} />
+        <Route path="attendance/:id" element={<EventAttendanceView />} />
+        <Route path="insights" element={<LearningInsightsView />} />
+        <Route path="participation" element={<PDParticipationView team={team} training={training} />} />
+        <Route path="reports" element={<ReportsView team={team} observations={observations} />} />
+        <Route path="users" element={<UserManagementView />} />
+        <Route path="forms" element={<FormTemplatesView />} />
+        <Route path="courses/*" element={<LeaderCoursesModule />} />
+        <Route path="documents" element={<AdminDocumentManagement />} />
+        <Route path="survey" element={<SurveyPage />} />
+        <Route path="settings" element={<SystemSettingsView />} />
+      </Routes>
     </DashboardLayout>
   );
 }
@@ -2322,7 +2327,11 @@ function ReportsView({ team, observations }: { team: any[], observations: Observ
                         </div>
                       </td>
                       <td className="p-6">
-                        <p className="text-sm text-foreground">{member.lastObserved}, 2026</p>
+                        <p className="text-sm text-foreground">
+                          {member.lastObserved === 'N/A' || member.lastObserved === 'Invalid Date'
+                            ? member.lastObserved
+                            : `${member.lastObserved}`}
+                        </p>
                       </td>
                       <td className="p-6 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -3256,8 +3265,8 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
     const matchesSearch = teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       domainName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const obsGrade = obs.classroom?.grade || "";
-    const obsLA = obs.classroom?.learningArea || obs.learningArea || "";
+    const obsGrade = obs.classroom?.grade || (obs as any).grade || "";
+    const obsLA = obs.classroom?.learningArea || (obs as any).learningArea || "";
 
     const matchesGrade = selectedGrade === "all" || obsGrade.split(' - ')[0] === selectedGrade;
     const matchesLA = selectedLA === "all" || obsLA === selectedLA;
@@ -3266,7 +3275,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
   });
 
   const grades = Array.from(new Set(observations.map(o => {
-    const g = o.classroom?.grade || "";
+    const g = o.classroom?.grade || (o as any).grade || "";
     return g.split(' - ')[0];
   }))).filter(Boolean).sort((a, b) => {
     const numA = parseInt(a.replace(/\D/g, ''));
@@ -3274,7 +3283,7 @@ function ObservationsManagementView({ observations, systemAvgScore }: { observat
     return numA - numB;
   });
 
-  const learningAreas = Array.from(new Set(observations.map(o => o.classroom?.learningArea || o.learningArea || ""))).filter(Boolean).sort();
+  const learningAreas = Array.from(new Set(observations.map(o => o.classroom?.learningArea || (o as any).learningArea || ""))).filter(Boolean).sort();
 
   const resetFilters = () => {
     setSelectedGrade("all");

@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { AuthRequest } from '../middlewares/auth';
 import { getIO } from '../../core/socket';
 import { createNotification } from './notificationController';
 
-const prisma = new PrismaClient();
+
 
 // Get active survey for the current term
 export const getActiveSurvey = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -33,7 +33,7 @@ export const getActiveSurvey = async (req: AuthRequest, res: Response, next: Nex
 
         // Check if user has already submitted (for Teacher/Leader)
         // Admin/Mgmt can see survey regardless
-        let myResponse = null;
+        let myResponse: any = null;
         if (req.user) {
             myResponse = await prisma.surveyResponse.findFirst({
                 where: {
