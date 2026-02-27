@@ -3,135 +3,96 @@ generator client {
   output   = "../../backend/node_modules/.prisma/client"
 }
 
-
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
-enum AcademicType {
-  CORE
-  NON_CORE
-}
-
-enum GrowthModuleType {
-  DANIELSON
-  QUICK_FEEDBACK
-  PERFORMING_ARTS
-  LIFE_SKILLS
-  PHYSICAL_EDUCATION
-  VISUAL_ARTS
-}
-
-enum GrowthObservationStatus {
-  SUBMITTED
-  DRAFT
-}
-
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
-  passwordHash   String?   @default("")
-  fullName       String
-  profilePicture String?
-  role           String    @default("TEACHER")
-  campusId       String?
-  department     String?
-  status         String    @default("Active")
-  lastActive     DateTime?
-  lastSeen       DateTime?
-  isVerified     Boolean   @default(false)
-  campusAccess   String?
-  dateOfBirth    String?
-  managerId      String?
-  academics      AcademicType? @default(CORE)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  // Relations
-  sentObservations     Observation[]             @relation("Observer")
-  receivedObservations Observation[]             @relation("Teacher")
-  proposedEvents       TrainingEvent[]           @relation("ProposedEvents")
-  createdEvents        TrainingEvent[]           @relation("CreatedEvents")
-  goals                Goal[]
-  registrations        Registration[]
-  attendanceRecords    EventAttendance[]
-  pdHours              PDHour[]
-  createdDocuments     Document[]
-  acknowledgements DocumentAcknowledgement[]
-  moocSubmissions  MoocSubmission[]
-  enrollments      CourseEnrollment[]
-
-  // New Relations for Meetings
-  createdMeetings  Meeting[]         @relation("MeetingCreator")
-  meetingAttendees MeetingAttendee[]
-  meetingReplies   MeetingReply[]
-  momCreated       MeetingMinutes[]  @relation("MoMCreator")
-
-  // Notifications
-  notifications Notification[]
-
-  // Announcements
-  createdAnnouncements   Announcement[]              @relation("AnnouncementCreator")
+  id                           String                        @id @default(uuid())
+  email                        String                        @unique
+  passwordHash                 String?                       @default("")
+  fullName                     String
+  profilePicture               String?
+  role                         String                        @default("TEACHER")
+  campusId                     String?
+  department                   String?
+  status                       String                        @default("Active")
+  lastActive                   DateTime?
+  lastSeen                     DateTime?
+  isVerified                   Boolean                       @default(false)
+  campusAccess                 String?
+  dateOfBirth                  String?
+  managerId                    String?
+  academics                    AcademicType?                 @default(CORE)
+  createdAt                    DateTime                      @default(now())
+  updatedAt                    DateTime                      @updatedAt
+  createdAnnouncements         Announcement[]                @relation("AnnouncementCreator")
   announcementAcknowledgements AnnouncementAcknowledgement[]
-  
-  // Survey Relations
-  surveyResponses SurveyResponse[]
-  postOrientationAssessments PostOrientationAssessment[]
-
-  // Learning Festival
-  festivalApplications LearningFestivalApplication[] @relation("Applicant")
-  reviewedApplications LearningFestivalApplication[] @relation("ApplicationReviewer")
-
-  // Assessments
-  createdAssessments    Assessment[]
-  assignedByMe          AssessmentAssignment[] @relation("AssignedBy")
-  assessmentAssignments AssessmentAssignment[] @relation("AssignedTo")
-  assessmentAttempts    AssessmentAttempt[]
-  trainingFeedbacks     TrainingFeedback[]
-
-  // New Growth Observation Relations
-  sentGrowthObs     GrowthObservation[] @relation("GrowthObserver")
-  receivedGrowthObs GrowthObservation[] @relation("GrowthTeacher")
+  createdAssessments           Assessment[]
+  assignedByMe                 AssessmentAssignment[]        @relation("AssignedBy")
+  assessmentAssignments        AssessmentAssignment[]        @relation("AssignedTo")
+  assessmentAttempts           AssessmentAttempt[]
+  enrollments                  CourseEnrollment[]
+  createdDocuments             Document[]
+  acknowledgements             DocumentAcknowledgement[]
+  attendanceRecords            EventAttendance[]
+  goals                        Goal[]
+  reviewedApplications         LearningFestivalApplication[] @relation("ApplicationReviewer")
+  festivalApplications         LearningFestivalApplication[] @relation("Applicant")
+  createdMeetings              Meeting[]                     @relation("MeetingCreator")
+  meetingAttendees             MeetingAttendee[]
+  momCreated                   MeetingMinutes[]              @relation("MoMCreator")
+  meetingReplies               MeetingReply[]
+  moocSubmissions              MoocSubmission[]
+  notifications                Notification[]
+  sentObservations             Observation[]                 @relation("Observer")
+  receivedObservations         Observation[]                 @relation("Teacher")
+  pdHours                      PDHour[]
+  registrations                Registration[]
+  createdEvents                TrainingEvent[]               @relation("CreatedEvents")
+  proposedEvents               TrainingEvent[]               @relation("ProposedEvents")
+  trainingFeedbacks            TrainingFeedback[]
+  postOrientationAssessments   PostOrientationAssessment[]
+  surveyResponses              SurveyResponse[]
+  growthObservationsSent       GrowthObservation[]           @relation("GrowthObserver")
+  growthObservationsReceived   GrowthObservation[]           @relation("GrowthTeacher")
 
   @@index([academics])
 }
 
 model Meeting {
-  id           String   @id @default(uuid())
+  id           String              @id @default(uuid())
   title        String
   description  String?
-  meetingType  String // Staff, Department, Management, Academic Review, Custom
+  meetingType  String
   campusId     String?
   departmentId String?
   meetingDate  String
   startTime    String
   endTime      String
-  mode         String // Online, Offline
+  mode         String
   locationLink String?
   createdById  String
-  status       String   @default("Draft") // Draft, Scheduled, Ongoing, Completed, Archived
-  momStatus    String   @default("Not Created") // Not Created, Draft, Published
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  createdBy     User                @relation("MeetingCreator", fields: [createdById], references: [id])
-  attendees     MeetingAttendee[]
-  minutes       MeetingMinutes?
-  replies       MeetingReply[]
-  shares        MeetingShare[]
-  actionItems   MeetingActionItem[]
+  status       String              @default("Draft")
+  momStatus    String              @default("Not Created")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  createdBy    User                @relation("MeetingCreator", fields: [createdById], references: [id])
+  actionItems  MeetingActionItem[]
+  attendees    MeetingAttendee[]
+  minutes      MeetingMinutes?
+  replies      MeetingReply[]
+  shares       MeetingShare[]
 }
 
 model MeetingAttendee {
   id               String  @id @default(uuid())
   meetingId        String
   userId           String
-  attendanceStatus String @default("Invited") // Invited, Attended, Absent
-
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendanceStatus String  @default("Invited")
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting          Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 
   @@unique([meetingId, userId])
 }
@@ -140,21 +101,19 @@ model MeetingMinutes {
   id                String   @id @default(uuid())
   meetingId         String   @unique
   objective         String
-  agendaPoints      String // JSON string or text
+  agendaPoints      String
   discussionSummary String
-  decisions         String // JSON string or text
+  decisions         String
   attendanceCount   Int      @default(0)
-  attendanceSummary String?  // Added field
-  departments       String? // JSON string
-  attachments       String? // JSON string
-  status            String   @default("Draft") // Draft, Published, Archived
+  attendanceSummary String?
+  departments       String?
+  attachments       String?
+  status            String   @default("Draft")
   createdById       String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  // Relations
-  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  createdBy User    @relation("MoMCreator", fields: [createdById], references: [id])
+  createdBy         User     @relation("MoMCreator", fields: [createdById], references: [id])
+  meeting           Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model MeetingActionItem {
@@ -163,12 +122,11 @@ model MeetingActionItem {
   taskDescription String
   assignedTo      String
   deadline        String
-  priority        String   @default("Medium") // High, Medium, Low
-  status          String   @default("Pending") // Pending, In Progress, Completed
+  priority        String   @default("Medium")
+  status          String   @default("Pending")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting         Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model MeetingReply {
@@ -177,9 +135,8 @@ model MeetingReply {
   userId    String
   replyText String
   createdAt DateTime @default(now())
-
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model MeetingShare {
@@ -189,8 +146,7 @@ model MeetingShare {
   targetRole     String
   targetCampusId String?
   sharedAt       DateTime @default(now())
-
-  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
 model Observation {
@@ -216,49 +172,14 @@ model Observation {
   strengths          String?
   areasOfGrowth      String?
   otherComment       String?
-  metaTags           String?   // JSON string
-  tools              String?   // JSON string
-  routines           String?   // JSON string
-  studioHabits       String?   // JSON string
+  metaTags           String?
+  tools              String?
+  routines           String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-
-  // Relations
-  teacher       User                @relation("Teacher", fields: [teacherId], references: [id])
-  observer      User                @relation("Observer", fields: [observerId], references: [id])
-  domainRatings ObservationDomain[]
-}
-
-model GrowthObservation {
-  id              String                  @id @default(uuid())
-  teacherId       String
-  observerId      String
-  campusId        String?
-  academicYear    String                  // e.g., AY 25-26
-  moduleType      GrowthModuleType
-  subject         String?
-  block           String?
-  grade           String?
-  section         String?
-  observationDate DateTime?
-  overallRating   Float?
-  hasReflection   Boolean                 @default(false)
-  teacherReflection String?
-  detailedReflection String?              // JSON string of full reflection data
-  status          GrowthObservationStatus @default(DRAFT)
-  formPayload     String?                 // JSON string of full structured response
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
-
-  // Relations
-  teacher  User @relation("GrowthTeacher", fields: [teacherId], references: [id])
-  observer User @relation("GrowthObserver", fields: [observerId], references: [id])
-
-  @@index([teacherId])
-  @@index([observerId])
-  @@index([campusId])
-  @@index([academicYear])
-  @@index([moduleType])
+  observer           User                @relation("Observer", fields: [observerId], references: [id])
+  teacher            User                @relation("Teacher", fields: [teacherId], references: [id])
+  domainRatings      ObservationDomain[]
 }
 
 model ObservationDomain {
@@ -268,77 +189,74 @@ model ObservationDomain {
   title         String
   rating        String
   evidence      String?
-
-  observation Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+  observation   Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
 }
 
 model Goal {
-  id              String   @id @default(uuid())
-  teacherId       String
-  teacherEmail    String?
-  title           String
-  description     String?
-  progress        Int      @default(0)
-  dueDate         String
-  status          String   @default("IN_PROGRESS")
-  isSchoolAligned Boolean  @default(false)
-  category        String?
-  assignedBy      String?
-  actionStep                String? // Kept for backwards compatibility
+  id                        String    @id @default(uuid())
+  teacherId                 String
+  teacherEmail              String?
+  title                     String
+  description               String?
+  progress                  Int       @default(0)
+  dueDate                   String
+  status                    String    @default("IN_PROGRESS")
+  isSchoolAligned           Boolean   @default(false)
+  category                  String?
+  assignedBy                String?
+  actionStep                String?
   campus                    String?
-  selfReflectionForm        String? // JSON string
-  goalSettingForm           String? // JSON string
-  goalCompletionForm        String? // JSON string
+  selfReflectionForm        String?
+  goalSettingForm           String?
+  goalCompletionForm        String?
   selfReflectionCompletedAt DateTime?
   goalSettingCompletedAt    DateTime?
   goalCompletionCompletedAt DateTime?
-  createdAt                 DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  teacher User @relation(fields: [teacherId], references: [id])
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  teacher                   User      @relation(fields: [teacherId], references: [id])
 }
 
 model TrainingEvent {
-  id                    String            @id @default(uuid())
+  id                    String             @id @default(uuid())
   title                 String
   topic                 String
   type                  String
   date                  String
   location              String
   capacity              Int
-  status                String            @default("PLANNED")
+  status                String             @default("PLANNED")
   time                  String?
   description           String?
   objectives            String?
   schoolId              String?
   createdById           String?
-  attendanceEnabled     Boolean           @default(false)
+  attendanceEnabled     Boolean            @default(false)
   attendanceTriggeredAt DateTime?
-  attendanceClosed      Boolean           @default(false)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
-  registrations         Registration[]
-  attendanceRecords     EventAttendance[]
+  attendanceClosed      Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
   proposedById          String?
-  proposedBy            User?             @relation("ProposedEvents", fields: [proposedById], references: [id])
-  createdBy             User?             @relation("CreatedEvents", fields: [createdById], references: [id])
+  attendanceRecords     EventAttendance[]
+  registrations         Registration[]
+  createdBy             User?              @relation("CreatedEvents", fields: [createdById], references: [id])
+  proposedBy            User?              @relation("ProposedEvents", fields: [proposedById], references: [id])
   feedbacks             TrainingFeedback[]
 }
 
 model Registration {
-  id               String   @id @default(uuid())
+  id               String        @id @default(uuid())
   eventId          String
   userId           String
-  registrationDate DateTime @default(now())
-
-  event TrainingEvent @relation(fields: [eventId], references: [id])
-  user  User          @relation(fields: [userId], references: [id])
+  registrationDate DateTime      @default(now())
+  user             User          @relation(fields: [userId], references: [id])
+  event            TrainingEvent @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, userId])
 }
 
 model EventAttendance {
-  id           String   @id @default(uuid())
+  id           String        @id @default(uuid())
   eventId      String
   teacherId    String
   teacherName  String
@@ -347,30 +265,26 @@ model EventAttendance {
   employeeId   String?
   department   String?
   schoolId     String?
-  submittedAt  DateTime @default(now())
-  status       Boolean  @default(true) // attendance_status
-
-  event   TrainingEvent @relation(fields: [eventId], references: [id])
-  teacher User          @relation(fields: [teacherId], references: [id])
+  submittedAt  DateTime      @default(now())
+  status       Boolean       @default(true)
+  teacher      User          @relation(fields: [teacherId], references: [id])
+  event        TrainingEvent @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, teacherEmail])
 }
 
 model TrainingFeedback {
-  id        String   @id @default(uuid())
+  id        String        @id @default(uuid())
   eventId   String
   userId    String
-  rating    Int      // 1-5
+  rating    Int
   comment   String?
-  createdAt DateTime @default(now())
-
-  event TrainingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     TrainingEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([eventId, userId])
 }
-
-
 
 model PDHour {
   id       String   @id @default(uuid())
@@ -380,8 +294,7 @@ model PDHour {
   category String
   status   String   @default("APPROVED")
   date     DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 }
 
 model MoocSubmission {
@@ -408,26 +321,24 @@ model MoocSubmission {
   status              String   @default("PENDING")
   submittedAt         DateTime @default(now())
   updatedAt           DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id])
+  user                User     @relation(fields: [userId], references: [id])
 }
 
 model Document {
-  id                String   @id @default(uuid())
+  id                String                    @id @default(uuid())
   title             String
   description       String?
   fileUrl           String
   fileName          String
   fileSize          Int?
-  version           String   @default("1.0")
-  requiresSignature Boolean  @default(false)
+  version           String                    @default("1.0")
+  requiresSignature Boolean                   @default(false)
   createdById       String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
   hash              String?
-
-  createdBy        User                      @relation(fields: [createdById], references: [id])
-  acknowledgements DocumentAcknowledgement[]
+  createdBy         User                      @relation(fields: [createdById], references: [id])
+  acknowledgements  DocumentAcknowledgement[]
 }
 
 model DocumentAcknowledgement {
@@ -444,9 +355,8 @@ model DocumentAcknowledgement {
   documentHash   String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  teacher  User     @relation(fields: [teacherId], references: [id])
+  teacher        User      @relation(fields: [teacherId], references: [id])
+  document       Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
 
 model Chat {
@@ -502,7 +412,6 @@ model Course {
   isDownloadable Boolean            @default(false)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-
   enrollments    CourseEnrollment[]
 }
 
@@ -514,9 +423,8 @@ model CourseEnrollment {
   progress    Int       @default(0)
   completedAt DateTime?
   enrolledAt  DateTime  @default(now())
-
-  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id])
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, userId])
 }
@@ -530,15 +438,12 @@ model SystemSettings {
 
 model FormTemplate {
   id        String   @id @default(uuid())
-  name      String   @unique
-
+  name      String
   type      String
   structure String
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  workflows FormWorkflow[]
 }
 
 model Notification {
@@ -546,106 +451,101 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  type      String   @default("INFO")
   isRead    Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Announcement {
-  id                String   @id @default(uuid())
+  id                String                        @id @default(uuid())
   title             String
   description       String
   createdById       String
-  role              String   // Role of the creator
-  priority          String   @default("Normal") // Normal, High
-  status            String   @default("Published") // Draft, Published, Archived
-  isPinned          Boolean  @default(false)
-  targetRoles       String   @default("[]") // JSON string of roles
-  targetDepartments String?  @default("[]") // JSON string of departments
-  targetCampuses    String?  @default("[]") // JSON string of campus IDs
+  role              String
+  priority          String                        @default("Normal")
+  status            String                        @default("Published")
+  isPinned          Boolean                       @default(false)
+  targetRoles       String                        @default("[]")
+  targetDepartments String?                       @default("[]")
+  targetCampuses    String?                       @default("[]")
   expiryDate        DateTime?
-  attachments       String?  // JSON string of file info
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
-  createdBy        User                        @relation("AnnouncementCreator", fields: [createdById], references: [id])
-  acknowledgements AnnouncementAcknowledgement[]
+  attachments       String?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  createdBy         User                          @relation("AnnouncementCreator", fields: [createdById], references: [id])
+  acknowledgements  AnnouncementAcknowledgement[]
 }
 
 model AnnouncementAcknowledgement {
-  id              String   @id @default(uuid())
-  announcementId  String
-  userId          String
-  acknowledgedAt  DateTime @default(now())
-
-  // Relations
-  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id])
+  id             String       @id @default(uuid())
+  announcementId String
+  userId         String
+  acknowledgedAt DateTime     @default(now())
+  user           User         @relation(fields: [userId], references: [id])
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
 
   @@unique([announcementId, userId])
 }
 
 model Survey {
-  id             String    @id @default(uuid())
-  title          String
-  academicYear   String    @map("academic_year")
-  term           String
-  description    String?
-  isActive       Boolean   @default(true) @map("is_active")
-  startDate      DateTime? @map("start_date")
-  endDate        DateTime? @map("end_date")
-  isAnonymous    Boolean   @default(true) @map("is_anonymous")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id           String           @id @default(uuid())
+  title        String
+  academicYear String           @map("academic_year")
+  term         String
+  description  String?
+  isActive     Boolean          @default(true) @map("is_active")
+  startDate    DateTime?        @map("start_date")
+  endDate      DateTime?        @map("end_date")
+  isAnonymous  Boolean          @default(true) @map("is_anonymous")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  questions    SurveyQuestion[]
+  responses    SurveyResponse[]
 
-  questions SurveyQuestion[]
-  responses SurveyResponse[]
   @@map("surveys")
 }
 
 model SurveyQuestion {
-  id           String  @id @default(uuid())
-  surveyId     String  @map("survey_id")
-  pageNumber   Int     @map("page_number")
-  questionText String  @map("question_text")
-  questionType String  @map("question_type") // short_text, long_text, rating_scale, multiple_choice, multi_select, yes_no
-  options      String? // JSON string
-  isRequired   Boolean @default(true) @map("is_required")
-  orderIndex   Int     @map("order_index")
+  id           String         @id @default(uuid())
+  surveyId     String         @map("survey_id")
+  pageNumber   Int            @map("page_number")
+  questionText String         @map("question_text")
+  questionType String         @map("question_type")
+  options      String?
+  isRequired   Boolean        @default(true) @map("is_required")
+  orderIndex   Int            @map("order_index")
+  answers      SurveyAnswer[]
+  survey       Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  survey  Survey          @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  answers SurveyAnswer[]
   @@map("survey_questions")
 }
 
 model SurveyResponse {
-  id          String   @id @default(uuid())
-  surveyId    String   @map("survey_id")
-  userId      String   @map("user_id")
+  id          String         @id @default(uuid())
+  surveyId    String         @map("survey_id")
+  userId      String         @map("user_id")
   campus      String?
-  submittedAt DateTime @default(now()) @map("submitted_at")
-  isCompleted Boolean  @default(false) @map("is_completed")
+  submittedAt DateTime       @default(now()) @map("submitted_at")
+  isCompleted Boolean        @default(false) @map("is_completed")
+  answers     SurveyAnswer[]
+  user        User           @relation(fields: [userId], references: [id])
+  survey      Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  user    User           @relation(fields: [userId], references: [id])
-  answers SurveyAnswer[]
   @@map("survey_responses")
 }
 
 model SurveyAnswer {
-  id            String  @id @default(uuid())
-  responseId    String  @map("response_id")
-  questionId    String  @map("question_id")
-  answerText    String? @map("answer_text")
-  answerNumeric Float?  @map("answer_numeric") // For analytics
-  answerJson    String? @map("answer_json") // For multi-select
+  id            String         @id @default(uuid())
+  responseId    String         @map("response_id")
+  questionId    String         @map("question_id")
+  answerText    String?        @map("answer_text")
+  answerNumeric Float?         @map("answer_numeric")
+  answerJson    String?        @map("answer_json")
+  question      SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  response      SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
-  response SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
-  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   @@map("survey_answers")
 }
 
@@ -658,137 +558,143 @@ model PostOrientationAssessment {
   term         String
   academicYear String   @map("academic_year")
   createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
 
-  user User @relation(fields: [userId], references: [id])
   @@map("post_orientation_assessments")
 }
 
 model LearningFestival {
-  id                String   @id @default(uuid())
+  id                String                        @id @default(uuid())
   name              String
   theme             String
   description       String?
   startDate         DateTime
   endDate           DateTime
   registrationStart DateTime?
-  registrationEnd   DateTime? @map("applyDeadline") // Replacing the conceptual applyDeadline
+  registrationEnd   DateTime?                     @map("applyDeadline")
   location          String?
   duration          String?
-  documents         String?  // JSON string
-  sharedWithRoles   String?  // JSON string array e.g. ["TEACHER", "ADMIN"]
-  status            String   @default("Draft") // Draft, Upcoming, Active, Completed
-  eligibilityRules  String?  // JSON string
-  campusLimits      String?  // JSON string for limits per campus
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  applications LearningFestivalApplication[]
+  documents         String?
+  sharedWithRoles   String?
+  status            String                        @default("Draft")
+  eligibilityRules  String?
+  campusLimits      String?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+  applications      LearningFestivalApplication[]
 }
 
 model LearningFestivalApplication {
-  id                 String   @id @default(uuid())
+  id                 String           @id @default(uuid())
   festivalId         String
   userId             String
   statementOfPurpose String
   relevantExperience String?
   preferredStrand    String?
-  status             String   @default("Draft") // Draft, Submitted, Under Review, Shortlisted, Rejected, Confirmed
-  documents          String?  // JSON string of uploaded proofs
+  status             String           @default("Draft")
+  documents          String?
   feedback           String?
   appliedAt          DateTime?
   reviewedAt         DateTime?
   reviewedById       String?
-
-  festival LearningFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
-  user     User             @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
-  reviewer User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+  reviewer           User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+  user               User             @relation("Applicant", fields: [userId], references: [id], onDelete: Cascade)
+  festival           LearningFestival @relation(fields: [festivalId], references: [id], onDelete: Cascade)
 }
 
 model Assessment {
-  id               String   @id @default(uuid())
+  id               String                 @id @default(uuid())
   title            String
   description      String?
-  type             String   @default("CUSTOM") // POST_ORIENTATION, PREPAREDNESS, CUSTOM
-  isTimed          Boolean  @default(false)
+  type             String                 @default("CUSTOM")
+  isTimed          Boolean                @default(false)
   timeLimitMinutes Int?
-  maxAttempts      Int      @default(1)
+  maxAttempts      Int                    @default(1)
   createdById      String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  createdBy   User                   @relation(fields: [createdById], references: [id])
-  questions   AssessmentQuestion[]
-  assignments AssessmentAssignment[]
-  attempts    AssessmentAttempt[]
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  createdBy        User                   @relation(fields: [createdById], references: [id])
+  assignments      AssessmentAssignment[]
+  attempts         AssessmentAttempt[]
+  questions        AssessmentQuestion[]
 }
 
 model AssessmentQuestion {
-  id            String  @id @default(uuid())
+  id            String     @id @default(uuid())
   assessmentId  String
   prompt        String
-  type          String  @default("MCQ") // MCQ, TEXT
-  options       String? // JSON string
-  correctAnswer String? // JSON string or text mapping
-  points        Int     @default(1)
-
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  type          String     @default("MCQ")
+  options       String?
+  correctAnswer String?
+  points        Int        @default(1)
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
 model AssessmentAssignment {
-  id                 String   @id @default(uuid())
+  id                 String     @id @default(uuid())
   assessmentId       String
-  assignedToId       String?  // Can be assigned to a specific user
-  assignedToCampusId String?  // Or a whole campus
-  assignedToRole     String?  // Or a specific role
+  assignedToId       String?
+  assignedToCampusId String?
+  assignedToRole     String?
   assignedById       String
-  assignedAt         DateTime @default(now())
-
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  assignedTo User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
-  assignedBy User       @relation("AssignedBy", fields: [assignedById], references: [id])
+  assignedAt         DateTime   @default(now())
+  assignedBy         User       @relation("AssignedBy", fields: [assignedById], references: [id])
+  assignedTo         User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+  assessment         Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
 model AssessmentAttempt {
-  id            String    @id @default(uuid())
+  id            String     @id @default(uuid())
   assessmentId  String
   userId        String
-  startTime     DateTime  @default(now())
+  startTime     DateTime   @default(now())
   endTime       DateTime?
-  status        String    @default("IN_PROGRESS") // IN_PROGRESS, SUBMITTED, TIMED_OUT
-  attemptNumber Int       @default(1)
+  status        String     @default("IN_PROGRESS")
+  attemptNumber Int        @default(1)
   score         Float?
-  answers       String?   // JSON string mapping questionId to user's answer
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers       String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment    Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
-model FormWorkflow {
-  id               String   @id @default(uuid())
-  formTemplateId   String
-  subjectType      String?  // CORE, NON_CORE, ALL
-  specificSubjects String?
-  targetSchool     String?  @default("ALL")
-  sentByRole       String   // e.g., Leader, Teacher, Admin
-  redirectTo       String   // e.g., Teacher Dashboard, Admin Dashboard
-  displayLocation  String   // e.g., Growth Reports, Pending Approvals
-  logicDescription String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  formTemplate     FormTemplate @relation(fields: [formTemplateId], references: [id], onDelete: Cascade)
+enum AcademicType {
+  CORE
+  NON_CORE
 }
 
-model AuditLog {
-  id           String   @id @default(uuid())
-  actorId      String?  
-  actorName    String?  // Optional name snapshot purely for UI performance
-  action       String   // e.g. 'UPDATED_WORKFLOWS', 'CREATED_TEMPLATE'
-  targetEntity String   // e.g. 'FormWorkflow', 'SystemSettings'
-  previousData String?  // JSON snapshot pre-change
-  newData      String?  // JSON snapshot post-change
-  timestamp    DateTime @default(now())
+enum GrowthModuleType {
+  DANIELSON
+  QUICK_FEEDBACK
+  PERFORMING_ARTS
+  LIFE_SKILLS
+  PHYSICAL_EDUCATION
+  VISUAL_ARTS
+}
+
+enum GrowthObservationStatus {
+  SUBMITTED
+  DRAFT
+}
+
+model GrowthObservation {
+  id              String                  @id @default(uuid())
+  teacherId       String
+  observerId      String
+  campusId        String?
+  academicYear    String
+  moduleType      GrowthModuleType
+  subject         String?
+  block           String?
+  grade           String?
+  section         String?
+  observationDate DateTime                @default(now())
+  overallRating   Float?                  @default(0)
+  status          GrowthObservationStatus @default(DRAFT)
+  formPayload     String? // Stringified JSON
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  teacher         User                    @relation("GrowthTeacher", fields: [teacherId], references: [id])
+  observer        User                    @relation("GrowthObserver", fields: [observerId], references: [id])
 }

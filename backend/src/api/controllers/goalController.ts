@@ -21,7 +21,8 @@ export const getAllGoals = async (req: Request, res: Response, next: NextFunctio
                 teacher: {
                     select: {
                         fullName: true,
-                        email: true
+                        email: true,
+                        academics: true
                     }
                 }
             }
@@ -30,7 +31,8 @@ export const getAllGoals = async (req: Request, res: Response, next: NextFunctio
         const formattedGoals = goals.map(g => ({
             ...g,
             teacher: g.teacher?.fullName || 'Unknown Teacher',
-            teacherEmail: g.teacherEmail || g.teacher?.email || null
+            teacherEmail: g.teacherEmail || g.teacher?.email || null,
+            academics: g.teacher?.academics || 'CORE'
         }));
 
         res.status(200).json({

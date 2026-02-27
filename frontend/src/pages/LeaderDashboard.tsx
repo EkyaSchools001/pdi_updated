@@ -245,7 +245,8 @@ export default function LeaderDashboard() {
         lastObserved: lastObsDate,
         avgScore: Number(avgScore),
         pdHours: pdHours,
-        completionRate: completionRate
+        completionRate: completionRate,
+        academics: teacher.academics
       };
     });
 

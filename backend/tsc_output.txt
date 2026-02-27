@@ -1,0 +1,14 @@
+﻿src/api/controllers/growthObservationController.ts(34,42): error TS2339: Property 'growthObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/growthObservationController.ts(109,43): error TS2339: Property 'growthObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/growthObservationController.ts(158,42): error TS2339: Property 'growthObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/growthObservationController.ts(214,39): error TS2339: Property 'growthObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/growthObservationController.ts(223,38): error TS2339: Property 'growthObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/lifeSkillsObsController.ts(25,34): error TS2339: Property 'lifeSkillsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/lifeSkillsObsController.ts(61,34): error TS2339: Property 'lifeSkillsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/lifeSkillsObsController.ts(95,34): error TS2339: Property 'lifeSkillsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/peObsController.ts(13,34): error TS2339: Property 'physicalEducationObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/peObsController.ts(53,37): error TS2339: Property 'physicalEducationObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/peObsController.ts(77,34): error TS2339: Property 'physicalEducationObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/performingArtsObsController.ts(18,37): error TS2339: Property 'performingArtsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/performingArtsObsController.ts(71,38): error TS2339: Property 'performingArtsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/api/controllers/performingArtsObsController.ts(98,37): error TS2339: Property 'performingArtsObservation' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.

@@ -41,9 +41,15 @@ import { CAMPUS_OPTIONS } from "@/lib/constants";
 
 const DEFAULT_CAMPUSES = CAMPUS_OPTIONS;
 
-const DEFAULT_PILLARS = [
+const CORE_PILLARS = [
     "Live the Lesson", "Authentic Assessments", "Instruct to Inspire", "Care about Culture", "Engaging Environment", "Professional Practice",
 ];
+
+const NON_CORE_PILLARS = [
+    "Pillar 1", "Pillar 2", "Pillar 3", "Pillar 4", "Pillar 5", "Pillar 6",
+];
+
+const DEFAULT_PILLARS = CORE_PILLARS;
 
 const formSchema = z.object({
     educatorName: z.string().min(1, "Educator name is required"),
@@ -85,7 +91,7 @@ interface GoalSettingFormProps {
     onSubmit: (data: z.infer<typeof formSchema>) => void;
     defaultCoachName?: string;
     onCancel: () => void;
-    teachers: { id: string; name: string; email?: string }[];
+    teachers: { id: string; name: string; email?: string; academics?: "CORE" | "NON_CORE" | string }[];
     initialData?: Partial<z.infer<typeof formSchema>>;
 }
 
@@ -162,6 +168,13 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     const selectedTeacher = teachers.find((t: any) => t.name === value);
                                                     if (selectedTeacher?.email) {
                                                         form.setValue("teacherEmail", selectedTeacher.email);
+                                                    }
+
+                                                    // Dynamic pillars based on track
+                                                    if (selectedTeacher?.academics === "NON_CORE") {
+                                                        setPillars(NON_CORE_PILLARS);
+                                                    } else {
+                                                        setPillars(CORE_PILLARS);
                                                     }
                                                 }}
                                                 defaultValue={field.value}

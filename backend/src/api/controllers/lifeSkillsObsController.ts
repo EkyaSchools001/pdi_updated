@@ -12,37 +12,37 @@ const safeJSON = (val: any, def: any = []) => {
 export const createLifeSkillsObs = async (req: Request, res: Response) => {
     try {
         const {
-            observerEmail, teacherName, teacherEmail, observerName,
-            observerRole, observerRoleOther, observationDate,
-            block, grade, section,
-            sectionAResponses, sectionAEvidence,
-            sectionBResponses, sectionBEvidence,
-            sectionCResponses, sectionCEvidence,
-            overallRating, cultureTools, routinesObserved, instructionalTools,
-            discussedWithTeacher, feedback, teacherReflection, actionStep, metaTags,
+            teacherEmail, observerEmail, observationDate,
+            block, grade, section, overallRating,
+            ...rest
         } = req.body;
 
-        const obs = await prisma.lifeSkillsObservation.create({
+        // Find teacher by email
+        const teacher = await prisma.user.findUnique({ where: { email: teacherEmail } });
+        if (!teacher) {
+            return res.status(404).json({ success: false, message: 'Teacher not found' });
+        }
+
+        // Find observer by email
+        const observer = await prisma.user.findUnique({ where: { email: observerEmail } });
+        if (!observer) {
+            return res.status(404).json({ success: false, message: 'Observer not found' });
+        }
+
+        const obs = await prisma.growthObservation.create({
             data: {
-                observerEmail, teacherName, teacherEmail, observerName,
-                observerRole, observerRoleOther: observerRoleOther || '',
-                observationDate, block, grade, section,
-                sectionAResponses: JSON.stringify(sectionAResponses || {}),
-                sectionAEvidence: sectionAEvidence || '',
-                sectionBResponses: JSON.stringify(sectionBResponses || {}),
-                sectionBEvidence: sectionBEvidence || '',
-                sectionCResponses: JSON.stringify(sectionCResponses || {}),
-                sectionCEvidence: sectionCEvidence || '',
+                teacherId: teacher.id,
+                observerId: observer.id,
+                campusId: teacher.campusId,
+                academicYear: 'AY 25-26', // Default or from body
+                moduleType: 'LIFE_SKILLS',
+                block,
+                grade,
+                section,
+                observationDate: observationDate ? new Date(observationDate) : new Date(),
                 overallRating: Number(overallRating) || 0,
-                cultureTools: JSON.stringify(cultureTools || []),
-                routinesObserved: JSON.stringify(routinesObserved || []),
-                instructionalTools: JSON.stringify(instructionalTools || []),
-                discussedWithTeacher: Boolean(discussedWithTeacher),
-                feedback: feedback || '',
-                teacherReflection: teacherReflection || '',
-                actionStep: actionStep || '',
-                metaTags: JSON.stringify(metaTags || []),
-                status: 'Submitted',
+                status: 'SUBMITTED',
+                formPayload: JSON.stringify(rest),
             },
         });
 
@@ -58,21 +58,27 @@ export const getAllLifeSkillsObs = async (req: Request, res: Response) => {
     try {
         const { block, grade, rating, observer } = req.query;
 
-        const all = await prisma.lifeSkillsObservation.findMany({
+        const all = await prisma.growthObservation.findMany({
+            where: { moduleType: 'LIFE_SKILLS' },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            },
             orderBy: { createdAt: 'desc' },
         });
 
         // Parse JSON fields and apply filters
-        let results = all.map((o) => ({
-            ...o,
-            sectionAResponses: safeJSON(o.sectionAResponses, {}),
-            sectionBResponses: safeJSON(o.sectionBResponses, {}),
-            sectionCResponses: safeJSON(o.sectionCResponses, {}),
-            cultureTools: safeJSON(o.cultureTools, []),
-            routinesObserved: safeJSON(o.routinesObserved, []),
-            instructionalTools: safeJSON(o.instructionalTools, []),
-            metaTags: safeJSON(o.metaTags, []),
-        }));
+        let results = all.map((o) => {
+            const payload = safeJSON(o.formPayload, {});
+            return {
+                ...o,
+                ...payload,
+                teacherName: o.teacher.fullName,
+                teacherEmail: o.teacher.email,
+                observerName: o.observer.fullName,
+                observerEmail: o.observer.email,
+            };
+        });
 
         if (block) results = results.filter((r) => r.block === block);
         if (grade) results = results.filter((r) => r.grade === grade);
@@ -92,19 +98,28 @@ export const getAllLifeSkillsObs = async (req: Request, res: Response) => {
 export const getLifeSkillsObsById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const obs = await prisma.lifeSkillsObservation.findUnique({ where: { id } });
-        if (!obs) return res.status(404).json({ success: false, message: 'Not found' });
+        const obs: any = await prisma.growthObservation.findUnique({
+            where: { id: String(id) },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            }
+        });
+        if (!obs || obs.moduleType !== 'LIFE_SKILLS') {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+
+        const payload = safeJSON(obs.formPayload, {});
+
         return res.status(200).json({
             success: true,
             data: {
                 ...obs,
-                sectionAResponses: safeJSON(obs.sectionAResponses, {}),
-                sectionBResponses: safeJSON(obs.sectionBResponses, {}),
-                sectionCResponses: safeJSON(obs.sectionCResponses, {}),
-                cultureTools: safeJSON(obs.cultureTools, []),
-                routinesObserved: safeJSON(obs.routinesObserved, []),
-                instructionalTools: safeJSON(obs.instructionalTools, []),
-                metaTags: safeJSON(obs.metaTags, []),
+                ...payload,
+                teacherName: obs.teacher.fullName,
+                teacherEmail: obs.teacher.email,
+                observerName: obs.observer.fullName,
+                observerEmail: obs.observer.email,
             },
         });
     } catch (error) {
@@ -112,3 +127,4 @@ export const getLifeSkillsObsById = async (req: Request, res: Response) => {
         return res.status(500).json({ success: false, message: 'Failed to fetch observation' });
     }
 };
+

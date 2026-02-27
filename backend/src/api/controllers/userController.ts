@@ -32,6 +32,15 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
             whereClause.role = role;
         }
 
+        const user = (req as any).user;
+        if (user && (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER')) {
+            const leaderConditions: any[] = [{ managerId: user.id }];
+            if (user.campusId) {
+                leaderConditions.push({ campusId: user.campusId });
+            }
+            whereClause.OR = leaderConditions;
+        }
+
         const users = await prisma.user.findMany({
             where: whereClause,
             select: {

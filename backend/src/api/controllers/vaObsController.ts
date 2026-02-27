@@ -9,42 +9,32 @@ const safeJSON = (val: any, def: any = []) => {
 
 export const createVAObs = async (req: Request, res: Response) => {
     try {
-        const b = req.body;
-        const obs = await (prisma as any).visualArtsObservation.create({
+        const {
+            teacherEmail, observerEmail, observationDate,
+            block, grade, section, overallRating,
+            ...rest
+        } = req.body;
+
+        const teacher = await prisma.user.findUnique({ where: { email: teacherEmail } });
+        if (!teacher) return res.status(404).json({ success: false, message: 'Teacher not found' });
+
+        const observer = await prisma.user.findUnique({ where: { email: observerEmail } });
+        if (!observer) return res.status(404).json({ success: false, message: 'Observer not found' });
+
+        const obs = await prisma.growthObservation.create({
             data: {
+                teacherId: teacher.id,
+                observerId: observer.id,
+                campusId: teacher.campusId,
                 academicYear: 'AY 25-26',
-                observerEmail: b.observerEmail,
-                teacherName: b.teacherName,
-                teacherEmail: b.teacherEmail,
-                observerName: b.observerName,
-                observerRole: b.observerRole,
-                observerRoleOther: b.observerRoleOther || '',
-                observationDate: b.observationDate,
-                block: b.block,
-                grade: b.grade,
-                section: b.section,
-                sectionA: JSON.stringify(b.sectionA || {}),
-                sectionAEvidence: b.sectionAEvidence || '',
-                sectionB1: JSON.stringify(b.sectionB1 || {}),
-                sectionB1Evidence: b.sectionB1Evidence || '',
-                sectionB2: JSON.stringify(b.sectionB2 || {}),
-                sectionB2Evidence: b.sectionB2Evidence || '',
-                sectionB3: JSON.stringify(b.sectionB3 || {}),
-                sectionB3Evidence: b.sectionB3Evidence || '',
-                sectionB4: JSON.stringify(b.sectionB4 || {}),
-                sectionB4Evidence: b.sectionB4Evidence || '',
-                sectionC: JSON.stringify(b.sectionC || {}),
-                sectionCEvidence: b.sectionCEvidence || '',
-                overallRating: b.overallRating || '',
-                cultureTools: JSON.stringify(b.cultureTools || []),
-                routinesObserved: JSON.stringify(b.routinesObserved || []),
-                studioHabits: JSON.stringify(b.studioHabits || []),
-                instructionalTools: JSON.stringify(b.instructionalTools || []),
-                feedback: b.feedback || '',
-                teacherReflection: b.teacherReflection || '',
-                actionStep: b.actionStep || '',
-                metaTags: JSON.stringify(b.metaTags || []),
-                status: 'Submitted',
+                moduleType: 'VISUAL_ARTS',
+                block,
+                grade,
+                section,
+                observationDate: observationDate ? new Date(observationDate) : new Date(),
+                overallRating: Number(overallRating) || 0,
+                status: 'SUBMITTED',
+                formPayload: JSON.stringify(rest),
             },
         });
         return res.status(201).json({ success: true, data: obs });
@@ -57,25 +47,31 @@ export const createVAObs = async (req: Request, res: Response) => {
 export const getAllVAObs = async (req: Request, res: Response) => {
     try {
         const { block, grade, rating } = req.query;
-        let results = (await (prisma as any).visualArtsObservation.findMany({
+        const all = await prisma.growthObservation.findMany({
+            where: { moduleType: 'VISUAL_ARTS' },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            },
             orderBy: { createdAt: 'desc' },
-        })).map((o: any) => ({
-            ...o,
-            sectionA: safeJSON(o.sectionA, {}),
-            sectionB1: safeJSON(o.sectionB1, {}),
-            sectionB2: safeJSON(o.sectionB2, {}),
-            sectionB3: safeJSON(o.sectionB3, {}),
-            sectionB4: safeJSON(o.sectionB4, {}),
-            sectionC: safeJSON(o.sectionC, {}),
-            cultureTools: safeJSON(o.cultureTools, []),
-            routinesObserved: safeJSON(o.routinesObserved, []),
-            studioHabits: safeJSON(o.studioHabits, []),
-            instructionalTools: safeJSON(o.instructionalTools, []),
-            metaTags: safeJSON(o.metaTags, []),
-        }));
-        if (block) results = results.filter((r: any) => r.block === block);
-        if (grade) results = results.filter((r: any) => r.grade === grade);
-        if (rating) results = results.filter((r: any) => r.overallRating === rating);
+        });
+
+        let results = all.map((o) => {
+            const payload = safeJSON(o.formPayload, {});
+            return {
+                ...o,
+                ...payload,
+                teacherName: o.teacher.fullName,
+                teacherEmail: o.teacher.email,
+                observerName: o.observer.fullName,
+                observerEmail: o.observer.email,
+            }
+        });
+
+        if (block) results = results.filter((r) => r.block === block);
+        if (grade) results = results.filter((r) => r.grade === grade);
+        if (rating) results = results.filter((r) => r.overallRating === Number(rating));
+
         return res.status(200).json({ success: true, data: { observations: results, total: results.length } });
     } catch (error) {
         console.error('Error fetching VA observations:', error);
@@ -85,10 +81,31 @@ export const getAllVAObs = async (req: Request, res: Response) => {
 
 export const getVAObsById = async (req: Request, res: Response) => {
     try {
-        const obs = await (prisma as any).visualArtsObservation.findUnique({ where: { id: req.params.id } });
-        if (!obs) return res.status(404).json({ success: false, message: 'Not found' });
-        return res.status(200).json({ success: true, data: obs });
+        const { id } = req.params;
+        const obs = await prisma.growthObservation.findUnique({
+            where: { id: String(id) },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            }
+        });
+        if (!obs || obs.moduleType !== 'VISUAL_ARTS') return res.status(404).json({ success: false, message: 'Not found' });
+
+        const payload = safeJSON(obs.formPayload, {});
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                ...obs,
+                ...payload,
+                teacherName: obs.teacher.fullName,
+                teacherEmail: obs.teacher.email,
+                observerName: obs.observer.fullName,
+                observerEmail: obs.observer.email,
+            }
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Failed to fetch observation' });
     }
 };
+

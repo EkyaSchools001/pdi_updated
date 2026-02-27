@@ -9,35 +9,32 @@ const safeJSON = (val: any, def: any = []) => {
 
 export const createPEObs = async (req: Request, res: Response) => {
     try {
-        const body = req.body;
-        const obs = await prisma.physicalEducationObservation.create({
+        const {
+            teacherEmail, observerEmail, observationDate,
+            block, grade, section, overallRating,
+            ...rest
+        } = req.body;
+
+        const teacher = await prisma.user.findUnique({ where: { email: teacherEmail } });
+        if (!teacher) return res.status(404).json({ success: false, message: 'Teacher not found' });
+
+        const observer = await prisma.user.findUnique({ where: { email: observerEmail } });
+        if (!observer) return res.status(404).json({ success: false, message: 'Observer not found' });
+
+        const obs = await prisma.growthObservation.create({
             data: {
-                observerEmail: body.observerEmail,
-                teacherName: body.teacherName,
-                teacherEmail: body.teacherEmail,
-                observerName: body.observerName,
-                observerRole: body.observerRole,
-                observerRoleOther: body.observerRoleOther || '',
-                observationDate: body.observationDate,
-                block: body.block,
-                grade: body.grade,
-                section: body.section,
-                sectionAResponses: JSON.stringify(body.sectionAResponses || {}),
-                sectionAEvidence: body.sectionAEvidence || '',
-                sectionBResponses: JSON.stringify(body.sectionBResponses || {}),
-                sectionBEvidence: body.sectionBEvidence || '',
-                sectionCResponses: JSON.stringify(body.sectionCResponses || {}),
-                sectionCEvidence: body.sectionCEvidence || '',
-                overallRating: Number(body.overallRating) || 0,
-                cultureTools: JSON.stringify(body.cultureTools || []),
-                routinesObserved: JSON.stringify(body.routinesObserved || []),
-                instructionalTools: JSON.stringify(body.instructionalTools || []),
-                discussedWithTeacher: Boolean(body.discussedWithTeacher),
-                feedback: body.feedback || '',
-                teacherReflection: body.teacherReflection || '',
-                actionStep: body.actionStep || '',
-                metaTags: JSON.stringify(body.metaTags || []),
-                status: 'Submitted',
+                teacherId: teacher.id,
+                observerId: observer.id,
+                campusId: teacher.campusId,
+                academicYear: 'AY 25-26',
+                moduleType: 'PHYSICAL_EDUCATION',
+                block,
+                grade,
+                section,
+                observationDate: observationDate ? new Date(observationDate) : new Date(),
+                overallRating: Number(overallRating) || 0,
+                status: 'SUBMITTED',
+                formPayload: JSON.stringify(rest),
             },
         });
         return res.status(201).json({ success: true, data: obs });
@@ -50,18 +47,27 @@ export const createPEObs = async (req: Request, res: Response) => {
 export const getAllPEObs = async (req: Request, res: Response) => {
     try {
         const { block, grade, rating } = req.query;
-        let results = (await prisma.physicalEducationObservation.findMany({
+        const all = await prisma.growthObservation.findMany({
+            where: { moduleType: 'PHYSICAL_EDUCATION' },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            },
             orderBy: { createdAt: 'desc' },
-        })).map(o => ({
-            ...o,
-            sectionAResponses: safeJSON(o.sectionAResponses, {}),
-            sectionBResponses: safeJSON(o.sectionBResponses, {}),
-            sectionCResponses: safeJSON(o.sectionCResponses, {}),
-            cultureTools: safeJSON(o.cultureTools, []),
-            routinesObserved: safeJSON(o.routinesObserved, []),
-            instructionalTools: safeJSON(o.instructionalTools, []),
-            metaTags: safeJSON(o.metaTags, []),
-        }));
+        });
+
+        let results = all.map(o => {
+            const payload = safeJSON(o.formPayload, {});
+            return {
+                ...o,
+                ...payload,
+                teacherName: o.teacher.fullName,
+                teacherEmail: o.teacher.email,
+                observerName: o.observer.fullName,
+                observerEmail: o.observer.email,
+            }
+        });
+
         if (block) results = results.filter(r => r.block === block);
         if (grade) results = results.filter(r => r.grade === grade);
         if (rating) results = results.filter(r => r.overallRating === Number(rating));
@@ -74,10 +80,30 @@ export const getAllPEObs = async (req: Request, res: Response) => {
 
 export const getPEObsById = async (req: Request, res: Response) => {
     try {
-        const obs = await prisma.physicalEducationObservation.findUnique({ where: { id: req.params.id } });
-        if (!obs) return res.status(404).json({ success: false, message: 'Not found' });
-        return res.status(200).json({ success: true, data: { ...obs, sectionAResponses: safeJSON(obs.sectionAResponses, {}), sectionBResponses: safeJSON(obs.sectionBResponses, {}), sectionCResponses: safeJSON(obs.sectionCResponses, {}), cultureTools: safeJSON(obs.cultureTools, []), routinesObserved: safeJSON(obs.routinesObserved, []), instructionalTools: safeJSON(obs.instructionalTools, []), metaTags: safeJSON(obs.metaTags, []) } });
+        const obs = await prisma.growthObservation.findUnique({
+            where: { id: String(req.params.id) },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            }
+        });
+        if (!obs || obs.moduleType !== 'PHYSICAL_EDUCATION') return res.status(404).json({ success: false, message: 'Not found' });
+
+        const payload = safeJSON(obs.formPayload, {});
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                ...obs,
+                ...payload,
+                teacherName: obs.teacher.fullName,
+                teacherEmail: obs.teacher.email,
+                observerName: obs.observer.fullName,
+                observerEmail: obs.observer.email,
+            }
+        });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Failed to fetch observation' });
     }
 };
+

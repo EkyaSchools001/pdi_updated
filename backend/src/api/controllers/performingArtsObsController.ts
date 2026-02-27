@@ -2,47 +2,42 @@ import { Request, Response, NextFunction } from 'express';
 import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 
+// Helper: safely parse JSON string or return default
+const safeJSON = (val: any, def: any = []) => {
+    if (!val) return def;
+    if (typeof val !== 'string') return val;
+    try { return JSON.parse(val); } catch { return def; }
+};
+
 // POST /performing-arts-obs
 export const createObservation = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const {
-            observerEmail, teacherName, teacherEmail, observerName, observerRole, observerRoleOther,
-            observationDate, block, grade, section,
-            sectionAResponses, sectionAEvidence,
-            sectionBResponses, sectionBEvidence,
-            sectionCResponses, sectionCEvidence,
-            overallRating, cultureTools, routinesObserved, instructionalTools,
-            discussedWithTeacher, feedback, teacherReflection, actionStep, metaTags
+            teacherEmail, observerEmail, observationDate,
+            block, grade, section, overallRating,
+            ...rest
         } = req.body;
 
-        const record = await prisma.performingArtsObservation.create({
+        const teacher = await prisma.user.findUnique({ where: { email: teacherEmail } });
+        if (!teacher) return next(new AppError('Teacher not found', 404));
+
+        const observer = await prisma.user.findUnique({ where: { email: observerEmail } });
+        if (!observer) return next(new AppError('Observer not found', 404));
+
+        const record = await prisma.growthObservation.create({
             data: {
-                observerEmail,
-                teacherName,
-                teacherEmail,
-                observerName,
-                observerRole,
-                observerRoleOther: observerRoleOther || null,
-                observationDate,
+                teacherId: teacher.id,
+                observerId: observer.id,
+                campusId: teacher.campusId,
+                academicYear: 'AY 25-26',
+                moduleType: 'PERFORMING_ARTS',
                 block,
                 grade,
                 section,
-                sectionAResponses: JSON.stringify(sectionAResponses || {}),
-                sectionAEvidence,
-                sectionBResponses: JSON.stringify(sectionBResponses || {}),
-                sectionBEvidence,
-                sectionCResponses: JSON.stringify(sectionCResponses || {}),
-                sectionCEvidence,
-                overallRating: parseInt(overallRating),
-                cultureTools: JSON.stringify(cultureTools || []),
-                routinesObserved: JSON.stringify(routinesObserved || []),
-                instructionalTools: JSON.stringify(instructionalTools || []),
-                discussedWithTeacher: !!discussedWithTeacher,
-                feedback,
-                teacherReflection,
-                actionStep,
-                metaTags: JSON.stringify(metaTags || []),
-                status: 'Submitted',
+                observationDate: observationDate ? new Date(observationDate) : new Date(),
+                overallRating: Number(overallRating) || 0,
+                status: 'SUBMITTED',
+                formPayload: JSON.stringify(rest),
             }
         });
 
@@ -57,35 +52,41 @@ export const getAllObservations = async (req: Request, res: Response, next: Next
     try {
         const { block, grade, observer, rating, dateFrom, dateTo } = req.query;
 
-        let where: any = {};
-        if (block) where.block = block;
-        if (grade) where.grade = grade;
-        if (observer) where.observerEmail = observer;
-        if (rating) where.overallRating = parseInt(rating as string);
-        if (dateFrom || dateTo) {
-            where.observationDate = {};
-            if (dateFrom) where.observationDate.gte = dateFrom;
-            if (dateTo) where.observationDate.lte = dateTo;
-        }
-
-        const records = await prisma.performingArtsObservation.findMany({
-            where,
+        const all = await prisma.growthObservation.findMany({
+            where: { moduleType: 'PERFORMING_ARTS' },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            },
             orderBy: { createdAt: 'desc' }
         });
 
-        // Parse JSON fields for response
-        const parsed = records.map(r => ({
-            ...r,
-            sectionAResponses: JSON.parse(r.sectionAResponses),
-            sectionBResponses: JSON.parse(r.sectionBResponses),
-            sectionCResponses: JSON.parse(r.sectionCResponses),
-            cultureTools: JSON.parse(r.cultureTools),
-            routinesObserved: JSON.parse(r.routinesObserved),
-            instructionalTools: JSON.parse(r.instructionalTools),
-            metaTags: JSON.parse(r.metaTags),
-        }));
+        let results = all.map(o => {
+            const payload = safeJSON(o.formPayload, {});
+            return {
+                ...o,
+                ...payload,
+                teacherName: o.teacher.fullName,
+                teacherEmail: o.teacher.email,
+                observerName: o.observer.fullName,
+                observerEmail: o.observer.email,
+            }
+        });
 
-        res.status(200).json({ status: 'success', results: parsed.length, data: { observations: parsed } });
+        if (block) results = results.filter(r => r.block === block);
+        if (grade) results = results.filter(r => r.grade === grade);
+        if (rating) results = results.filter(r => r.overallRating === Number(rating));
+
+        if (dateFrom || dateTo) {
+            results = results.filter(r => {
+                const d = r.observationDate ? new Date(r.observationDate).getTime() : 0;
+                if (dateFrom && d < new Date(dateFrom as string).getTime()) return false;
+                if (dateTo && d > new Date(dateTo as string).getTime()) return false;
+                return true;
+            });
+        }
+
+        res.status(200).json({ status: 'success', results: results.length, data: { observations: results } });
     } catch (err) {
         next(err);
     }
@@ -95,22 +96,29 @@ export const getAllObservations = async (req: Request, res: Response, next: Next
 export const getObservationById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const record = await prisma.performingArtsObservation.findUnique({ where: { id } });
-        if (!record) return next(new AppError('Observation not found', 404));
+        const record = await prisma.growthObservation.findUnique({
+            where: { id: String(id) },
+            include: {
+                teacher: { select: { fullName: true, email: true } },
+                observer: { select: { fullName: true, email: true } }
+            }
+        });
+        if (!record || record.moduleType !== 'PERFORMING_ARTS') return next(new AppError('Observation not found', 404));
 
-        const parsed = {
+        const payload = safeJSON(record.formPayload, {});
+
+        const result = {
             ...record,
-            sectionAResponses: JSON.parse(record.sectionAResponses),
-            sectionBResponses: JSON.parse(record.sectionBResponses),
-            sectionCResponses: JSON.parse(record.sectionCResponses),
-            cultureTools: JSON.parse(record.cultureTools),
-            routinesObserved: JSON.parse(record.routinesObserved),
-            instructionalTools: JSON.parse(record.instructionalTools),
-            metaTags: JSON.parse(record.metaTags),
+            ...payload,
+            teacherName: record.teacher.fullName,
+            teacherEmail: record.teacher.email,
+            observerName: record.observer.fullName,
+            observerEmail: record.observer.email,
         };
 
-        res.status(200).json({ status: 'success', data: { observation: parsed } });
+        res.status(200).json({ status: 'success', data: { observation: result } });
     } catch (err) {
         next(err);
     }
 };
+

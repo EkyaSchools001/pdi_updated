@@ -156,7 +156,7 @@ export const getGrowthObservationById = async (req: Request, res: Response, next
         const { id } = req.params;
 
         const observation = await prisma.growthObservation.findUnique({
-            where: { id },
+            where: { id: String(id) },
             include: {
                 teacher: {
                     select: {
@@ -211,7 +211,7 @@ export const updateGrowthObservation = async (req: Request, res: Response, next:
         const { id } = req.params;
         const data = req.body;
 
-        const existing = await prisma.growthObservation.findUnique({ where: { id } });
+        const existing = await prisma.growthObservation.findUnique({ where: { id: String(id) } });
         if (!existing) return next(new AppError('Observation not found', 404));
 
         // Security: Leaders can update almost anything, teachers maybe just reflections (though not requested yet for unified table)
@@ -221,7 +221,7 @@ export const updateGrowthObservation = async (req: Request, res: Response, next:
         }
 
         const updated = await prisma.growthObservation.update({
-            where: { id },
+            where: { id: String(id) },
             data: {
                 ...data,
                 observationDate: data.observationDate ? new Date(data.observationDate) : undefined,

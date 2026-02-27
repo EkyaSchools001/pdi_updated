@@ -19,6 +19,7 @@ interface GoalCardProps {
     selfReflectionForm?: string;
     goalSettingForm?: string;
     goalCompletionForm?: string;
+    academics?: string;
   };
   onReflect?: () => void;
   className?: string;
@@ -45,6 +46,14 @@ export function GoalCard({ goal, onReflect, className }: GoalCardProps) {
           {(goal.pillar || goal.category) && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
               {goal.pillar || goal.category}
+            </span>
+          )}
+          {goal.academics && (
+            <span className={cn(
+              "text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider",
+              goal.academics === "CORE" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
+            )}>
+              {goal.academics === "NON_CORE" ? "Non-Core Track" : "Core Track"}
             </span>
           )}
         </div>
