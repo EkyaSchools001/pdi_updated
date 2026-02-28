@@ -18,10 +18,11 @@ import { cn } from '@/lib/utils';
 import { GoalSettingForm } from '@/components/GoalSettingForm';
 
 const safeJsonParse = (str: any, fallback: any = {}) => {
-    if (!str) return fallback;
-    if (typeof str === 'object') return str;
+    if (!str || str === 'null') return fallback;
+    if (typeof str === 'object') return str || fallback;
     try {
-        return JSON.parse(str);
+        const parsed = JSON.parse(str);
+        return parsed || fallback;
     } catch (e) {
         return fallback;
     }
@@ -410,7 +411,35 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
         }
 
         if (phase === 'SELF_REFLECTION') {
-            const isCore = goal.academicType === 'CORE';
+            // Detect framework: teacher data is the primary signal;
+            // logged-in user data is only a fallback for the teacher themselves.
+            const teacherEmail = goal.teacherEmail?.toLowerCase() || user?.email?.toLowerCase() || '';
+            const teacherDept = goal.teacherDepartment || user?.department || '';
+
+            const isPE =
+                teacherDept === 'Physical Education' ||
+                teacherEmail.includes('.pe') ||
+                goal.category === 'Physical Education' ||
+                goal.title?.toLowerCase().includes('physical education') ||
+                goal.title?.toLowerCase().includes('p.e');
+
+            const isVA = !isPE && (
+                teacherDept === 'Visual Arts' ||
+                teacherEmail.includes('.va') ||
+                goal.category === 'Visual Arts' ||
+                goal.title?.toLowerCase().includes('visual arts')
+            );
+
+            const isPA = !isPE && !isVA && (
+                teacherDept === 'Performing Arts' ||
+                teacherDept === 'Arts' || // "Arts" maps to PA
+                teacherEmail.includes('.art') ||
+                goal.category === 'Performing Arts' ||
+                goal.title?.toLowerCase().includes('performing arts') ||
+                goal.title?.toLowerCase().includes('arts')
+            );
+
+            const isCore = goal.academicType === 'CORE' && !isPE && !isPA && !isVA;
 
             if (isCore) {
                 return (
@@ -434,8 +463,8 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                         <p className="text-sm font-semibold text-foreground/90">{item}</p>
                                                         <RadioGroup
                                                             onValueChange={(val) => {
-                                                                const newRatings = { ...(formData.ratings || {}), [item]: val };
-                                                                setFormData({ ...formData, ratings: newRatings });
+                                                                const newRatings = { ...(formData?.ratings || {}), [item]: val };
+                                                                setFormData({ ...(formData || {}), ratings: newRatings });
                                                             }}
                                                             value={formData?.ratings?.[item] || ''}
                                                             className="flex flex-wrap gap-x-6 gap-y-3 pt-2"
@@ -461,8 +490,8 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                     className="text-xs min-h-[60px]"
                                                     value={formData?.evidence?.[section.evidenceId] || ''}
                                                     onChange={(e) => {
-                                                        const newEvidence = { ...(formData.evidence || {}), [section.evidenceId]: e.target.value };
-                                                        setFormData({ ...formData, evidence: newEvidence });
+                                                        const newEvidence = { ...(formData?.evidence || {}), [section.evidenceId]: e.target.value };
+                                                        setFormData({ ...(formData || {}), evidence: newEvidence });
                                                     }}
                                                 />
                                             </div>
@@ -482,7 +511,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                             <Textarea
                                                 className="text-xs min-h-[80px]"
                                                 value={formData?.reflection?.[field.id] || ''}
-                                                onChange={(e) => setFormData({ ...formData, reflection: { ...formData.reflection, [field.id]: e.target.value } })}
+                                                onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
                                             />
                                         </div>
                                     ))}
@@ -492,35 +521,6 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                     </ScrollArea>
                 );
             }
-
-            // Detect framework: email domain is the primary signal;
-            // category / title are fallbacks for when email is unavailable (e.g. leader viewing).
-            const effectiveEmail = user?.email?.toLowerCase() || goal.teacherEmail?.toLowerCase() || '';
-
-            const isPE =
-                effectiveEmail.includes('.pe') ||
-                user?.department === 'Physical Education' ||
-                goal.teacherDepartment === 'Physical Education' ||
-                goal.category === 'Physical Education' ||
-                goal.title?.toLowerCase().includes('physical education') ||
-                goal.title?.toLowerCase().includes('p.e');
-
-            const isPA = !isPE && (
-                effectiveEmail.includes('.art') ||
-                user?.department === 'Performing Arts' ||
-                goal.teacherDepartment === 'Performing Arts' ||
-                goal.category === 'Performing Arts' ||
-                goal.title?.toLowerCase().includes('arts')
-            );
-
-            const isVA = !isPE && !isPA && (
-                effectiveEmail.includes('.va') ||
-                user?.department === 'Visual Arts' ||
-                goal.teacherDepartment === 'Visual Arts' ||
-                goal.category === 'Visual Arts' ||
-                goal.title?.toLowerCase().includes('visual arts') ||
-                goal.title?.toLowerCase().includes('art') // fallback for 'art' not matching PA
-            );
 
             if (isPA || isPE || isVA) {
                 const framework = isPA ? PA_FRAMEWORK : isPE ? PE_FRAMEWORK : VA_FRAMEWORK;
@@ -539,7 +539,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                     <Label className="text-xs font-bold">Category Block</Label>
                                     <RadioGroup
                                         className="flex flex-wrap gap-3"
-                                        onValueChange={(val) => setFormData({ ...formData, block: val })}
+                                        onValueChange={(val) => setFormData({ ...(formData || {}), block: val })}
                                         value={formData.block || ''}
                                     >
                                         {['Early Years', 'Primary', 'Middle', 'Senior', 'Whole School'].map((b, bIdx) => {
@@ -568,8 +568,8 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                         <p className="text-sm font-medium md:max-w-[70%]">{item}</p>
                                                         <RadioGroup
                                                             onValueChange={(val) => {
-                                                                const newRatings = { ...(formData.ratings || {}), [item]: val };
-                                                                setFormData({ ...formData, ratings: newRatings });
+                                                                const newRatings = { ...(formData?.ratings || {}), [item]: val };
+                                                                setFormData({ ...(formData || {}), ratings: newRatings });
                                                             }}
                                                             value={formData?.ratings?.[item] || ''}
                                                             className="flex gap-2 flex-wrap md:flex-nowrap shrink-0"
@@ -595,8 +595,8 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                     className="text-xs min-h-[60px]"
                                                     value={formData?.evidence?.[section.id] || ''}
                                                     onChange={(e) => {
-                                                        const newEvidence = { ...(formData.evidence || {}), [section.id]: e.target.value };
-                                                        setFormData({ ...formData, evidence: newEvidence });
+                                                        const newEvidence = { ...(formData?.evidence || {}), [section.id]: e.target.value };
+                                                        setFormData({ ...(formData || {}), evidence: newEvidence });
                                                     }}
                                                 />
                                             </div>
@@ -615,7 +615,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                 <span className="text-[10px] text-muted-foreground font-bold uppercase">Basic</span>
                                                 <RadioGroup
                                                     className="flex gap-4"
-                                                    onValueChange={(val) => setFormData({ ...formData, overallRating: val })}
+                                                    onValueChange={(val) => setFormData({ ...(formData || {}), overallRating: val })}
                                                     value={formData.overallRating || ''}
                                                 >
                                                     {['1', '2', '3', '4'].map((r, rIdx) => {
@@ -648,7 +648,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                                 onCheckedChange={(checked) => {
                                                                     const tools = formData.tools || [];
                                                                     setFormData({
-                                                                        ...formData,
+                                                                        ...(formData || {}),
                                                                         tools: checked ? [...tools, tool] : tools.filter((t: string) => t !== tool)
                                                                     });
                                                                 }}
@@ -674,7 +674,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                                                 onCheckedChange={(checked) => {
                                                                     const routines = formData.routines || [];
                                                                     setFormData({
-                                                                        ...formData,
+                                                                        ...(formData || {}),
                                                                         routines: checked ? [...routines, routine] : routines.filter((r: string) => r !== routine)
                                                                     });
                                                                 }}
@@ -700,7 +700,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                             <Textarea
                                                 className="text-xs min-h-[80px]"
                                                 value={formData?.reflection?.[field.id] || ''}
-                                                onChange={(e) => setFormData({ ...formData, reflection: { ...formData.reflection, [field.id]: e.target.value } })}
+                                                onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
                                             />
                                         </div>
                                     ))}
@@ -725,7 +725,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                 placeholder="Describe your professional contribution and collaboration..."
                                 className="min-h-[100px]"
                                 value={formData.impact || ''}
-                                onChange={(e) => setFormData({ ...formData, impact: e.target.value })}
+                                onChange={(e) => setFormData({ ...(formData || {}), impact: e.target.value })}
                             />
                         </div>
 
@@ -735,7 +735,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                 placeholder="Describe skills developed and alignment with school needs..."
                                 className="min-h-[100px]"
                                 value={formData.evidence || ''}
-                                onChange={(e) => setFormData({ ...formData, evidence: e.target.value })}
+                                onChange={(e) => setFormData({ ...(formData || {}), evidence: e.target.value })}
                             />
                         </div>
 
@@ -745,7 +745,7 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                 placeholder="Final summary and any additional support required..."
                                 className="min-h-[120px]"
                                 value={formData.text || ''}
-                                onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                                onChange={(e) => setFormData({ ...(formData || {}), text: e.target.value })}
                             />
                         </div>
                     </div>
@@ -757,13 +757,16 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
             if (!goal.selfReflectionForm) return null;
             const refData = safeJsonParse(goal.selfReflectionForm);
 
+            const teacherEmail = goal.teacherEmail?.toLowerCase() || '';
+            const teacherDept = goal.teacherDepartment || '';
+
             const isPE = goal.category === 'Physical Education' ||
-                goal.teacherDepartment === 'Physical Education' ||
-                goal.teacherEmail?.toLowerCase().includes('.pe') ||
+                teacherDept === 'Physical Education' ||
+                teacherEmail.includes('.pe') ||
                 (goal.title?.toLowerCase().includes('p.e') && !goal.category);
 
-            const isPA = !isPE && (refData?.block || goal.category === 'Performing Arts' || goal.teacherDepartment === 'Performing Arts' || goal.teacherEmail?.toLowerCase().includes('.art'));
-            const isVA = !isPE && !isPA && (refData?.block || goal.category === 'Visual Arts' || goal.teacherDepartment === 'Visual Arts' || goal.teacherEmail?.toLowerCase().includes('.va') || goal.title?.toLowerCase().includes('visual arts') || goal.title?.toLowerCase().includes('art'));
+            const isVA = !isPE && (goal.category === 'Visual Arts' || teacherDept === 'Visual Arts' || teacherEmail.includes('.va') || goal.title?.toLowerCase().includes('visual arts'));
+            const isPA = !isPE && !isVA && (refData?.block || goal.category === 'Performing Arts' || teacherDept === 'Performing Arts' || teacherDept === 'Arts' || teacherEmail.includes('.art') || goal.title?.toLowerCase().includes('arts'));
             const isCore = !isPA && !isPE && !isVA && (refData.ratings && Object.keys(refData.ratings).length > 0);
 
             if (isPA || isPE || isVA) {

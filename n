@@ -1,0 +1,46 @@
+goals updation, observe teacher removed
+
+# Conflicts:
+#	backend/src/api/services/aiService.ts
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# interactive rebase in progress; onto b2837f0
+# Last command done (1 command done):
+#    pick 1101c66 # goals updation, observe teacher removed
+# No commands remaining.
+# You are currently rebasing branch 'main' on 'b2837f0'.
+#
+# Changes to be committed:
+#	modified:   backend/.env.example
+#	new file:   backend/check_teacher4_goals.js
+#	new file:   backend/create_pe_teacher.js
+#	modified:   backend/debug_results.json
+#	deleted:    backend/find_admin.js
+#	new file:   backend/list_models.js
+#	new file:   backend/list_non_core.js
+#	modified:   backend/src/api/controllers/authController.ts
+#	modified:   backend/src/api/controllers/goalController.ts
+#	new file:   backend/src/api/controllers/goalWindowController.ts
+#	deleted:    backend/src/api/controllers/observationController.ts
+#	modified:   backend/src/api/routes/goalRoutes.ts
+#	new file:   backend/src/api/routes/goalWindowRoutes.ts
+#	modified:   backend/src/api/routes/index.ts
+#	deleted:    backend/src/api/routes/observationRoutes.ts
+#	modified:   backend/src/core/models/schemas.ts
+#	modified:   backend/src/index.ts
+#	new file:   backend/test_ai.js
+#	new file:   database/list_non_core.js
+#	modified:   database/prisma/dev.db
+#	modified:   database/prisma/schema.prisma
+#	modified:   frontend/src/components/GoalCard.tsx
+#	new file:   frontend/src/components/GoalGovernance.tsx
+#	modified:   frontend/src/components/GoalSettingForm.tsx
+#	new file:   frontend/src/components/GoalWorkflowForms.tsx
+#	modified:   frontend/src/components/layout/DashboardSidebar.tsx
+#	modified:   frontend/src/pages/LeaderDashboard.tsx
+#	modified:   frontend/src/pages/TeacherDashboard.tsx
+#	modified:   frontend/src/pages/admin/AdminGoalsView.tsx
+#	modified:   package-lock.json
+#

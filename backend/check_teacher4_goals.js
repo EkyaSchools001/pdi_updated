@@ -1,28 +1,36 @@
-const { PrismaClient } = require('./node_modules/.prisma/client');
+
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
-    try {
+    const teacher = await prisma.user.findFirst({
+        where: { fullName: { contains: 'Four' } },
+        select: {
+            id: true,
+            email: true,
+            fullName: true,
+            academics: true,
+            department: true
+        }
+    });
+
+    console.log('Teacher Details:', JSON.stringify(teacher, null, 2));
+
+    if (teacher) {
         const goals = await prisma.goal.findMany({
-            where: {
-                teacherEmail: 'teacher4.art@pdi.com'
-            },
+            where: { teacherId: teacher.id },
             select: {
                 id: true,
                 title: true,
-                status: true,
+                category: true,
                 academicType: true,
-                category: true
+                status: true
             }
         });
-        console.log('TEACHER_FOUR_GOALS_START');
-        console.log(JSON.stringify(goals, null, 2));
-        console.log('TEACHER_FOUR_GOALS_END');
-    } catch (error) {
-        console.error('Error fetching goals:', error);
-    } finally {
-        await prisma.$disconnect();
+        console.log('Teacher Goals:', JSON.stringify(goals, null, 2));
     }
 }
 
-main();
+main()
+    .catch(e => console.error(e))
+    .finally(async () => await prisma.$disconnect());
