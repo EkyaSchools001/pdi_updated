@@ -148,8 +148,48 @@ model MeetingShare {
   sharedAt       DateTime @default(now())
   meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
+model Observation {
+  id                 String              @id @default(uuid())
+  teacherId          String
+  observerId         String
+  date               String
+  domain             String
+  score              Float
+  notes              String?
+  status             String              @default("SUBMITTED")
+  actionStep         String?
+  teacherReflection  String?
+  detailedReflection String?
+  discussionMet      Boolean             @default(false)
+  hasReflection      Boolean             @default(false)
+  campus             String?
+  block              String?
+  grade              String?
+  section            String?
+  learningArea       String?
+  type               String?
+  strengths          String?
+  areasOfGrowth      String?
+  otherComment       String?
+  metaTags           String?
+  tools              String?
+  routines           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  observer           User                @relation("Observer", fields: [observerId], references: [id])
+  teacher            User                @relation("Teacher", fields: [teacherId], references: [id])
+  domainRatings      ObservationDomain[]
+}
 
-
+model ObservationDomain {
+  id            String      @id @default(uuid())
+  observationId String
+  domainId      String
+  title         String
+  rating        String
+  evidence      String?
+  observation   Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+}
 
 model Goal {
   id                        String    @id @default(uuid())
