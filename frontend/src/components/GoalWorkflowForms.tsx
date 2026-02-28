@@ -499,23 +499,28 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                     </Card>
                                 ))}
 
-                                <div className="space-y-4 bg-muted/20 p-6 rounded-2xl border border-muted-foreground/10">
-                                    {[
-                                        { id: 'strengths', l: 'What are your strengths? *' },
-                                        { id: 'improvement', l: 'What do you think you need to improve on? *' },
-                                        { id: 'goal', l: 'What goal would you like to set for yourself? *' },
-                                        { id: 'anythingElse', l: "Anything else you'd like to share" }
-                                    ].map(field => (
-                                        <div key={field.id} className="space-y-2">
-                                            <Label className="text-xs font-bold">{field.l}</Label>
-                                            <Textarea
-                                                className="text-xs min-h-[80px]"
-                                                value={formData?.reflection?.[field.id] || ''}
-                                                onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <Card className="border-none shadow-sm bg-primary/5 overflow-hidden">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-xs font-bold uppercase text-primary">Final Reflection</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-6 space-y-4">
+                                        {[
+                                            { id: 'strengths', l: 'What are your strengths? *' },
+                                            { id: 'improvement', l: 'What do you think you need to improve on? *' },
+                                            { id: 'goal', l: 'What goal would you like to set for yourself? *' },
+                                            { id: 'anythingElse', l: "Anything else you'd like to share" }
+                                        ].map(field => (
+                                            <div key={field.id} className="space-y-2">
+                                                <Label className="text-xs font-bold">{field.l}</Label>
+                                                <Textarea
+                                                    className="text-xs min-h-[80px] bg-background"
+                                                    value={formData?.reflection?.[field.id] || ''}
+                                                    onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
+                                                />
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
                             </div>
                         </div>
                     </ScrollArea>
@@ -534,26 +539,31 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                 <Badge variant="outline" className="mt-1 text-[10px] uppercase">Specialist Track</Badge>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold">Category Block</Label>
-                                    <RadioGroup
-                                        className="flex flex-wrap gap-3"
-                                        onValueChange={(val) => setFormData({ ...(formData || {}), block: val })}
-                                        value={formData.block || ''}
-                                    >
-                                        {['Early Years', 'Primary', 'Middle', 'Senior', 'Whole School'].map((b, bIdx) => {
-                                            const sId = `block-${bIdx}`;
-                                            return (
-                                                <div key={bIdx} className="flex items-center space-x-2 bg-muted/40 px-3 py-1.5 rounded-full cursor-pointer hover:bg-muted/60 transition-colors">
-                                                    <RadioGroupItem value={b} id={sId} />
-                                                    <Label htmlFor={sId} className="text-xs cursor-pointer font-medium">{b}</Label>
-                                                </div>
-                                            );
-                                        })}
-                                    </RadioGroup>
-                                </div>
-                            </div>
+                            <Card className="border-none shadow-sm bg-primary/5 overflow-hidden">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-xs font-bold uppercase text-primary">Grade Level Context</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-bold italic text-muted-foreground">Select your current category block *</Label>
+                                        <RadioGroup
+                                            className="flex flex-wrap gap-3 pt-2"
+                                            onValueChange={(val) => setFormData({ ...(formData || {}), block: val })}
+                                            value={formData.block || ''}
+                                        >
+                                            {['Early Years', 'Primary', 'Middle', 'Senior', 'Whole School'].map((b, bIdx) => {
+                                                const sId = `block-${bIdx}`;
+                                                return (
+                                                    <div key={bIdx} className="flex items-center space-x-2 bg-background/50 border border-primary/10 px-4 py-2 rounded-xl cursor-pointer hover:bg-background transition-all">
+                                                        <RadioGroupItem value={b} id={sId} />
+                                                        <Label htmlFor={sId} className="text-xs cursor-pointer font-bold">{b}</Label>
+                                                    </div>
+                                                );
+                                            })}
+                                        </RadioGroup>
+                                    </div>
+                                </CardContent>
+                            </Card>
 
                             <div className="space-y-6">
                                 {framework.map((section) => (
@@ -688,23 +698,28 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                                     </CardContent>
                                 </Card>
 
-                                <div className="space-y-4 bg-muted/20 p-6 rounded-2xl border border-muted-foreground/10">
-                                    {[
-                                        { id: 'strengths', l: isPE ? 'What are your strengths as a PE educator? *' : isVA ? 'What are your strengths as a visual arts educator? *' : 'What are your strengths? *' },
-                                        { id: 'improvement', l: 'What do you think you need to improve on? *' },
-                                        { id: 'goal', l: 'What goal would you like to set for yourself? *' },
-                                        { id: 'anythingElse', l: "Anything else you'd like to share" }
-                                    ].map(field => (
-                                        <div key={field.id} className="space-y-2">
-                                            <Label className="text-xs font-bold">{field.l}</Label>
-                                            <Textarea
-                                                className="text-xs min-h-[80px]"
-                                                value={formData?.reflection?.[field.id] || ''}
-                                                onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <Card className="border-none shadow-sm bg-primary/5 overflow-hidden">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-xs font-bold uppercase text-primary">Final Reflection</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-6 space-y-4">
+                                        {[
+                                            { id: 'strengths', l: isPE ? 'What are your strengths as a PE educator? *' : isVA ? 'What are your strengths as a visual arts educator? *' : 'What are your strengths? *' },
+                                            { id: 'improvement', l: 'What do you think you need to improve on? *' },
+                                            { id: 'goal', l: 'What goal would you like to set for yourself? *' },
+                                            { id: 'anythingElse', l: "Anything else you'd like to share" }
+                                        ].map(field => (
+                                            <div key={field.id} className="space-y-2">
+                                                <Label className="text-xs font-bold">{field.l}</Label>
+                                                <Textarea
+                                                    className="text-xs min-h-[80px] bg-background"
+                                                    value={formData?.reflection?.[field.id] || ''}
+                                                    onChange={(e) => setFormData({ ...(formData || {}), reflection: { ...(formData?.reflection || {}), [field.id]: e.target.value } })}
+                                                />
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                </Card>
                             </div>
                         </div>
                     </ScrollArea>
@@ -718,37 +733,42 @@ export const GoalWorkflowForms = ({ goal, role, onComplete, onClose }: GoalWorkf
                         <Badge variant="secondary" className="mt-2 text-[10px] uppercase">Non-Core Track</Badge>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-muted-foreground uppercase">Professional Contribution</Label>
-                            <Textarea
-                                placeholder="Describe your professional contribution and collaboration..."
-                                className="min-h-[100px]"
-                                value={formData.impact || ''}
-                                onChange={(e) => setFormData({ ...(formData || {}), impact: e.target.value })}
-                            />
-                        </div>
+                    <Card className="border-none shadow-sm bg-primary/5 overflow-hidden">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-bold uppercase text-primary">Non-Core Self-Reflection</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 space-y-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase">Professional Contribution</Label>
+                                <Textarea
+                                    placeholder="Describe your professional contribution and collaboration..."
+                                    className="min-h-[100px] bg-background"
+                                    value={formData.impact || ''}
+                                    onChange={(e) => setFormData({ ...(formData || {}), impact: e.target.value })}
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-muted-foreground uppercase">Skill Development & Alignment</Label>
-                            <Textarea
-                                placeholder="Describe skills developed and alignment with school needs..."
-                                className="min-h-[100px]"
-                                value={formData.evidence || ''}
-                                onChange={(e) => setFormData({ ...(formData || {}), evidence: e.target.value })}
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase">Skill Development & Alignment</Label>
+                                <Textarea
+                                    placeholder="Describe skills developed and alignment with school needs..."
+                                    className="min-h-[100px] bg-background"
+                                    value={formData.evidence || ''}
+                                    onChange={(e) => setFormData({ ...(formData || {}), evidence: e.target.value })}
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-bold text-muted-foreground uppercase">Summary</Label>
-                            <Textarea
-                                placeholder="Final summary and any additional support required..."
-                                className="min-h-[120px]"
-                                value={formData.text || ''}
-                                onChange={(e) => setFormData({ ...(formData || {}), text: e.target.value })}
-                            />
-                        </div>
-                    </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase">Summary</Label>
+                                <Textarea
+                                    placeholder="Final summary and any additional support required..."
+                                    className="min-h-[120px] bg-background"
+                                    value={formData.text || ''}
+                                    onChange={(e) => setFormData({ ...(formData || {}), text: e.target.value })}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             );
         }
