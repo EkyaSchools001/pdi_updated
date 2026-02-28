@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Target, Search, FileText, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +22,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DynamicForm } from '@/components/DynamicForm';
-import { GoalSettingForm } from '@/components/GoalSettingForm';
+import { GoalWorkflowForms } from '@/components/GoalWorkflowForms';
+import { GoalGovernance } from '@/components/GoalGovernance';
+import { CAMPUS_OPTIONS } from '@/lib/constants';
 
 export function AdminGoalsView() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -30,15 +33,10 @@ export function AdminGoalsView() {
     const [isGoalSettingOpen, setIsGoalSettingOpen] = useState(true);
 
     const [selectedGoal, setSelectedGoal] = useState<any>(null);
-    const [settingText, setSettingText] = useState("");
-    const [reflectionText, setReflectionText] = useState("");
-    const [completionText, setCompletionText] = useState("");
-    const [goalTemplate, setGoalTemplate] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState("master");
+    const [selectedCampusStats, setSelectedCampusStats] = useState<string | null>(null);
 
     useEffect(() => {
         fetchGoals();
-        fetchSettings();
     }, []);
 
     const fetchGoals = async () => {
@@ -51,33 +49,6 @@ export function AdminGoalsView() {
             console.error(err);
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const fetchSettings = async () => {
-        try {
-            // Mocking setting fetch for now
-            setIsGoalSettingOpen(true);
-
-            // Fetch template
-            const response = await api.get('/templates');
-            if (response.data?.status === 'success') {
-                const templates = response.data.data.templates || [];
-                const activeResponse = templates.find((t: any) => t.type === 'GOAL' && (t.isDefault || t.status === 'Active' || !t.status));
-                if (activeResponse) {
-                    let parsedStructure = [];
-                    try {
-                        parsedStructure = typeof activeResponse.structure === 'string'
-                            ? JSON.parse(activeResponse.structure)
-                            : activeResponse.structure;
-                    } catch (e) {
-                        parsedStructure = [];
-                    }
-                    setGoalTemplate({ ...activeResponse, fields: parsedStructure });
-                }
-            }
-        } catch (err) {
-            console.error(err);
         }
     };
 
@@ -95,35 +66,23 @@ export function AdminGoalsView() {
         }
     };
 
-    const handleAdminUpdate = async () => {
-        if (!selectedGoal) return;
-        try {
-            await api.patch(`/goals/${selectedGoal.id}`, {
-                goalSettingForm: JSON.stringify({ text: settingText }),
-                selfReflectionForm: JSON.stringify({ text: reflectionText }),
-                goalCompletionForm: JSON.stringify({ text: completionText }),
-            });
-            toast.success(`Goal forms manually updated for ${selectedGoal.teacher}.`);
-            setSelectedGoal(null);
-            fetchGoals();
-        } catch (err) {
-            toast.error("Failed to update goal forms.");
-        }
-    };
-
     // Group goals by campus (or fallback)
     const campusStats = React.useMemo(() => {
-        const grouped = goals.reduce((acc, goal) => {
-            const campus = goal.campus || "Unassigned";
-            if (!acc[campus]) {
-                acc[campus] = { totalGoals: 0, reflectionFilled: 0, settingFilled: 0, completed: 0 };
-            }
-            acc[campus].totalGoals += 1;
-            if (goal.selfReflectionForm) acc[campus].reflectionFilled += 1;
-            if (goal.goalSettingForm) acc[campus].settingFilled += 1;
-            if (goal.status === "COMPLETED") acc[campus].completed += 1;
+        const grouped = CAMPUS_OPTIONS.reduce((acc, campus) => {
+            acc[campus] = { totalGoals: 0, reflectionFilled: 0, settingFilled: 0, completed: 0 };
             return acc;
         }, {} as Record<string, { totalGoals: number; reflectionFilled: number; settingFilled: number; completed: number }>);
+
+        goals.forEach(goal => {
+            const campus = goal.campus;
+            // Only process goals that belong to a valid predefined campus
+            if (!campus || !CAMPUS_OPTIONS.includes(campus)) return;
+
+            grouped[campus].totalGoals += 1;
+            if (goal.selfReflectionForm) grouped[campus].reflectionFilled += 1;
+            if (goal.goalSettingForm) grouped[campus].settingFilled += 1;
+            if (goal.status === "COMPLETED") grouped[campus].completed += 1;
+        });
 
         return Object.entries(grouped).map(([campus, value]) => {
             const stats = value as { totalGoals: number; reflectionFilled: number; settingFilled: number; completed: number };
@@ -147,23 +106,19 @@ export function AdminGoalsView() {
             <PageHeader
                 title="Admin: Goals Management"
                 subtitle="Overview of goal setting, reflections, and metrics per campus"
-                actions={
-                    <div className="flex items-center gap-3 bg-muted/30 px-4 py-2 rounded-xl border border-muted-foreground/10">
-                        <Label htmlFor="goal-window" className="text-sm font-bold truncate">Goal Setting Window Open</Label>
-                        <Switch
-                            id="goal-window"
-                            checked={isGoalSettingOpen}
-                            onCheckedChange={handleToggleWindow}
-                        />
-                    </div>
-                }
             />
+
+            <GoalGovernance />
 
             {/* Campus Aggregated Metrics */}
             <h3 className="text-xl font-bold mt-8 mb-4">Campus Goal Metrics</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {campusStats.map(stat => (
-                    <Card key={stat.campus} className="shadow-lg border-none hover:shadow-xl transition-shadow bg-background/50 backdrop-blur-sm">
+                    <Card
+                        key={stat.campus}
+                        className="shadow-lg border-none hover:shadow-xl transition-all cursor-pointer bg-background/50 hover:bg-background/80 backdrop-blur-sm"
+                        onClick={() => setSelectedCampusStats(stat.campus)}
+                    >
                         <CardHeader className="border-b bg-muted/10 pb-4">
                             <CardTitle className="text-lg flex justify-between">
                                 <span>{stat.campus}</span>
@@ -240,9 +195,6 @@ export function AdminGoalsView() {
                                             variant="ghost"
                                             onClick={() => {
                                                 setSelectedGoal(goal);
-                                                try { setSettingText(goal.goalSettingForm ? JSON.parse(goal.goalSettingForm).text : ""); } catch { setSettingText(""); }
-                                                try { setReflectionText(goal.selfReflectionForm ? JSON.parse(goal.selfReflectionForm).text : ""); } catch { setReflectionText(""); }
-                                                try { setCompletionText(goal.goalCompletionForm ? JSON.parse(goal.goalCompletionForm).text : ""); } catch { setCompletionText(""); }
                                             }}
                                             className="text-primary font-bold px-2 h-8"
                                         >
@@ -261,64 +213,105 @@ export function AdminGoalsView() {
                 </CardContent>
             </Card>
 
-            <Dialog open={!!selectedGoal} onOpenChange={(open) => !open && setSelectedGoal(null)}>
-                <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            {selectedGoal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <GoalWorkflowForms
+                        goal={selectedGoal}
+                        role="ADMIN"
+                        onComplete={() => {
+                            setSelectedGoal(null);
+                            fetchGoals();
+                        }}
+                        onClose={() => setSelectedGoal(null)}
+                    />
+                </div>
+            )}
+
+            <Dialog open={!!selectedCampusStats} onOpenChange={(open) => !open && setSelectedCampusStats(null)}>
+                <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-6">
                     <DialogHeader>
-                        <DialogTitle>Admin Modify Goal Forms</DialogTitle>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <Activity className="w-5 h-5 text-primary" />
+                            {selectedCampusStats} - Goal Progress Details
+                        </DialogTitle>
                         <DialogDescription>
-                            Directly edit the form data for {selectedGoal?.teacher}'s goal.
+                            Review which teachers have completed their goal forms.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <GoalSettingForm
-                        teachers={[{ id: selectedGoal?.teacherId || "temp-id", name: selectedGoal?.teacher || "Unknown", email: selectedGoal?.teacherEmail || "" }]}
-                        defaultCoachName={selectedGoal?.assignedBy || "Admin"}
-                        initialData={{
-                            educatorName: selectedGoal?.teacher,
-                            teacherEmail: selectedGoal?.teacherEmail || "",
-                            coachName: selectedGoal?.assignedBy || "Admin",
-                            campus: selectedGoal?.campus || "HQ",
-                            dateOfGoalSetting: selectedGoal?.createdAt ? new Date(selectedGoal.createdAt) : new Date(),
-                            goalForYear: selectedGoal?.title,
-                            reasonForGoal: selectedGoal?.description || "Defined during goal setting",
-                            actionStep: selectedGoal?.actionStep || "Initial planning",
-                            pillarTag: selectedGoal?.category || selectedGoal?.pillar || "Professional Practice",
-                            goalEndDate: selectedGoal?.dueDate ? new Date(selectedGoal.dueDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-                            awareOfProcess: "yes",
-                            awareOfFramework: "yes",
-                            reflectionCompleted: "yes",
-                            evidenceProvided: "yes",
-                            ...(() => {
-                                try {
-                                    return selectedGoal?.goalSettingForm ? JSON.parse(selectedGoal.goalSettingForm) : {};
-                                } catch {
-                                    return {};
-                                }
-                            })()
-                        }}
-                        onSubmit={async (data) => {
-                            if (!selectedGoal) return;
-                            try {
-                                const payload = {
-                                    title: data.goalForYear || selectedGoal.title,
-                                    description: data.reasonForGoal !== undefined ? data.reasonForGoal : selectedGoal.description,
-                                    actionStep: data.actionStep !== undefined ? data.actionStep : selectedGoal.actionStep,
-                                    pillar: data.pillarTag || selectedGoal.pillar,
-                                    category: data.pillarTag || selectedGoal.category,
-                                    campus: data.campus || selectedGoal.campus,
-                                    dueDate: data.goalEndDate ? new Date(data.goalEndDate).toISOString() : selectedGoal.dueDate,
-                                    goalSettingForm: JSON.stringify(data)
-                                };
-                                await api.patch(`/goals/${selectedGoal.id}`, payload);
-                                toast.success(`Goal master form updated for ${selectedGoal.teacher}.`);
-                                setSelectedGoal(null);
-                                fetchGoals();
-                            } catch (err) {
-                                toast.error("Failed to update goal via master form.");
-                            }
-                        }}
-                        onCancel={() => setSelectedGoal(null)}
-                    />
+                    <ScrollArea className="flex-1 pr-4 -mr-4">
+                        <div className="space-y-6 pt-4">
+                            {(() => {
+                                const campusGoals = goals.filter(g => (g.campus || "Unassigned") === selectedCampusStats);
+
+                                const reflectionCompleted = campusGoals.filter(g => !!g.selfReflectionForm);
+                                const reflectionPending = campusGoals.filter(g => !g.selfReflectionForm);
+
+                                const settingCompleted = campusGoals.filter(g => !!g.goalSettingForm);
+                                const settingPending = campusGoals.filter(g => !g.goalSettingForm);
+
+                                return (
+                                    <>
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold flex items-center gap-2 text-sm uppercase text-muted-foreground border-b pb-2">
+                                                <FileText className="w-4 h-4" /> Self-Reflection Status
+                                            </h4>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
+                                                    <p className="text-xs font-bold text-emerald-700 uppercase mb-2">✅ Completed ({reflectionCompleted.length})</p>
+                                                    <div className="space-y-1">
+                                                        {reflectionCompleted.map(g => (
+                                                            <div key={g.id} className="text-xs font-medium">{g.teacher}</div>
+                                                        ))}
+                                                        {reflectionCompleted.length === 0 && <div className="text-xs text-muted-foreground italic">None</div>}
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-rose-50 border border-rose-100 p-3 rounded-lg">
+                                                    <p className="text-xs font-bold text-rose-700 uppercase mb-2">⏳ Pending ({reflectionPending.length})</p>
+                                                    <div className="space-y-1">
+                                                        {reflectionPending.map(g => (
+                                                            <div key={g.id} className="text-xs font-medium">{g.teacher}</div>
+                                                        ))}
+                                                        {reflectionPending.length === 0 && <div className="text-xs text-muted-foreground italic">None</div>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold flex items-center gap-2 text-sm uppercase text-muted-foreground border-b pb-2">
+                                                <Target className="w-4 h-4" /> Goal Setting Status
+                                            </h4>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="bg-blue-50 border border-blue-100 p-3 rounded-lg">
+                                                    <p className="text-xs font-bold text-blue-700 uppercase mb-2">✅ Completed ({settingCompleted.length})</p>
+                                                    <div className="space-y-1">
+                                                        {settingCompleted.map(g => (
+                                                            <div key={g.id} className="text-xs font-medium">{g.teacher}</div>
+                                                        ))}
+                                                        {settingCompleted.length === 0 && <div className="text-xs text-muted-foreground italic">None</div>}
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-amber-50 border border-amber-100 p-3 rounded-lg">
+                                                    <p className="text-xs font-bold text-amber-700 uppercase mb-2">⏳ Pending ({settingPending.length})</p>
+                                                    <div className="space-y-1">
+                                                        {settingPending.map(g => (
+                                                            <div key={g.id} className="text-xs font-medium">{g.teacher}</div>
+                                                        ))}
+                                                        {settingPending.length === 0 && <div className="text-xs text-muted-foreground italic">None</div>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
         </div>

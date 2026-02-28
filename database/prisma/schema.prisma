@@ -149,48 +149,7 @@ model MeetingShare {
   meeting        Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
 }
 
-model Observation {
-  id                 String              @id @default(uuid())
-  teacherId          String
-  observerId         String
-  date               String
-  domain             String
-  score              Float
-  notes              String?
-  status             String              @default("SUBMITTED")
-  actionStep         String?
-  teacherReflection  String?
-  detailedReflection String?
-  discussionMet      Boolean             @default(false)
-  hasReflection      Boolean             @default(false)
-  campus             String?
-  block              String?
-  grade              String?
-  section            String?
-  learningArea       String?
-  type               String?
-  strengths          String?
-  areasOfGrowth      String?
-  otherComment       String?
-  metaTags           String?
-  tools              String?
-  routines           String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  observer           User                @relation("Observer", fields: [observerId], references: [id])
-  teacher            User                @relation("Teacher", fields: [teacherId], references: [id])
-  domainRatings      ObservationDomain[]
-}
 
-model ObservationDomain {
-  id            String      @id @default(uuid())
-  observationId String
-  domainId      String
-  title         String
-  rating        String
-  evidence      String?
-  observation   Observation @relation(fields: [observationId], references: [id], onDelete: Cascade)
-}
 
 model Goal {
   id                        String    @id @default(uuid())
@@ -200,21 +159,36 @@ model Goal {
   description               String?
   progress                  Int       @default(0)
   dueDate                   String
-  status                    String    @default("IN_PROGRESS")
+  status                    String    @default("IN_PROGRESS") // SELF_REFLECTION_PENDING, SELF_REFLECTION_SUBMITTED, GOAL_SET, GOAL_COMPLETED, PARTIALLY_MET, NOT_MET
   isSchoolAligned           Boolean   @default(false)
   category                  String?
   assignedBy                String?
   actionStep                String?
   campus                    String?
+  academicType              AcademicType @default(CORE)
+  
+  // Role-based Form Payloads (JSON)
   selfReflectionForm        String?
   goalSettingForm           String?
   goalCompletionForm        String?
+  
+  // Timestamps for workflow stages
   selfReflectionCompletedAt DateTime?
   goalSettingCompletedAt    DateTime?
   goalCompletionCompletedAt DateTime?
+  
   createdAt                 DateTime  @default(now())
   updatedAt                 DateTime  @updatedAt
   teacher                   User      @relation(fields: [teacherId], references: [id])
+}
+
+model GoalWindow {
+  id        String   @id @default(uuid())
+  phase     String   @unique // SELF_REFLECTION, GOAL_SETTING, GOAL_COMPLETION
+  status    String   @default("CLOSED") // OPEN, CLOSED
+  startDate DateTime?
+  endDate   DateTime?
+  updatedAt DateTime @updatedAt
 }
 
 model TrainingEvent {

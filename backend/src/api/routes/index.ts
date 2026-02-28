@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { roleModuleAuth } from '../middlewares/accessControl';
-import observationRoutes from './observationRoutes';
 import authRoutes from './authRoutes';
 import goalRoutes from './goalRoutes';
 import userRoutes from './userRoutes';
@@ -25,6 +24,7 @@ import analyticsRoutes from './analyticsRoutes';
 import assessmentRoutes from './assessmentRoutes';
 import okrRoutes from './okrRoutes';
 import formWorkflowRoutes from './formWorkflowRoutes';
+import goalWindowRoutes from './goalWindowRoutes';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.use(roleModuleAuth);
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/goals', goalRoutes);
-router.use('/observations', observationRoutes);
+router.use('/goal-windows', goalWindowRoutes);
 router.use('/documents', documentRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/mooc', moocRoutes);

@@ -4,14 +4,14 @@ import { AuthRequest } from '../middlewares/auth';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { createGoalSchema } from '../../core/models/schemas';
 import { createNotification } from './notificationController';
-import { getIO } from '../../core/socket';
+import { isWindowOpen } from './goalWindowController';
 
 export const getAllGoals = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authReq = req as AuthRequest;
-        let filter = {};
+        let filter: any = {};
         if (authReq.user?.role === 'TEACHER') {
-            filter = { teacherId: authReq.user.id };
+            filter.teacherId = authReq.user.id;
         }
 
         const goals = await prisma.goal.findMany({
@@ -22,7 +22,9 @@ export const getAllGoals = async (req: Request, res: Response, next: NextFunctio
                     select: {
                         fullName: true,
                         email: true,
-                        academics: true
+                        academics: true,
+                        campusId: true,
+                        department: true
                     }
                 }
             }
@@ -32,6 +34,7 @@ export const getAllGoals = async (req: Request, res: Response, next: NextFunctio
             ...g,
             teacher: g.teacher?.fullName || 'Unknown Teacher',
             teacherEmail: g.teacherEmail || g.teacher?.email || null,
+            teacherDepartment: g.teacher?.department || null,
             academics: g.teacher?.academics || 'CORE'
         }));
 
@@ -56,24 +59,20 @@ export const createGoal = async (req: Request, res: Response, next: NextFunction
         const data = result.data;
         let teacherId = data.teacherId;
 
-        // If leader/admin is assigning and teacherEmail is provided
         if (authReq.user?.role !== 'TEACHER' && !teacherId && data.teacherEmail) {
             const targetTeacher = await prisma.user.findUnique({ where: { email: data.teacherEmail } });
             if (targetTeacher) {
                 teacherId = targetTeacher.id;
             } else {
-                // Return error if teacher not found - or auto-create? 
-                // Let's return error for now as goals are more sensitive
                 return next(new AppError('Target teacher not found', 404));
             }
         }
 
-        // If still no teacherId, fallback to current user if teacher
         if (!teacherId) {
             if (authReq.user?.role === 'TEACHER') {
                 teacherId = authReq.user.id;
             } else {
-                return next(new AppError('A valid teacherId or teacherEmail is required for leader assignments', 400));
+                return next(new AppError('A valid teacherId or teacherEmail is required', 400));
             }
         }
 
@@ -85,28 +84,17 @@ export const createGoal = async (req: Request, res: Response, next: NextFunction
                 description: data.description || undefined,
                 dueDate: data.dueDate,
                 progress: data.progress ?? 0,
-                status: (data.status === 'COMPLETED' ? 'COMPLETED' : data.status) || 'IN_PROGRESS',
+                status: 'IN_PROGRESS',
                 isSchoolAligned: data.isSchoolAligned ?? false,
                 category: data.category || undefined,
-                assignedBy: data.assignedBy || undefined,
+                assignedBy: authReq.user?.id,
                 actionStep: data.actionStep || undefined,
-                campus: data.campus || undefined
-            },
-            include: {
-                teacher: { select: { fullName: true, email: true } }
+                campus: data.campus || undefined,
+                academicType: data.academicType || 'CORE'
             }
         });
 
-        const formatted = {
-            ...newGoal,
-            teacher: newGoal.teacher?.fullName || 'Unknown Teacher',
-            teacherEmail: newGoal.teacherEmail || newGoal.teacher?.email || null
-        };
-
-        res.status(201).json({
-            status: 'success',
-            data: { goal: formatted }
-        });
+        res.status(201).json({ status: 'success', data: { goal: newGoal } });
     } catch (err) {
         next(err);
     }
@@ -115,103 +103,190 @@ export const createGoal = async (req: Request, res: Response, next: NextFunction
 export const updateGoal = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authReq = req as AuthRequest;
-        const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-        const { progress, status: statusUpdate, title, description, dueDate, selfReflectionForm, goalSettingForm, goalCompletionForm, selfReflectionCompletedAt, goalSettingCompletedAt, goalCompletionCompletedAt, category, actionStep, pillar, campus } = req.body;
+        const { id } = req.params as { id: string };
+        const { progress, status, title, description, dueDate, category, actionStep, campus } = req.body;
 
         const existing = await prisma.goal.findUnique({ where: { id } });
-        if (!existing) {
-            return next(new AppError('Goal not found', 404));
-        }
+        if (!existing) return next(new AppError('Goal not found', 404));
 
-        // Teachers can only update their own goals (progress, status)
         if (authReq.user?.role === 'TEACHER' && existing.teacherId !== authReq.user.id) {
-            return next(new AppError('You can only update your own goals', 403));
+            return next(new AppError('Access denied', 403));
         }
-
-        const updateData: Record<string, unknown> = {};
-        if (typeof progress === 'number' && progress >= 0 && progress <= 100) updateData.progress = progress;
-        if (statusUpdate && ['IN_PROGRESS', 'COMPLETED'].includes(statusUpdate)) updateData.status = statusUpdate;
-        if (title) updateData.title = title;
-        if (description !== undefined) updateData.description = description;
-        if (dueDate) updateData.dueDate = dueDate;
-        if (category) updateData.category = category;
-        if (actionStep !== undefined) updateData.actionStep = actionStep;
-        if (campus) updateData.campus = campus;
-
-        // Form updates
-        if (selfReflectionForm !== undefined) updateData.selfReflectionForm = selfReflectionForm;
-        if (goalSettingForm !== undefined) updateData.goalSettingForm = goalSettingForm;
-        if (goalCompletionForm !== undefined) updateData.goalCompletionForm = goalCompletionForm;
-
-        if (selfReflectionCompletedAt !== undefined) updateData.selfReflectionCompletedAt = selfReflectionCompletedAt;
-        if (goalSettingCompletedAt !== undefined) updateData.goalSettingCompletedAt = goalSettingCompletedAt;
-        if (goalCompletionCompletedAt !== undefined) updateData.goalCompletionCompletedAt = goalCompletionCompletedAt;
 
         const updated = await prisma.goal.update({
             where: { id },
-            data: updateData,
-            include: {
-                teacher: { select: { fullName: true, email: true } }
+            data: {
+                progress: typeof progress === 'number' ? progress : undefined,
+                status: status || undefined,
+                title: title || undefined,
+                description: description || undefined,
+                dueDate: dueDate || undefined,
+                category: category || undefined,
+                actionStep: actionStep || undefined,
+                campus: campus || undefined
             }
         });
 
-        const updatedWithTeacher = updated as typeof updated & { teacher?: { fullName: string; email: string; campusId?: string | null } };
-        const formatted = {
-            ...updated,
-            teacher: updatedWithTeacher.teacher?.fullName || 'Unknown Teacher',
-            teacherEmail: updated.teacherEmail || updatedWithTeacher.teacher?.email || null
-        };
+        res.status(200).json({ status: 'success', data: { goal: updated } });
+    } catch (err) {
+        next(err);
+    }
+};
 
-        // NOTIFICATIONS
-        // 1. Goal Setting Form Filled -> Notify Teacher
-        if (goalSettingForm && !(existing as any).goalSettingForm) {
-            await createNotification({
-                userId: updated.teacherId,
-                title: 'Goal Setting Added',
-                message: `Your HOS has added Goal Setting expectations for: ${updated.title}`,
-                type: 'INFO',
-                link: '/teacher/goals'
-            });
+export const submitSelfReflection = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authReq = req as AuthRequest;
+        const { id } = req.params as { id: string };
+        const { reflectionData } = req.body;
+
+        if (!(await isWindowOpen('SELF_REFLECTION'))) {
+            return next(new AppError('Self-reflection window is closed', 403));
         }
 
-        // 2. Goal Completion Form Filled -> Notify Teacher
-        if (goalCompletionForm && !(existing as any).goalCompletionForm) {
-            await createNotification({
-                userId: updated.teacherId,
-                title: 'Goal Completed',
-                message: `Your HOS has finalized the Completion form for: ${updated.title}`,
-                type: 'SUCCESS',
-                link: '/teacher/goals'
-            });
+        const goal = await prisma.goal.findUnique({ where: { id } });
+        if (!goal || goal.teacherId !== authReq.user?.id) {
+            return next(new AppError('Goal not found or access denied', 404));
         }
 
-        // 3. Self Reflection Filled -> Notify HOS
-        if (selfReflectionForm && !(existing as any).selfReflectionForm) {
-            // Find leader to notify - try to find leader of same campus or assignedBy
-            let notifyLeaderId = existing.assignedBy;
-            if (!notifyLeaderId) {
-                const teacherDetails = await prisma.user.findUnique({ where: { id: updated.teacherId } });
-                if (teacherDetails?.campusId) {
-                    const campusLeader = await prisma.user.findFirst({
-                        where: { role: 'LEADER', campusId: teacherDetails.campusId }
-                    });
-                    if (campusLeader) notifyLeaderId = campusLeader.id;
-                }
+        const updated = await prisma.goal.update({
+            where: { id },
+            data: {
+                selfReflectionForm: JSON.stringify(reflectionData),
+                selfReflectionCompletedAt: new Date(),
+                status: 'SELF_REFLECTION_SUBMITTED'
             }
-            if (notifyLeaderId) {
+        });
+
+        // Notify HOS
+        const teacher = await prisma.user.findUnique({ where: { id: goal.teacherId } });
+        if (teacher?.campusId) {
+            const hos = await prisma.user.findFirst({ where: { role: 'LEADER', campusId: teacher.campusId } });
+            if (hos) {
                 await createNotification({
-                    userId: notifyLeaderId,
-                    title: 'Self-Reflection Submitted',
-                    message: `${formatted.teacher} has submitted a self-reflection for: ${updated.title}`,
+                    userId: hos.id,
+                    title: 'New Self-Reflection',
+                    message: `${teacher.fullName} has submitted a self-reflection.`,
                     type: 'INFO',
-                    link: '/leader/goals'
+                    link: `/leader/goals`
                 });
             }
         }
 
+        res.status(200).json({ status: 'success', data: { goal: updated } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const submitGoalSetting = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params as { id: string };
+        const { settingData } = req.body;
+
+        if (!(await isWindowOpen('GOAL_SETTING'))) {
+            return next(new AppError('Goal setting window is closed', 403));
+        }
+
+        const goal = await prisma.goal.findUnique({ where: { id } });
+        if (!goal) return next(new AppError('Goal not found', 404));
+
+        if (goal.status !== 'SELF_REFLECTION_SUBMITTED') {
+            return next(new AppError('Workflow violation: Self-reflection required first', 400));
+        }
+
+        const updated = await prisma.goal.update({
+            where: { id },
+            data: {
+                goalSettingForm: JSON.stringify(settingData),
+                goalSettingCompletedAt: new Date(),
+                status: 'GOAL_SET'
+            }
+        });
+
+        await createNotification({
+            userId: goal.teacherId,
+            title: 'Goal Expectations Set',
+            message: `Expectations have been set for your goal: ${goal.title}`,
+            type: 'INFO',
+            link: '/teacher/goals'
+        });
+
+        res.status(200).json({ status: 'success', data: { goal: updated } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const submitGoalCompletion = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params as { id: string };
+        const { completionData, status: finalStatus } = req.body;
+
+        if (!(await isWindowOpen('GOAL_COMPLETION'))) {
+            return next(new AppError('Goal completion window is closed', 403));
+        }
+
+        const goal = await prisma.goal.findUnique({ where: { id } });
+        if (!goal) return next(new AppError('Goal not found', 404));
+
+        if (goal.status !== 'GOAL_SET') {
+            return next(new AppError('Workflow violation: Goal setting required first', 400));
+        }
+
+        const updated = await prisma.goal.update({
+            where: { id },
+            data: {
+                goalCompletionForm: JSON.stringify(completionData),
+                goalCompletionCompletedAt: new Date(),
+                status: finalStatus,
+                progress: finalStatus === 'GOAL_COMPLETED' ? 100 : finalStatus === 'PARTIALLY_MET' ? 50 : 0
+            }
+        });
+
+        await createNotification({
+            userId: goal.teacherId,
+            title: 'Goal Finalized',
+            message: `Evaluation completed for: ${goal.title}. Status: ${finalStatus}`,
+            type: 'SUCCESS',
+            link: '/teacher/goals'
+        });
+
+        res.status(200).json({ status: 'success', data: { goal: updated } });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getGoalAnalyticsDashboard = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const authReq = req as AuthRequest;
+        const campusId = req.query.campusId as string | undefined;
+
+        let filter: any = {};
+        if (authReq.user?.role === 'LEADER') filter.campus = authReq.user.campusId;
+        if (campusId) filter.campus = campusId;
+
+        const allGoals = await prisma.goal.findMany({
+            where: filter,
+            include: { teacher: { select: { campusId: true, fullName: true, role: true } } }
+        });
+
+        const total = allGoals.length;
+        const reflected = allGoals.filter(g => g.status === 'SELF_REFLECTION_SUBMITTED' || g.status === 'GOAL_SET' || g.status === 'GOAL_COMPLETED' || g.status === 'PARTIALLY_MET' || g.status === 'NOT_MET').length;
+        const set = allGoals.filter(g => ['GOAL_SET', 'GOAL_COMPLETED', 'PARTIALLY_MET', 'NOT_MET'].includes(g.status)).length;
+        const completed = allGoals.filter(g => ['GOAL_COMPLETED', 'PARTIALLY_MET', 'NOT_MET'].includes(g.status)).length;
+
         res.status(200).json({
             status: 'success',
-            data: { goal: formatted }
+            data: {
+                summary: {
+                    total,
+                    reflectionRate: total > 0 ? (reflected / total) * 100 : 0,
+                    settingRate: total > 0 ? (set / total) * 100 : 0,
+                    completionRate: total > 0 ? (completed / total) * 100 : 0
+                },
+                goals: allGoals
+            }
         });
     } catch (err) {
         next(err);
@@ -225,22 +300,17 @@ export const notifyWindowOpen = async (req: Request, res: Response, next: NextFu
             select: { id: true }
         });
 
-        const notifications = teachers.map(t => ({
-            userId: t.id,
-            title: 'Goal Setting Window Open',
-            message: 'The self reflection and goal setting window is now open. Please review and submit your goals.',
-            type: 'INFO',
-            link: '/teacher/goals'
-        }));
-
-        for (const n of notifications) {
-            await createNotification(n as any);
+        for (const t of teachers) {
+            await createNotification({
+                userId: t.id,
+                title: 'Goal Window Open',
+                message: 'A new goal submission window has been opened.',
+                type: 'INFO',
+                link: '/teacher/goals'
+            });
         }
 
-        res.status(200).json({
-            status: 'success',
-            message: `Notifications sent to ${teachers.length} teachers.`
-        });
+        res.status(200).json({ status: 'success', message: 'Notifications sent' });
     } catch (err) {
         next(err);
     }

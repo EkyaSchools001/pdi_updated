@@ -26,6 +26,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
     Popover,
@@ -85,6 +86,7 @@ const formSchema = z.object({
     pillarTag: z.string().min(1, "Please select a pillar"),
     additionalNotes: z.string().optional(),
     teacherEmail: z.string().email("Invalid email address").optional(),
+    academicType: z.enum(["CORE", "NON_CORE"]).default("CORE"),
 });
 
 interface GoalSettingFormProps {
@@ -124,6 +126,7 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
             educatorName: "",
             teacherEmail: "",
             additionalNotes: "",
+            academicType: "CORE",
             ...initialData,
         },
     });
@@ -169,12 +172,9 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     if (selectedTeacher?.email) {
                                                         form.setValue("teacherEmail", selectedTeacher.email);
                                                     }
-
-                                                    // Dynamic pillars based on track
-                                                    if (selectedTeacher?.academics === "NON_CORE") {
-                                                        setPillars(NON_CORE_PILLARS);
-                                                    } else {
-                                                        setPillars(CORE_PILLARS);
+                                                    if (selectedTeacher?.academics) {
+                                                        form.setValue("academicType", selectedTeacher.academics as any);
+                                                        setPillars(selectedTeacher.academics === "NON_CORE" ? NON_CORE_PILLARS : CORE_PILLARS);
                                                     }
                                                 }}
                                                 defaultValue={field.value}
@@ -192,6 +192,40 @@ export function GoalSettingForm({ onSubmit, defaultCoachName = "", onCancel, tea
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="academicType"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Academic Type *</FormLabel>
+                                            <FormControl>
+                                                <RadioGroup
+                                                    onValueChange={(val) => {
+                                                        field.onChange(val);
+                                                        if (val === "NON_CORE") {
+                                                            setPillars(NON_CORE_PILLARS);
+                                                        } else {
+                                                            setPillars(CORE_PILLARS);
+                                                        }
+                                                    }}
+                                                    value={field.value}
+                                                    className="flex gap-4"
+                                                >
+                                                    <div className="flex items-center space-x-2">
+                                                        <RadioGroupItem value="CORE" id="r1" />
+                                                        <Label htmlFor="r1">CORE</Label>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <RadioGroupItem value="NON_CORE" id="r2" />
+                                                        <Label htmlFor="r2">NON-CORE</Label>
+                                                    </div>
+                                                </RadioGroup>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

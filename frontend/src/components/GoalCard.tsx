@@ -20,6 +20,7 @@ interface GoalCardProps {
     goalSettingForm?: string;
     goalCompletionForm?: string;
     academics?: string;
+    teacherEmail?: string;
   };
   onReflect?: () => void;
   className?: string;

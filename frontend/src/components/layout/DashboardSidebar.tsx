@@ -63,7 +63,6 @@ const leaderNav = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/leader" },
   { title: "Growth", icon: TrendingUp, path: "/growth" },
   { title: "Announcements", icon: Bell, path: "/announcements" },
-  { title: "Observe Teacher", icon: Eye, path: "/leader/observe" },
   { title: "Team Overview", icon: Users, path: "/leader/team" },
   { title: "Set Goals", icon: Target, path: "/leader/goals" },
   { title: "Meetings", icon: Video, path: "/meetings" },

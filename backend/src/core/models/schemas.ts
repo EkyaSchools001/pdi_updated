@@ -32,4 +32,5 @@ export const createGoalSchema = z.object({
     campus: z.string().optional(),
     status: z.string().optional(),
     progress: z.number().optional(),
+    academicType: z.enum(['CORE', 'NON_CORE']).optional(),
 });

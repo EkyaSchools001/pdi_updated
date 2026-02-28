@@ -64,6 +64,7 @@ import {
   ArrowLeft,
   PenTool
 } from "lucide-react";
+import { GoalWorkflowForms } from "@/components/GoalWorkflowForms";
 import { Button } from "@/components/ui/button";
 import { AcknowledgementsView } from "@/components/documents/AcknowledgementsView";
 import { AIAnalysisModal } from "@/components/AIAnalysisModal";
@@ -441,19 +442,18 @@ function ObservationsView({
   );
 }
 
-function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (goal: NewGoal) => void, userName: string }) {
+function GoalsView({ goals, fetchGoals, onAddGoal, userName }: { goals: any[], fetchGoals: () => void, onAddGoal: (goal: NewGoal) => void, userName: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newGoal, setNewGoal] = useState({ title: "", description: "", dueDate: "" });
+  const [newGoal, setNewGoal] = useState({ title: "", description: "", dueDate: "", academicType: "CORE" });
   const [filter, setFilter] = useState<string>("all");
 
   const [selectedReflectGoal, setSelectedReflectGoal] = useState<any>(null);
-  const [reflectionText, setReflectionText] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGoal.title || !newGoal.dueDate) return;
     onAddGoal(newGoal);
-    setNewGoal({ title: "", description: "", dueDate: "" });
+    setNewGoal({ title: "", description: "", dueDate: "", academicType: "CORE" });
     setIsDialogOpen(false);
   };
 
@@ -466,23 +466,6 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
     return true;
   });
 
-  const handleReflectSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedReflectGoal || !reflectionText) return;
-
-    try {
-      await api.patch(`/goals/${selectedReflectGoal.id}`, {
-        selfReflectionForm: JSON.stringify({ text: reflectionText }),
-        selfReflectionCompletedAt: new Date().toISOString()
-      });
-      toast.success("Self-reflection submitted successfully!");
-      setSelectedReflectGoal(null);
-      setReflectionText("");
-      window.location.reload();
-    } catch (err) {
-      toast.error("Failed to submit reflection.");
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -515,19 +498,7 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
           <GoalCard
             key={goal.id}
             goal={goal}
-            onReflect={() => {
-              setSelectedReflectGoal(goal);
-              if (goal.selfReflectionForm) {
-                try {
-                  const parsed = JSON.parse(goal.selfReflectionForm);
-                  setReflectionText(parsed.text || "");
-                } catch (e) {
-                  setReflectionText(goal.selfReflectionForm);
-                }
-              } else {
-                setReflectionText("");
-              }
-            }}
+            onReflect={() => setSelectedReflectGoal(goal)}
           />
         ))}
 
@@ -582,6 +553,23 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Goal Type</Label>
+                <div className="flex gap-2">
+                  {['CORE', 'NON_CORE'].map(type => (
+                    <Button
+                      key={type}
+                      type="button"
+                      variant={newGoal.academicType === type ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setNewGoal(prev => ({ ...prev, academicType: type }))}
+                      className="flex-1"
+                    >
+                      {type.replace('_', ' ')}
+                    </Button>
+                  ))}
+                </div>
+              </div>
               <DialogFooter className="pt-4">
                 <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                 <Button type="submit">Create Goal</Button>
@@ -590,39 +578,17 @@ function GoalsView({ goals, onAddGoal, userName }: { goals: any[], onAddGoal: (g
           </DialogContent>
         </Dialog>
 
-        <Dialog open={!!selectedReflectGoal} onOpenChange={(open) => !open && setSelectedReflectGoal(null)}>
-          <DialogContent className="sm:max-w-[500px] bg-background border-none shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                <Target className="w-6 h-6 text-primary" />
-                {selectedReflectGoal?.selfReflectionForm ? "View Self-Reflection" : "Goal Self-Reflection"}
-              </DialogTitle>
-              <DialogDescription>
-                Reflect on your progress towards: <strong className="text-foreground">{selectedReflectGoal?.title}</strong>
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleReflectSubmit} className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="reflection">Your Reflection</Label>
-                <Textarea
-                  id="reflection"
-                  placeholder="Describe your achievements, challenges, and learnings..."
-                  className="min-h-[150px]"
-                  value={reflectionText}
-                  onChange={(e) => setReflectionText(e.target.value)}
-                  disabled={!!selectedReflectGoal?.selfReflectionForm}
-                  required
-                />
-              </div>
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="ghost" onClick={() => setSelectedReflectGoal(null)}>Close</Button>
-                {!selectedReflectGoal?.selfReflectionForm && (
-                  <Button type="submit">Submit Reflection</Button>
-                )}
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {selectedReflectGoal && (
+          <GoalWorkflowForms
+            goal={selectedReflectGoal}
+            role="TEACHER"
+            onComplete={() => {
+              setSelectedReflectGoal(null);
+              fetchGoals(); // Refresh goals from parent
+            }}
+            onClose={() => setSelectedReflectGoal(null)}
+          />
+        )}
       </div>
     </div>
   );
@@ -1731,6 +1697,19 @@ export default function TeacherDashboard() {
   const [surveyStatus, setSurveyStatus] = useState<{ active: boolean; completed: boolean; title?: string } | null>(null);
 
 
+  const fetchGoals = async () => {
+    try {
+      const response = await api.get('/goals');
+      if (response.data?.status === 'success') {
+        const apiGoals = response.data?.data?.goals || [];
+        setGoals(apiGoals);
+      }
+    } catch (error) {
+      console.error("Failed to fetch goals:", error);
+      setGoals([]);
+    }
+  };
+
   // Fetch initial data via API
   useEffect(() => {
     const fetchObservations = async () => {
@@ -1746,7 +1725,7 @@ export default function TeacherDashboard() {
                 formPayload = {};
               }
             }
-            
+
             let parsedReflection = obs.detailedReflection;
             if (typeof obs.detailedReflection === 'string') {
               try {
@@ -1755,7 +1734,7 @@ export default function TeacherDashboard() {
                 // ignore
               }
             }
-            
+
             // Map unified observation fields to the expected Observation type
             return {
               ...obs,
@@ -1780,23 +1759,6 @@ export default function TeacherDashboard() {
       } catch (error) {
         console.error("Failed to fetch observations:", error);
         setObservations([]);
-      }
-    };
-
-    const fetchGoals = async () => {
-      try {
-        const response = await api.get('/goals');
-        if (response.data?.status === 'success') {
-          const apiGoals = response.data?.data?.goals || [];
-          if (apiGoals.length > 0) {
-            setGoals(apiGoals);
-          } else {
-            setGoals([]);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch goals:", error);
-        setGoals([]);
       }
     };
 
@@ -2121,7 +2083,8 @@ export default function TeacherDashboard() {
         <Route path="observations" element={<ModuleGuard modulePath="observations"><ObservationsView observations={userObservations} onReflect={setSelectedReflectObs} onView={handleViewReport} /></ModuleGuard>} />
         <Route path="dummy-observations" element={<DummyObservationsView />} />
         <Route path="observations/:id" element={<ModuleGuard modulePath="observations"><ObservationDetailView observations={userObservations} /></ModuleGuard>} />
-        <Route path="goals" element={<ModuleGuard modulePath="goals"><GoalsView goals={userGoals} onAddGoal={handleAddGoal} userName={userName} /></ModuleGuard>} />
+        <Route path="goals" element={<ModuleGuard modulePath="goals">          <GoalsView goals={goals} fetchGoals={fetchGoals} onAddGoal={handleAddGoal} userName={userName} />
+        </ModuleGuard>} />
         <Route path="calendar" element={<ModuleGuard modulePath="calendar"><CalendarView events={events} onRegister={handleRegister} /></ModuleGuard>} />
         <Route path="attendance" element={<ModuleGuard modulePath="attendance"><TeacherAttendance /></ModuleGuard>} />
         <Route path="attendance/:eventId" element={<ModuleGuard modulePath="attendance"><AttendanceForm /></ModuleGuard>} />

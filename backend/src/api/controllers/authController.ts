@@ -5,8 +5,8 @@ import prisma from '../../infrastructure/database/prisma';
 import { AppError } from '../../infrastructure/utils/AppError';
 import { loginSchema } from '../../core/models/schemas';
 
-const signToken = (id: string, role: string, fullName: string, campusId?: string | null, department?: string | null) => {
-    return jwt.sign({ id, role, fullName, campusId, department }, (process.env.JWT_SECRET || 'secret') as Secret, {
+const signToken = (id: string, role: string, fullName: string, campusId?: string | null, department?: string | null, academics?: string | null) => {
+    return jwt.sign({ id, role, fullName, campusId, department, academics }, (process.env.JWT_SECRET || 'secret') as Secret, {
         expiresIn: (process.env.JWT_EXPIRES_IN || '1d') as any,
     });
 };
@@ -28,7 +28,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         }
 
         // 2) Sign token
-        const token = signToken(user.id, user.role, user.fullName, user.campusId, user.department);
+        const token = signToken(user.id, user.role, user.fullName, user.campusId, user.department, user.academics);
 
         res.status(200).json({
             status: 'success',
@@ -39,6 +39,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
                     fullName: user.fullName,
                     email: user.email,
                     role: user.role,
+                    academics: user.academics,
                 },
             },
         });
