@@ -6,6 +6,7 @@
     "start": "cd backend && npm start"
   },
   "devDependencies": {
+    "@testsprite/testsprite-mcp": "^0.0.29",
     "prisma": "^6.19.2"
   },
   "dependencies": {

@@ -25,6 +25,8 @@ import assessmentRoutes from './assessmentRoutes';
 import okrRoutes from './okrRoutes';
 import formWorkflowRoutes from './formWorkflowRoutes';
 import goalWindowRoutes from './goalWindowRoutes';
+import observationRoutes from './observationRoutes';
+import growthRoutes from './growthRoutes';
 
 const router = Router();
 
@@ -32,6 +34,8 @@ const router = Router();
 router.use(roleModuleAuth);
 
 router.use('/auth', authRoutes);
+router.use('/growth', growthRoutes);
+router.use('/observations', observationRoutes);
 router.use('/users', userRoutes);
 router.use('/goals', goalRoutes);
 router.use('/goal-windows', goalWindowRoutes);
