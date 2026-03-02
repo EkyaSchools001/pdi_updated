@@ -261,6 +261,7 @@ const VAObsPage: React.FC = () => {
         try {
             await api.post("/growth/observations", {
                 ...form,
+                overallRating: Number(form.overallRating),
                 formPayload: { ...form }, // Sending the entire form as payload for detailed view
                 status: "SUBMITTED"
             });

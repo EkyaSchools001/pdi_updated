@@ -16,6 +16,7 @@ import { MessageSquare } from "lucide-react";
 
 interface PAObs {
     id: string;
+    teacherId: string;
     observationDate: string;
     teacherName: string;
     block: string;
@@ -60,19 +61,21 @@ const PerformingArtsObsDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 const params: any = { moduleType: 'PERFORMING_ARTS' };
+                if (teacherId) params.teacherId = teacherId;
                 if (blockFilter) params.block = blockFilter;
                 if (gradeFilter) params.grade = gradeFilter;
                 if (ratingFilter) params.rating = ratingFilter;
                 const res = await api.get("/growth/observations", { params });
-                
+
                 // Map the unified observation format to the old PAObs interface
                 const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
                     let formPayload = obs.formPayload;
                     if (typeof formPayload === 'string') {
-                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                        try { formPayload = JSON.parse(formPayload); } catch (e) { formPayload = {}; }
                     }
                     return {
                         id: obs.id,
+                        teacherId: obs.teacherId,
                         observationDate: obs.observationDate,
                         teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
                         block: formPayload?.block || "",
@@ -84,7 +87,7 @@ const PerformingArtsObsDashboard: React.FC = () => {
                         detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
                     };
                 });
-                
+
                 setObservations(mappedObservations);
             } catch (e) {
                 toast.error("Failed to load observations");
@@ -98,9 +101,10 @@ const PerformingArtsObsDashboard: React.FC = () => {
     if (!user) return null;
 
     const filtered = observations.filter(o =>
-        !searchText ||
-        o.teacherName.toLowerCase().includes(searchText.toLowerCase()) ||
-        o.observerName.toLowerCase().includes(searchText.toLowerCase())
+        (!searchText ||
+            o.teacherName.toLowerCase().includes(searchText.toLowerCase()) ||
+            o.observerName.toLowerCase().includes(searchText.toLowerCase())) &&
+        (!teacherId || o.teacherId === teacherId)
     );
 
     const teacherName = searchParams.get("teacherName");

@@ -37,16 +37,18 @@ const QuickFeedbackDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 const params: any = { moduleType: "QUICK_FEEDBACK" };
+                if (teacherId) params.teacherId = teacherId;
                 const res = await api.get("/growth/observations", { params });
                 const all = res.data?.data?.observations || res.data?.observations || [];
-                
+
                 const mappedObservations = all.map((obs: any) => {
                     let formPayload = obs.formPayload;
                     if (typeof formPayload === 'string') {
-                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                        try { formPayload = JSON.parse(formPayload); } catch (e) { formPayload = {}; }
                     }
                     return {
                         id: obs.id,
+                        teacherId: obs.teacherId,
                         observationDate: obs.observationDate,
                         teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
                         teacher: obs.teacher?.fullName || formPayload?.teacherName || "Unknown Teacher",
@@ -61,7 +63,7 @@ const QuickFeedbackDashboard: React.FC = () => {
                         detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
                     };
                 });
-                
+
                 setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load feedback records");
@@ -87,7 +89,8 @@ const QuickFeedbackDashboard: React.FC = () => {
         return (
             (!searchText || name.includes(searchText.toLowerCase())) &&
             (!blockFilter || getBlock(o) === blockFilter) &&
-            (!gradeFilter || getGrade(o) === gradeFilter)
+            (!gradeFilter || getGrade(o) === gradeFilter) &&
+            (!teacherId || o.teacherId === teacherId)
         );
     });
 
@@ -189,7 +192,7 @@ const QuickFeedbackDashboard: React.FC = () => {
                                         onClick={() => navigate(`/leader/quick-feedback/new?teacherId=${obs.teacherId || (typeof obs.teacher === 'object' ? obs.teacher?.id : '')}`)}
                                     >
                                         <span className="text-muted-foreground flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />{obs.date}
+                                            <Calendar className="w-3 h-3" />{obs.observationDate ? new Date(obs.observationDate).toLocaleDateString() : "—"}
                                         </span>
                                         <span className="col-span-2 font-medium text-slate-800">{getTeacherName(obs)}</span>
                                         <span>{getBlock(obs)}</span>

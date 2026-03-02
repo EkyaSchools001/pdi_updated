@@ -62,7 +62,8 @@ import {
   Tag,
   ClipboardList,
   ArrowLeft,
-  PenTool
+  PenTool,
+  Palette
 } from "lucide-react";
 import { GoalWorkflowForms } from "@/components/GoalWorkflowForms";
 import { Button } from "@/components/ui/button";
@@ -2433,6 +2434,134 @@ function ObservationDetailView({ observations }: { observations: Observation[] }
                   </div>
                 </div>
               )}
+
+              {/* Specialist Form Sections (Dynamically detect sections like Section A, B1 etc.) */}
+              {Object.keys(observation).some(key => /^section[A-Z]/.test(key)) && (
+                <div className="space-y-6 pt-6 border-t border-dashed">
+                  <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                    <ClipboardCheck className="w-5 h-5" />
+                    Detailed Observation Criteria
+                  </h3>
+                  <div className="grid gap-6">
+                    {Object.keys(observation)
+                      .filter(key => /^section[A-Z](\d+)?$/.test(key) && typeof (observation as any)[key] === 'object')
+                      .sort()
+                      .map(sectionKey => {
+                        const sectionData = (observation as any)[sectionKey];
+                        const evidenceKey = `${sectionKey}Evidence`;
+                        const evidence = (observation as any)[evidenceKey];
+                        // Convert "sectionA" to "Section A", "sectionB1" to "Section B1"
+                        const sectionTitle = sectionKey.replace(/section([A-Z])(\d+)?/, (_, char, num) => `Section ${char}${num || ''}`);
+
+                        return (
+                          <Card key={sectionKey} className="border-muted/30 shadow-sm overflow-hidden">
+                            <div className="bg-muted/10 p-4 border-b">
+                              <h4 className="font-bold flex items-center justify-between text-sm uppercase tracking-wider text-muted-foreground">
+                                {sectionTitle}
+                              </h4>
+                            </div>
+                            <CardContent className="p-0 divide-y divide-dashed">
+                              {Object.entries(sectionData).map(([question, answer], idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 hover:bg-muted/5 transition-colors">
+                                  <span className="text-sm font-medium text-foreground/80 leading-relaxed pr-4">{question}</span>
+                                  <Badge
+                                    variant={answer === "Yes" ? "default" : answer === "No" ? "destructive" : "outline"}
+                                    className={cn(
+                                      "flex-shrink-0 font-bold px-3",
+                                      answer === "Yes" && "bg-emerald-500 hover:bg-emerald-600",
+                                      answer === "No" && "bg-rose-500 hover:bg-rose-600"
+                                    )}
+                                  >
+                                    {String(answer)}
+                                  </Badge>
+                                </div>
+                              ))}
+                              {evidence && (
+                                <div className="p-4 bg-primary/5">
+                                  <p className="text-[10px] font-bold uppercase text-primary mb-1 tracking-widest">Section Evidence</p>
+                                  <p className="text-sm italic text-foreground/80 leading-relaxed">"{evidence}"</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })
+                    }
+                  </div>
+                </div>
+              )}
+
+              {/* Specialist Tools and Routines */}
+              {((observation as any).cultureTools?.length > 0 ||
+                (observation as any).routinesObserved?.length > 0 ||
+                (observation as any).studioHabits?.length > 0 ||
+                (observation as any).instructionalTools?.length > 0) && (
+                  <div className="grid md:grid-cols-2 gap-8 pt-8 border-t border-dashed">
+                    {(observation as any).cultureTools?.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold flex items-center gap-2 text-emerald-600">
+                          <Zap className="w-5 h-5" />
+                          Culture Tools
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {(observation as any).cultureTools.map((tool: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-100">
+                              {tool}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(observation as any).routinesObserved?.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold flex items-center gap-2 text-indigo-600">
+                          <ClipboardList className="w-5 h-5" />
+                          Routines Observed
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {(observation as any).routinesObserved.map((routine: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100">
+                              {routine}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(observation as any).studioHabits?.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold flex items-center gap-2 text-amber-600">
+                          <Palette className="w-5 h-5" />
+                          Studio Habits
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {(observation as any).studioHabits.map((habit: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100">
+                              {habit}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(observation as any).instructionalTools?.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
+                          <PenTool className="w-5 h-5" />
+                          Instructional Tools
+                        </h3>
+                        <div className="flex flex-wrap gap-2">
+                          {(observation as any).instructionalTools.map((tool: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="bg-primary/5 text-primary border-primary/10">
+                              {tool}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {/* Action Steps & Reflection */}
               <div className="grid md:grid-cols-2 gap-8">

@@ -33,7 +33,8 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
         }
 
         const user = (req as any).user;
-        if (user && (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER')) {
+        // Leaders see everyone if fetching TEACHERs specifically, otherwise restricted to their campus/team
+        if (user && (user.role === 'LEADER' || user.role === 'SCHOOL_LEADER') && role !== 'TEACHER') {
             const leaderConditions: any[] = [{ managerId: user.id }];
             if (user.campusId) {
                 leaderConditions.push({ campusId: user.campusId });

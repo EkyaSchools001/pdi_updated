@@ -54,16 +54,18 @@ const DanielsonDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 const params: any = { moduleType: "DANIELSON" };
+                if (teacherId) params.teacherId = teacherId;
                 const res = await api.get("/growth/observations", { params });
                 const all = res.data?.data?.observations || res.data?.observations || [];
-                
+
                 const mappedObservations = all.map((obs: any) => {
                     let formPayload = obs.formPayload;
                     if (typeof formPayload === 'string') {
-                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                        try { formPayload = JSON.parse(formPayload); } catch (e) { formPayload = {}; }
                     }
                     return {
                         id: obs.id,
+                        teacherId: obs.teacherId,
                         observationDate: obs.observationDate,
                         teacher: obs.teacher?.fullName || formPayload?.teacherName || "Unknown Teacher",
                         type: "Danielson Framework",
@@ -77,7 +79,7 @@ const DanielsonDashboard: React.FC = () => {
                         detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
                     };
                 });
-                
+
                 setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load observations");
@@ -107,7 +109,8 @@ const DanielsonDashboard: React.FC = () => {
             (!searchText || name.includes(searchText.toLowerCase())) &&
             (!blockFilter || block === blockFilter) &&
             (!gradeFilter || grade === gradeFilter) &&
-            (!ratingFilter || String(Math.round(o.score)) === ratingFilter)
+            (!ratingFilter || String(Math.round(o.score)) === ratingFilter) &&
+            (!teacherId || o.teacherId === teacherId)
         );
     });
 
@@ -221,7 +224,7 @@ const DanielsonDashboard: React.FC = () => {
                                             onClick={() => navigate(`/leader/danielson-framework/new?teacherId=${obs.teacherId || (typeof obs.teacher === 'object' ? obs.teacher?.id : '')}`)}
                                         >
                                             <span className="text-muted-foreground flex items-center gap-1">
-                                                <Calendar className="w-3 h-3" />{obs.date}
+                                                <Calendar className="w-3 h-3" />{obs.observationDate ? new Date(obs.observationDate).toLocaleDateString() : "—"}
                                             </span>
                                             <span className="col-span-2 font-medium text-slate-800">{getTeacherName(obs)}</span>
                                             <span>{getBlock(obs)}</span>

@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { GrowthLayout } from "@/components/growth/GrowthLayout";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MessageSquare } from "lucide-react";
 
 const RATING_COLORS: Record<string, string> = {
@@ -47,15 +47,17 @@ const VAObsDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 const params: any = { moduleType: 'VISUAL_ARTS' };
+                if (teacherId) params.teacherId = teacherId;
                 const res = await api.get("/growth/observations", { params });
-                
+
                 const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
                     let formPayload = obs.formPayload;
                     if (typeof formPayload === 'string') {
-                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                        try { formPayload = JSON.parse(formPayload); } catch (e) { formPayload = {}; }
                     }
                     return {
                         id: obs.id,
+                        teacherId: obs.teacherId,
                         observationDate: obs.observationDate,
                         teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
                         block: formPayload?.block || "",
@@ -67,7 +69,7 @@ const VAObsDashboard: React.FC = () => {
                         detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
                     };
                 });
-                
+
                 setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load Visual Arts observations");
@@ -86,7 +88,8 @@ const VAObsDashboard: React.FC = () => {
             (!searchText || name.includes(searchText.toLowerCase())) &&
             (!blockFilter || o.block === blockFilter) &&
             (!gradeFilter || o.grade === gradeFilter) &&
-            (!ratingFilter || o.overallRating === ratingFilter)
+            (!ratingFilter || o.overallRating === ratingFilter) &&
+            (!teacherId || o.teacherId === teacherId)
         );
     });
 
@@ -175,7 +178,7 @@ const VAObsDashboard: React.FC = () => {
                                 filtered.map((obs, idx) => (
                                     <div key={obs.id} className={`grid grid-cols-7 gap-2 px-4 py-3 items-center hover:bg-amber-50 cursor-pointer border-b transition-colors text-sm ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
                                         onClick={() => navigate(`/leader/va-obs/new`)}>
-                                        <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{obs.observationDate}</span>
+                                        <span className="text-muted-foreground flex items-center gap-1"><Calendar className="w-3 h-3" />{obs.observationDate ? new Date(obs.observationDate).toLocaleDateString() : "—"}</span>
                                         <span className="col-span-2 font-medium text-slate-800">{obs.teacherName}</span>
                                         <span className="col-span-2">
                                             {obs.overallRating ? (

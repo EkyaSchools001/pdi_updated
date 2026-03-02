@@ -50,15 +50,17 @@ const LifeSkillsObsDashboard: React.FC = () => {
             try {
                 setLoading(true);
                 const params: any = { moduleType: 'LIFE_SKILLS' };
+                if (teacherId) params.teacherId = teacherId;
                 const res = await api.get("/growth/observations", { params });
-                
+
                 const mappedObservations = (res.data?.data?.observations || []).map((obs: any) => {
                     let formPayload = obs.formPayload;
                     if (typeof formPayload === 'string') {
-                      try { formPayload = JSON.parse(formPayload); } catch(e) { formPayload = {}; }
+                        try { formPayload = JSON.parse(formPayload); } catch (e) { formPayload = {}; }
                     }
                     return {
                         id: obs.id,
+                        teacherId: obs.teacherId,
                         observationDate: obs.observationDate,
                         teacherName: obs.teacher?.fullName || obs.teacherEmail || formPayload?.teacherName || "Unknown Teacher",
                         block: formPayload?.block || "",
@@ -70,7 +72,7 @@ const LifeSkillsObsDashboard: React.FC = () => {
                         detailedReflection: obs.detailedReflection ? (typeof obs.detailedReflection === 'string' ? JSON.parse(obs.detailedReflection) : obs.detailedReflection) : null
                     };
                 });
-                
+
                 setObservations(mappedObservations);
             } catch {
                 toast.error("Failed to load life skills observations");
@@ -89,7 +91,8 @@ const LifeSkillsObsDashboard: React.FC = () => {
             (!searchText || name.includes(searchText.toLowerCase())) &&
             (!blockFilter || o.block === blockFilter) &&
             (!gradeFilter || o.grade === gradeFilter) &&
-            (!ratingFilter || String(o.overallRating) === ratingFilter)
+            (!ratingFilter || String(o.overallRating) === ratingFilter) &&
+            (!teacherId || o.teacherId === teacherId)
         );
     });
 
@@ -201,7 +204,7 @@ const LifeSkillsObsDashboard: React.FC = () => {
                                         onClick={() => navigate(`/leader/life-skills-obs/new?teacherId=${obs.teacherEmail}`)}
                                     >
                                         <span className="text-muted-foreground flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />{obs.observationDate}
+                                            <Calendar className="w-3 h-3" />{obs.observationDate ? new Date(obs.observationDate).toLocaleDateString() : "—"}
                                         </span>
                                         <span className="col-span-2 font-medium text-slate-800">{obs.teacherName}</span>
                                         <span>{obs.block || "—"}</span>

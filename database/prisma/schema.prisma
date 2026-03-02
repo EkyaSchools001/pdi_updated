@@ -718,6 +718,15 @@ model GrowthObservation {
   overallRating   Float?                  @default(0)
   status          GrowthObservationStatus @default(DRAFT)
   formPayload     String? // Stringified JSON
+  notes           String?
+  actionStep      String?
+  teacherReflection String?
+  discussionMet   Boolean?                @default(false)
+  strengths       String?
+  areasOfGrowth   String?
+  metaTags        String?
+  tools           String?
+  routines        String?
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
   teacher         User                    @relation("GrowthTeacher", fields: [teacherId], references: [id])
